@@ -26,7 +26,7 @@ const findings: Finding[] = [
   },
   {
     title: 'Method never hit',
-    body: "Methods no instance has run. Constructors only show up as unused overloads, so private constructors stay off the list.",
+    body: "Methods no instance has run.",
     examples: [{ code: 'constructor(pounds: Int, pence: Int)', verdict: 'unused overload' }],
   },
   {
@@ -36,7 +36,7 @@ const findings: Finding[] = [
   },
   {
     title: 'Class never loaded, initialised or instantiated',
-    body: "Classes that never loaded, never initialised or never had an instance made. Never loaded needs the startup scan.",
+    body: "Classes that never loaded, never initialised or never had an instance made.",
     examples: [
       { code: 'PromoRepository', verdict: 'never loaded' },
       { code: 'AuditLog', verdict: 'never initialised' },
@@ -49,7 +49,7 @@ const findings: Finding[] = [
   },
   {
     title: 'Dependency never loaded or referenced',
-    body: "Jars that never loaded a class, or that your code never references. Worth a check, since reflection can still use them.",
+    body: "Jars that never loaded a class, or that your code never references.",
   },
   {
     title: 'Default always or never used',
@@ -57,18 +57,18 @@ const findings: Finding[] = [
   },
   {
     title: 'Called only by tests',
-    body: "Run the agent in your tests too, and see which tests call code production never touches.",
+    body: "Code only your tests run, and which tests run it.",
   },
 ];
 
 const security = [
   {
     title: 'Open source where it runs',
-    body: "The agent and collector are Apache 2.0, so you can read everything that runs in your network.",
+    body: "The agent and collector are Apache 2.0.",
   },
   {
     title: 'String literals stay home',
-    body: "The collector can blank out string literals in your conditions before reports leave your network. It's off by default, and hashes of the literals are still sent.",
+    body: "The collector can blank out string literals in your conditions before reports leave your network.",
   },
   {
     title: 'Data in London',
@@ -91,8 +91,8 @@ const security = [
         </h1>
         <p class="mt-6 max-w-[34rem] text-[1.1875rem] leading-relaxed">
           <strong class="font-bold">Find the code that never runs in production.</strong>{' '}
-          Otherlode tracks what your Java, Kotlin and Scala services actually run, across every instance. Give
-          it a few weeks and it shows you what never did.
+          Otherlode tracks what your Java, Kotlin and Scala services actually run, across every instance, and
+          shows you what never did.
         </p>
         <div class="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-5">
           <a href={earlyAccessHref} class="button">Ask for early access</a>
@@ -143,9 +143,6 @@ const security = [
             </dl>
           </div>
         </div>
-        <figcaption class="mt-4 text-[0.875rem] text-muted-foreground">
-          From the demo app in the agent's repo.
-        </figcaption>
       </figure>
     </div>
     <Ridge class="h-16 sm:h-24 lg:h-28" />
@@ -153,12 +150,7 @@ const security = [
 
   <section id="finds" aria-labelledby="finds-title" class="ground scroll-mt-4 bg-ground text-ground-foreground">
     <div class="mx-auto max-w-6xl px-4 pt-6 pb-20 sm:px-6 sm:pb-24">
-      <div class="flex flex-wrap items-end justify-between gap-x-10 gap-y-4">
-        <h2 id="finds-title" class="display text-[clamp(2rem,4vw,3rem)]">What it finds</h2>
-        <p class="max-w-[30rem] text-ground-muted">
-          Code only counts as never run if no instance ran it, so one quiet server won't flag anything.
-        </p>
-      </div>
+      <h2 id="finds-title" class="display text-[clamp(2rem,4vw,3rem)]">What it finds</h2>
 
       <div class="box mt-8">
         <div class="box-bar" aria-hidden="true"></div>
@@ -167,7 +159,7 @@ const security = [
             <tr>
               <th scope="col">Finding</th>
               <th scope="col">What it means</th>
-              <th scope="col">In the demo app</th>
+              <th scope="col">Example</th>
             </tr>
           </thead>
           <tbody>
@@ -245,16 +237,10 @@ const security = [
       </div>
 
       <div class="mt-16 grid grid-cols-1 items-center gap-10 lg:grid-cols-[1fr_1.4fr]">
-        <div>
-          <p>
-            Name the service, the packages to watch and your collector. The last setting turns on the startup scan,
-            which finds classes that never load.
-          </p>
-          <p class="mt-3">
-            No release yet, so build the jar from the <a href={agentRepo} class="underline">agent's repo</a> with{' '}
-            <code class="whitespace-nowrap text-[0.9em]">./gradlew build</code>.
-          </p>
-        </div>
+        <p>
+          No release yet, so build the jar from the <a href={agentRepo} class="underline">agent's repo</a> with{' '}
+          <code class="whitespace-nowrap text-[0.9em]">./gradlew build</code>.
+        </p>
         <figure class="terminal min-w-0">
           <figcaption class="terminal-bar">
             <span>Run the agent</span>
@@ -294,12 +280,7 @@ const security = [
       <div class="box">
         <div class="box-bar" aria-hidden="true"></div>
         <div class="flex flex-col items-start justify-between gap-6 p-6 sm:p-7 md:flex-row md:items-center">
-          <div>
-            <h2 id="access-title" class="display text-[clamp(1.75rem,3.4vw,2.5rem)]">We're in early access.</h2>
-            <p class="mt-2 max-w-[32rem] text-muted-foreground">
-              We're setting accounts up by hand for now. Tell us what you run and we'll take it from there.
-            </p>
-          </div>
+          <h2 id="access-title" class="display text-[clamp(1.75rem,3.4vw,2.5rem)]">We're in early access.</h2>
           <a href={earlyAccessHref} class="button shrink-0">Ask for early access</a>
         </div>
       </div>
