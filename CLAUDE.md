@@ -24,4 +24,6 @@ fails on inline ones.
 
 ## Privacy policy
 
-Write the privacy policy in plain English with short sentences.
+Write the privacy policy in plain English with short sentences. Change it
+only to keep it factually accurate. Copy and style passes over the site
+leave it alone, since every sentence there is a commitment.
