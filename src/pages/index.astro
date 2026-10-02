@@ -1,7 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import Ridge from '../components/Ridge.astro';
-import { agentRepo, collectorRepo, contactEmail, earlyAccessHref, earlyAccessMailto } from '../lib/site';
+import { agentRepo, contactEmail, earlyAccessHref, earlyAccessMailto } from '../lib/site';
 
 /**
  * One kind of finding, with optional examples from the agent's demo app.
@@ -20,23 +20,23 @@ function withCode(text: string): { text: string; code: boolean }[] {
 
 const findings: Finding[] = [
   {
-    title: 'Endpoints nobody calls',
-    body: "Routes no request has ever hit, in Spring MVC, Ktor, JAX-RS or the JDK's HttpServer.",
+    title: 'Endpoint never called',
+    body: "Routes no request has ever matched, in Spring MVC, Ktor, JAX-RS or the JDK's `HttpServer`.",
     examples: [{ code: '/promo', verdict: 'never called' }],
   },
   {
-    title: 'Methods that never run',
+    title: 'Method never hit',
     body: "Methods no instance has run. Constructors only show up as unused overloads, so private constructors stay off the list.",
     examples: [{ code: 'constructor(pounds: Int, pence: Int)', verdict: 'unused overload' }],
   },
   {
-    title: 'Branches that only go one way',
-    body: "An `if` or `switch` outcome that's never happened, with the lines only it would reach.",
+    title: 'Branch outcome never taken',
+    body: "An `if` or `switch` outcome that has never happened, with the lines only it would reach.",
     examples: [{ code: 'discounted > 100.0', verdict: 'was never true' }],
   },
   {
-    title: 'Classes that never loaded',
-    body: "Turn on the startup scan to see classes that never loaded, plus ones never initialised or instantiated.",
+    title: 'Class never loaded, initialised or instantiated',
+    body: "Classes that never loaded, never initialised or never had an instance made. Never loaded needs the startup scan.",
     examples: [
       { code: 'PromoRepository', verdict: 'never loaded' },
       { code: 'AuditLog', verdict: 'never initialised' },
@@ -44,30 +44,30 @@ const findings: Finding[] = [
     ],
   },
   {
-    title: 'Dependencies you might not need',
-    body: "Jars that never loaded a class, or that your code never references. Worth a check, since reflection can still use them.",
-  },
-  {
-    title: 'Default parameters nobody changes',
-    body: "Kotlin and Scala defaults that no call overrides, or that every call does.",
-  },
-  {
-    title: 'Dead code behind one branch',
+    title: 'Unreached cluster',
     body: "Everything that only an untaken branch leads to, grouped so you can delete it in one go.",
   },
   {
-    title: 'Code only your tests call',
+    title: 'Dependency never loaded or referenced',
+    body: "Jars that never loaded a class, or that your code never references. Worth a check, since reflection can still use them.",
+  },
+  {
+    title: 'Default always or never used',
+    body: "Kotlin and Scala default parameters that no call overrides, or that every call does.",
+  },
+  {
+    title: 'Called only by tests',
     body: "Run the agent in your tests too, and see which tests call code production never touches.",
   },
 ];
 
 const security = [
   {
-    title: 'Open source on your side',
+    title: 'Open source where it runs',
     body: "The agent and collector are Apache 2.0, so you can read everything that runs in your network.",
   },
   {
-    title: 'Keep string literals at home',
+    title: 'String literals stay home',
     body: "The collector can blank out string literals in your conditions before reports leave your network. It's off by default, and hashes of the literals are still sent.",
   },
   {
@@ -75,7 +75,7 @@ const security = [
     body: "The database and backups live in Google Cloud's London region.",
   },
   {
-    title: 'Sign in your way',
+    title: 'Your sign-in',
     body: "Google, Microsoft, GitHub, or your own SAML or OIDC single sign-on.",
   },
 ];
@@ -83,18 +83,18 @@ const security = [
 
 <Base>
   <section aria-labelledby="hero-title" class="relative">
-    <div class="mx-auto grid max-w-6xl grid-cols-1 gap-12 px-4 pt-14 pb-10 sm:px-6 sm:pt-20 lg:grid-cols-12 lg:gap-10 lg:pt-24 lg:pb-14">
+    <div class="mx-auto grid max-w-6xl grid-cols-1 gap-12 px-4 pt-12 pb-12 sm:px-6 sm:pt-16 lg:grid-cols-12 lg:gap-14 lg:pt-20 lg:pb-16">
       <div class="lg:col-span-7">
-        <h1 id="hero-title" class="display text-[clamp(2.375rem,6vw,3.75rem)]">
+        <h1 id="hero-title" class="display text-[clamp(2.375rem,6vw,4.25rem)]">
           Traces find the motherlode. <span class="whitespace-nowrap">What about</span> the{' '}
           <span class="whitespace-nowrap"><span class="text-signal-text">other</span>lode?</span>
         </h1>
-        <p class="mt-6 max-w-[34rem] text-[1.1875rem] leading-relaxed text-muted-foreground">
-          <strong class="font-semibold text-foreground">Find the code that never runs in production.</strong>{' '}
+        <p class="mt-6 max-w-[34rem] text-[1.1875rem] leading-relaxed">
+          <strong class="font-bold">Find the code that never runs in production.</strong>{' '}
           Otherlode tracks what your Java, Kotlin and Scala services actually run, across every instance. Give
           it a few weeks and it shows you what never did.
         </p>
-        <div class="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-5">
+        <div class="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-5">
           <a href={earlyAccessHref} class="button">Ask for early access</a>
           <p class="text-[0.9375rem] text-muted-foreground">
             Or email <a href={earlyAccessMailto} class="underline">{contactEmail}</a>.
@@ -103,194 +103,205 @@ const security = [
       </div>
 
       <figure class="lg:col-span-5 lg:self-center">
-        <div class="rounded-xl border bg-card p-5 sm:p-6">
-          <p class="text-[0.9375rem]">
-            <code class="text-[0.875rem]">handleCheckout</code>{' '}
-            <span class="text-muted-foreground">in</span>{' '}
-            <code class="text-[0.875rem] text-muted-foreground">DemoServerMain.kt:71</code>
-          </p>
-          <dl class="mt-3 divide-y text-[0.9375rem] leading-relaxed">
-            <div class="py-3.5">
-              <dt class="text-[0.8125rem] font-semibold text-muted-foreground">A branch that only goes one way</dt>
-              <dd class="mt-1.5">
-                <code class="rounded bg-muted px-1.5 py-0.5 text-[0.8125rem] [overflow-wrap:anywhere] sm:text-[0.875rem]">System.getenv("ENABLE_LEGACY_DISCOUNT") == "true"</code>{' '}
-                <span class="font-semibold text-signal-text">was never true.</span>
-              </dd>
-            </div>
-            <div class="py-3.5">
-              <dt class="text-[0.8125rem] font-semibold text-muted-foreground">Dead code behind that branch</dt>
-              <dd class="mt-1.5">
-                Only that branch reaches <code class="text-[0.8125rem]">DemoServerMain.kt:72</code>, so it{' '}
-                <span class="font-semibold text-signal-text">never runs.</span>
-              </dd>
-            </div>
-            <div class="pt-3.5">
-              <dt class="text-[0.8125rem] font-semibold text-muted-foreground">Classes that never loaded</dt>
-              <dd class="mt-1.5">
-                <p class="text-muted-foreground">Delete the branch and these go with it.</p>
-                <ul class="mt-2 space-y-1.5">
-                  <li class="flex flex-wrap justify-between gap-x-4">
-                    <code class="text-[0.8125rem] sm:text-[0.875rem]">LegacyDiscountCalculator</code>
-                    <span class="font-semibold text-signal-text">never loaded</span>
-                  </li>
-                  <li class="flex flex-wrap justify-between gap-x-4">
-                    <code class="text-[0.8125rem] sm:text-[0.875rem]">LegacyRates</code>
-                    <span class="font-semibold text-signal-text">never loaded</span>
-                  </li>
-                </ul>
-              </dd>
-            </div>
-          </dl>
+        <div class="box">
+          <div class="box-bar">
+            <span class="tag">Finding</span>
+            <code class="box-meta">DemoServerMain.kt:71</code>
+          </div>
+          <div class="px-4 pt-4 pb-5 text-[0.9375rem] leading-relaxed sm:px-5">
+            <p class="font-bold"><code class="text-[0.9375em]">handleCheckout</code></p>
+            <dl>
+              <div class="mt-3.5 border-t-2 border-muted pt-3">
+                <dt class="text-[0.8125rem] font-extrabold text-muted-foreground">Branch outcome never taken</dt>
+                <dd class="mt-1.5">
+                  <code class="bg-muted px-1.5 py-0.5 text-[0.8125rem] [overflow-wrap:anywhere] sm:text-[0.875rem]">System.getenv("ENABLE_LEGACY_DISCOUNT") == "true"</code>{' '}
+                  <span class="font-bold text-signal-text">was never true.</span>
+                </dd>
+              </div>
+              <div class="mt-3.5 border-t-2 border-muted pt-3">
+                <dt class="text-[0.8125rem] font-extrabold text-muted-foreground">Unreached code behind it</dt>
+                <dd class="mt-1.5">
+                  Only that outcome reaches <code class="text-[0.8125rem]">DemoServerMain.kt:72</code>, so it{' '}
+                  <span class="font-bold text-signal-text">never runs.</span>
+                </dd>
+              </div>
+              <div class="mt-3.5 border-t-2 border-muted pt-3">
+                <dt class="text-[0.8125rem] font-extrabold text-muted-foreground">Classes that go with it</dt>
+                <dd class="mt-1.5">
+                  <ul class="space-y-1">
+                    <li class="flex flex-wrap justify-between gap-x-4">
+                      <code class="text-[0.8125rem] sm:text-[0.875rem]">LegacyDiscountCalculator</code>
+                      <span class="font-bold text-signal-text">never loaded</span>
+                    </li>
+                    <li class="flex flex-wrap justify-between gap-x-4">
+                      <code class="text-[0.8125rem] sm:text-[0.875rem]">LegacyRates</code>
+                      <span class="font-bold text-signal-text">never loaded</span>
+                    </li>
+                  </ul>
+                </dd>
+              </div>
+            </dl>
+          </div>
         </div>
-        <figcaption class="mt-3 text-[0.875rem] text-muted-foreground">
+        <figcaption class="mt-4 text-[0.875rem] text-muted-foreground">
           From the demo app in the agent's repo.
         </figcaption>
       </figure>
     </div>
-    <Ridge class="h-24 sm:h-28 lg:h-40" />
+    <Ridge class="h-16 sm:h-24 lg:h-28" />
   </section>
 
   <section id="finds" aria-labelledby="finds-title" class="ground scroll-mt-4 bg-ground text-ground-foreground">
-    <div class="mx-auto max-w-6xl px-4 pt-10 pb-20 sm:px-6 sm:pt-12 sm:pb-24">
-      <div class="max-w-[40rem]">
-        <h2 id="finds-title" class="heading text-[clamp(2rem,5vw,3rem)]">What it finds</h2>
-        <p class="mt-4 text-ground-muted">
-          Code only counts as dead if no instance ran it, so one quiet server won't flag anything.
+    <div class="mx-auto max-w-6xl px-4 pt-6 pb-20 sm:px-6 sm:pb-24">
+      <div class="flex flex-wrap items-end justify-between gap-x-10 gap-y-4">
+        <h2 id="finds-title" class="display text-[clamp(2rem,4vw,3rem)]">What it finds</h2>
+        <p class="max-w-[30rem] text-ground-muted">
+          Code only counts as never run if no instance ran it, so one quiet server won't flag anything.
         </p>
       </div>
 
-      <ul class="mt-12 grid grid-cols-1 gap-x-12 sm:grid-cols-2">
-        {
-          findings.map((finding) => (
-            <li class="border-t border-ground-border py-6">
-              <h3 class="text-[1.1875rem] font-semibold leading-snug">{finding.title}</h3>
-              <p class="mt-2 max-w-[36rem] text-ground-muted">
-                {withCode(finding.body).map((part) => (part.code ? <code class="text-[0.9em]">{part.text}</code> : part.text))}
-              </p>
-              {finding.examples && (
-                <ul class="mt-3 space-y-1 text-[0.9375rem]">
-                  {finding.examples.map((example) => (
-                    <li>
-                      <code class="text-[0.875rem]">{example.code}</code>{' '}
-                      <span class="text-ground-signal-text">{example.verdict}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))
-        }
-      </ul>
-      <p class="mt-6 text-[0.875rem] text-ground-muted">
-        Every example here is a real finding from the demo app in the{' '}
-        <a href={agentRepo} class="underline">agent's repo</a>.
-      </p>
+      <div class="box mt-8">
+        <div class="box-bar" aria-hidden="true"></div>
+        <table class="findings-table">
+          <thead>
+            <tr>
+              <th scope="col">Finding</th>
+              <th scope="col">What it means</th>
+              <th scope="col">In the demo app</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              findings.map((finding) => (
+                <tr>
+                  <th scope="row">{finding.title}</th>
+                  <td>
+                    {withCode(finding.body).map((part) => (part.code ? <code class="text-[0.9em]">{part.text}</code> : part.text))}
+                  </td>
+                  <td>
+                    {finding.examples && (
+                      <ul class="space-y-1">
+                        {finding.examples.map((example) => (
+                          <li>
+                            <code class="text-[0.875rem]">{example.code}</code>{' '}
+                            <span class="font-bold text-signal-text">{example.verdict}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 
   <section id="how" aria-labelledby="how-title" class="scroll-mt-4">
     <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
-      <div class="max-w-[40rem]">
-        <h2 id="how-title" class="heading text-[clamp(2rem,5vw,3rem)]">How it works</h2>
-        <p class="mt-4 text-muted-foreground">
-          Two open source pieces run in your network and send us counts. We turn them into findings.
-        </p>
-      </div>
+      <h2 id="how-title" class="display text-[clamp(2rem,4vw,3rem)]">How it works</h2>
 
-      <div class="mt-12 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div class="rounded-xl border-2 border-dashed p-5 sm:p-6 lg:col-span-2">
-          <h3 class="text-[0.9375rem] font-semibold text-muted-foreground">In your network</h3>
-          <ol class="mt-4 grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-6">
-            <li class="flex gap-4">
-              <span class="heading text-[2rem] leading-none text-muted-foreground" aria-hidden="true">1</span>
-              <div class="min-w-0">
-                <h4 class="text-[1.1875rem] font-semibold">The agent</h4>
-                <p class="mt-2">
-                  A jar you attach with <code class="whitespace-nowrap text-[0.9em]">-javaagent</code>. It counts which methods,
-                  endpoints and branches run and sends the totals to your collector every minute.
-                </p>
-                <p class="mt-3 text-[0.9375rem]">
-                  <a href={agentRepo} class="underline">otherlode-agent on GitHub</a>
-                </p>
-              </div>
-            </li>
-            <li class="flex gap-4">
-              <span class="heading text-[2rem] leading-none text-muted-foreground" aria-hidden="true">2</span>
-              <div class="min-w-0">
-                <h4 class="text-[1.1875rem] font-semibold">The collector</h4>
-                <p class="mt-2">
-                  A server in your network that forwards the agents' reports to Otherlode with your API key.
-                </p>
-                <p class="mt-3 text-[0.9375rem]">
-                  <a href={collectorRepo} class="underline">otherlode-collector on GitHub</a>
-                </p>
-              </div>
-            </li>
-          </ol>
-          <figure class="mt-8 min-w-0 border-t border-dashed pt-6">
-            <figcaption class="text-[0.9375rem] text-muted-foreground">
-              Name the service, the packages to watch and your collector. The last line turns on the startup scan.
-            </figcaption>
-            <pre class="mt-3 overflow-x-auto rounded-lg bg-muted px-4 py-3 text-[0.8125rem] leading-relaxed"><code>OTHERLODE_SERVICE_NAME=checkout \
-OTHERLODE_INCLUDE_PACKAGES=com.acme.checkout \
-OTHERLODE_ENDPOINT=http://&lt;your-collector&gt;:4319 \
-OTHERLODE_STATIC_BASELINE_ENABLED=true \
-java -javaagent:otherlode-agent-&lt;version&gt;.jar -jar app.jar</code></pre>
-            <p class="mt-3 text-[0.9375rem] text-muted-foreground">
-              No release yet, so build the jar from the{' '}
-              <a href={agentRepo} class="underline">agent's repo</a> with{' '}
-              <code class="whitespace-nowrap text-[0.9em]">./gradlew build</code>.
+      <div class="flow mt-12">
+        <div class="flow-zone"><span class="tag">Your network</span></div>
+        <div class="flow-node col-start-1">
+          <div class="box">
+            <div class="box-bar"><span class="tag">Agent</span><span class="box-meta">In your JVM</span></div>
+            <p class="px-4 pt-4 pb-5 text-[0.9375rem] sm:px-5">
+              Counts which methods, endpoints, branches and classes run, on every instance. Attach it with{' '}
+              <code class="whitespace-nowrap text-[0.9em]">-javaagent</code>.
             </p>
-          </figure>
+          </div>
         </div>
+        <div class="flow-wire col-start-2">
+          <svg viewBox="0 0 100 16" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+            <path d="M0 8 H88" fill="none" stroke="currentColor" stroke-width="3" />
+            <path d="M84 1 L99 8 L84 15 Z" fill="currentColor" />
+          </svg>
+          <span>counts</span>
+        </div>
+        <div class="flow-node col-start-3">
+          <div class="box">
+            <div class="box-bar"><span class="tag">Collector</span></div>
+            <p class="px-4 pt-4 pb-5 text-[0.9375rem] sm:px-5">
+              Gathers counts from every agent. Can blank out string literals before anything leaves your network.
+            </p>
+          </div>
+        </div>
+        <div class="flow-wire col-start-4">
+          <svg viewBox="0 0 100 16" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+            <path d="M0 8 H88" fill="none" stroke="currentColor" stroke-width="3" />
+            <path d="M84 1 L99 8 L84 15 Z" fill="currentColor" />
+          </svg>
+          <span>counts</span>
+        </div>
+        <div class="flow-node col-start-5">
+          <div class="box">
+            <div class="box-bar"><span class="tag">Otherlode</span><span class="box-meta">Hosted</span></div>
+            <p class="px-4 pt-4 pb-5 text-[0.9375rem] sm:px-5">Merges every instance and shows you what never ran.</p>
+          </div>
+        </div>
+      </div>
 
-        <div class="self-start rounded-xl border bg-card p-5 sm:p-6">
-          <h3 class="text-[0.9375rem] font-semibold text-muted-foreground">Hosted by Otherlode</h3>
-          <ol start="3" class="mt-4">
-            <li class="flex gap-4">
-              <span class="heading text-[2rem] leading-none text-muted-foreground" aria-hidden="true">3</span>
-              <div class="min-w-0">
-                <h4 class="text-[1.1875rem] font-semibold">Otherlode</h4>
-                <p class="mt-2">
-                  Merges reports from every instance over weeks and shows the findings in a web UI.
-                </p>
-              </div>
-            </li>
-          </ol>
+      <div class="mt-16 grid grid-cols-1 items-center gap-10 lg:grid-cols-[1fr_1.4fr]">
+        <div>
+          <p>
+            Name the service, the packages to watch and your collector. The last setting turns on the startup scan,
+            which finds classes that never load.
+          </p>
+          <p class="mt-3">
+            No release yet, so build the jar from the <a href={agentRepo} class="underline">agent's repo</a> with{' '}
+            <code class="whitespace-nowrap text-[0.9em]">./gradlew build</code>.
+          </p>
         </div>
+        <figure class="terminal min-w-0">
+          <figcaption class="terminal-bar">
+            <span>Run the agent</span>
+            <span class="terminal-lights" aria-hidden="true"><span></span><span></span><span></span></span>
+          </figcaption>
+          <pre><code><span class="prompt" aria-hidden="true">$ </span>OTHERLODE_SERVICE_NAME=checkout \
+  OTHERLODE_INCLUDE_PACKAGES=com.acme.checkout \
+  OTHERLODE_ENDPOINT=http://&lt;your-collector&gt;:4319 \
+  OTHERLODE_STATIC_BASELINE_ENABLED=true \
+  java -javaagent:otherlode-agent-&lt;version&gt;.jar -jar app.jar</code></pre>
+        </figure>
       </div>
     </div>
   </section>
 
-  <section id="security" aria-labelledby="security-title" class="scroll-mt-4 border-t">
-    <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
-      <h2 id="security-title" class="heading max-w-[40rem] text-[clamp(2rem,5vw,3rem)]">Security and hosting</h2>
-      <dl class="mt-10 grid grid-cols-1 gap-x-12 gap-y-8 sm:grid-cols-2">
-        {
-          security.map((item) => (
-            <div>
-              <dt class="text-[1.1875rem] font-semibold leading-snug">{item.title}</dt>
-              <dd class="mt-2 max-w-[36rem] text-muted-foreground">{item.body}</dd>
-            </div>
-          ))
-        }
-      </dl>
+  <section id="security" aria-labelledby="security-title" class="scroll-mt-4">
+    <div class="mx-auto max-w-6xl px-4 pb-20 sm:px-6 sm:pb-24">
+      <h2 id="security-title" class="display text-[clamp(2rem,4vw,3rem)]">Security and hosting</h2>
+      <div class="box mt-8">
+        <div class="box-bar" aria-hidden="true"></div>
+        <dl class="spec">
+          {
+            security.map((item) => (
+              <div>
+                <dt class="font-extrabold">{item.title}</dt>
+                <dd class="mt-1 text-[0.9375rem] text-muted-foreground">{item.body}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
     </div>
   </section>
 
-  <section aria-labelledby="access-title" class="border-t bg-muted">
-    <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
-      <h2 id="access-title" class="display max-w-[44rem] text-[clamp(2.25rem,6vw,3.75rem)]">
-        We're in early access.
-      </h2>
-      <p class="mt-5 max-w-[36rem] text-muted-foreground">
-        We're setting accounts up by hand for now. Tell us what you run and we'll take it from there.
-      </p>
-      <div class="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-5">
-        <a href={earlyAccessHref} class="button">Ask for early access</a>
-        <p class="text-[0.9375rem] text-muted-foreground">
-          Or email <a href={earlyAccessMailto} class="underline">{contactEmail}</a>.
-        </p>
+  <section aria-labelledby="access-title" class="hatched border-y-2 border-ink">
+    <div class="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+      <div class="box">
+        <div class="box-bar" aria-hidden="true"></div>
+        <div class="flex flex-col items-start justify-between gap-6 p-6 sm:p-7 md:flex-row md:items-center">
+          <div>
+            <h2 id="access-title" class="display text-[clamp(1.75rem,3.4vw,2.5rem)]">We're in early access.</h2>
+            <p class="mt-2 max-w-[32rem] text-muted-foreground">
+              We're setting accounts up by hand for now. Tell us what you run and we'll take it from there.
+            </p>
+          </div>
+          <a href={earlyAccessHref} class="button shrink-0">Ask for early access</a>
+        </div>
       </div>
     </div>
   </section>

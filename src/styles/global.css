@@ -3,53 +3,68 @@
 @import "@fontsource-variable/jetbrains-mono/wght.css";
 
 /*
-  Colour tokens follow the product UI (otherlode-server web/src/index.css),
-  so the site and the app read as one thing. The ridge colours come from
-  the badge's mountain range. "Ground" is the dark band under the ridge.
+  Stone and cinnabar. The neutrals are warm rock greys, matched to the
+  badge's mountain range, and cinnabar marks what Otherlode finds. "Ink"
+  draws the borders and shadows of the boxes. "Ground" is the dark band
+  under the ridge.
 */
 :root {
-  --background: #F5F7F8;
-  --foreground: #172026;
-  --card: #FFFFFF;
-  --muted: #EEF1F3;
-  --muted-foreground: #56626C;
-  --border: #DCE1E5;
-  --ring: #8A949C;
-  --signal: #C2410C;
+  --background: #ECEAE6;
+  --foreground: #24201D;
+  --card: #F7F5F1;
+  --muted: #E3DED6;
+  --muted-foreground: #5E5650;
+  --border: #D3CCC3;
+  --ring: #8A8178;
+  --ink: #24201D;
+  --shadow: #24201D;
+  --hatch: #C9C1B7;
+  --signal: #A3231B;
   --signal-foreground: #FFFFFF;
-  --signal-text: #B23C0B;
+  --signal-text: #A3231B;
+  --terminal: #24201D;
+  --terminal-foreground: #EDE8E2;
+  --terminal-muted: #B9AFA6;
 
-  --ridge-far: #D8D2C8;
-  --ridge-mid: #B8B0A4;
-  --ridge-near: #958C80;
-  --ground: #172026;
-  --ground-foreground: #E6EAED;
-  --ground-muted: #A3AEB6;
-  --ground-border: #2E3A43;
-  --ground-signal-text: #F4A26E;
+  --ridge-far: #C9C3BB;
+  --ridge-mid: #A79F96;
+  --ridge-near: #7D746C;
+  --ground: #2B2623;
+  --ground-foreground: #EDE8E2;
+  --ground-muted: #B9AFA6;
+  --ground-border: #4A423C;
+  --ground-shadow: #000000;
+  --ground-signal-text: #FF8A7A;
 
   color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0E1418;
-    --foreground: #E6EAED;
-    --card: #161E24;
-    --muted: #222B32;
-    --muted-foreground: #97A2AB;
-    --border: #2A343C;
-    --ring: #6B7680;
-    --signal-text: #F4A26E;
+    --background: #161412;
+    --foreground: #ECE7E1;
+    --card: #201D1A;
+    --muted: #2E2925;
+    --muted-foreground: #A69C93;
+    --border: #34302C;
+    --ring: #6B625A;
+    --ink: #CFC6BC;
+    --shadow: #5A514A;
+    --hatch: #3A342F;
+    --signal-text: #FF8A7A;
+    --terminal: #0D0C0B;
+    --terminal-foreground: #ECE7E1;
+    --terminal-muted: #A69C93;
 
-    --ridge-far: #2A333B;
-    --ridge-mid: #212930;
-    --ridge-near: #192026;
-    --ground: #080C0F;
-    --ground-foreground: #E6EAED;
-    --ground-muted: #97A2AB;
-    --ground-border: #1F282F;
-    --ground-signal-text: #F4A26E;
+    --ridge-far: #2A2623;
+    --ridge-mid: #211E1B;
+    --ridge-near: #181614;
+    --ground: #0D0C0B;
+    --ground-foreground: #ECE7E1;
+    --ground-muted: #A69C93;
+    --ground-border: #2C2825;
+    --ground-shadow: #5A514A;
+    --ground-signal-text: #FF8A7A;
   }
 }
 
@@ -64,6 +79,7 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-ring: var(--ring);
+  --color-ink: var(--ink);
   --color-signal: var(--signal);
   --color-signal-foreground: var(--signal-foreground);
   --color-signal-text: var(--signal-text);
@@ -172,17 +188,23 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    border-radius: 0.5rem;
+    border: 2px solid var(--ink);
     background-color: var(--foreground);
     color: var(--background);
-    padding: 0.75rem 1.25rem;
-    font-weight: 600;
+    box-shadow: 4px 4px 0 var(--signal);
+    padding: 0.625rem 1.125rem;
+    font-weight: 700;
     text-decoration: none;
     line-height: 1.2;
   }
 
   .button:hover {
     background-color: color-mix(in oklab, var(--foreground) 86%, var(--background));
+  }
+
+  .button-small {
+    padding: 0.375rem 0.75rem;
+    box-shadow: 3px 3px 0 var(--signal);
   }
 
   .field-label {
@@ -203,8 +225,7 @@
     display: block;
     width: 100%;
     margin-top: 0.5rem;
-    border: 1px solid var(--ring);
-    border-radius: 0.5rem;
+    border: 2px solid var(--ink);
     background-color: var(--card);
     color: var(--foreground);
     padding: 0.625rem 0.75rem;
@@ -231,6 +252,271 @@
     overflow: hidden;
   }
 
+  /* A box: a bordered panel with an offset shadow and a hatched title bar. */
+  .box {
+    background-color: var(--card);
+    color: var(--foreground);
+    border: 2px solid var(--ink);
+    box-shadow: 6px 6px 0 var(--shadow);
+  }
+
+  .ground .box {
+    --shadow: var(--ground-shadow);
+  }
+
+  .box-bar {
+    display: flex;
+    min-height: 2.5rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-bottom: 2px solid var(--ink);
+    background-color: var(--card);
+    background-image: repeating-linear-gradient(-45deg, var(--hatch) 0 2px, transparent 2px 7px);
+    padding: 0.5rem 0.75rem;
+  }
+
+  .tag {
+    border: 2px solid var(--ink);
+    background-color: var(--card);
+    padding: 0.0625rem 0.5625rem;
+    font-size: 0.8125rem;
+    font-weight: 800;
+  }
+
+  .box-meta {
+    background-color: var(--card);
+    padding: 0.0625rem 0.375rem;
+    font-size: 0.8125rem;
+  }
+
+  .hatched {
+    background-image: repeating-linear-gradient(-45deg, var(--hatch) 0 2px, transparent 2px 9px);
+  }
+
+  /* A terminal window for shell commands. */
+  .terminal {
+    border: 2px solid var(--ink);
+    background-color: var(--terminal);
+    color: var(--terminal-foreground);
+    box-shadow: 6px 6px 0 var(--signal);
+  }
+
+  .terminal-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--terminal-muted);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--terminal-muted);
+  }
+
+  .terminal-lights {
+    display: flex;
+    gap: 0.375rem;
+  }
+
+  .terminal-lights span {
+    display: block;
+    width: 0.625rem;
+    height: 0.625rem;
+    border: 2px solid var(--terminal-muted);
+  }
+
+  .terminal pre {
+    overflow-x: auto;
+    padding: 1rem 1.125rem;
+    font-size: 0.84375rem;
+    line-height: 1.7;
+  }
+
+  .terminal .prompt {
+    color: var(--ground-signal-text);
+  }
+
+  /* The findings table. On narrow screens each row stacks. */
+  .findings-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+
+  .findings-table thead th {
+    border-bottom: 2px solid var(--ink);
+    background-color: var(--muted);
+    padding: 0.625rem 0.875rem;
+    text-align: left;
+    font-size: 0.8125rem;
+    font-weight: 800;
+  }
+
+  .findings-table tbody th,
+  .findings-table tbody td {
+    border-bottom: 1px solid var(--hatch);
+    padding: 0.875rem;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .findings-table tbody tr:last-child > * {
+    border-bottom: 0;
+  }
+
+  .findings-table tbody th {
+    width: 25%;
+    border-right: 2px solid var(--ink);
+    font-weight: 800;
+  }
+
+  .findings-table tbody td:nth-child(2) {
+    width: 40%;
+    color: var(--muted-foreground);
+  }
+
+  @media (max-width: 47.99rem) {
+    .findings-table thead {
+      display: none;
+    }
+
+    .findings-table tbody tr {
+      display: grid;
+      gap: 0.375rem;
+      border-bottom: 1px solid var(--hatch);
+      padding: 0.875rem;
+    }
+
+    .findings-table tbody tr:last-child {
+      border-bottom: 0;
+    }
+
+    .findings-table tbody th,
+    .findings-table tbody td,
+    .findings-table tbody td:nth-child(2) {
+      width: auto;
+      border: 0;
+      padding: 0;
+    }
+  }
+
+  /* How it works: three boxes joined by arrows, two of them inside a
+     dashed outline for your network. Below 62rem they stack. */
+  .flow {
+    display: grid;
+    grid-template-columns: 1fr 6rem 1fr 6rem 1fr;
+    align-items: stretch;
+  }
+
+  .flow-zone {
+    position: relative;
+    grid-row: 1;
+    grid-column: 1 / 4;
+    margin: -1.125rem;
+    border: 2px dashed var(--ink);
+  }
+
+  .flow-zone .tag {
+    position: absolute;
+    top: -0.875rem;
+    left: 1rem;
+  }
+
+  .flow-node {
+    z-index: 1;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .flow-node > .box {
+    flex: 1;
+  }
+
+  .flow-wire {
+    z-index: 1;
+    grid-row: 1;
+    align-self: center;
+    display: grid;
+    justify-items: center;
+    gap: 0.25rem;
+    padding: 0 0.625rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--signal-text);
+  }
+
+  .flow-wire svg {
+    display: block;
+    width: 100%;
+    height: 1rem;
+  }
+
+  @media (max-width: 61.99rem) {
+    .flow {
+      grid-template-columns: 1fr;
+    }
+
+    .flow-zone {
+      display: none;
+    }
+
+    .flow-node,
+    .flow-wire {
+      grid-column: 1 !important;
+      grid-row: auto;
+    }
+
+    .flow-wire {
+      padding: 0.75rem 0;
+    }
+
+    .flow-wire svg {
+      width: 1rem;
+      height: 2.5rem;
+      transform: rotate(90deg);
+    }
+  }
+
+  /* A ruled two-by-two grid, like a spec sheet. */
+  .spec {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .spec > div {
+    border-right: 2px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+    padding: 1.125rem 1.25rem;
+  }
+
+  .spec > div:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .spec > div:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
+  @media (max-width: 43.99rem) {
+    .spec {
+      grid-template-columns: 1fr;
+    }
+
+    .spec > div {
+      border-right: 0;
+      border-bottom: 2px solid var(--ink);
+    }
+
+    .spec > div:nth-last-child(2) {
+      border-bottom: 2px solid var(--ink);
+    }
+
+    .spec > div:last-child {
+      border-bottom: 0;
+    }
+  }
 
   .prose {
     max-width: 68ch;
