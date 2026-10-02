@@ -17,7 +17,7 @@ interface Props {
 
 const siteName = 'Otherlode';
 const defaultDescription =
-  'Otherlode finds the code that never runs in production on the JVM: endpoints never called, methods never run, conditions that only went one way, and classes never loaded.';
+  "Otherlode finds the code your JVM services never run in production: endpoints nobody calls, methods nobody hits, branches that only go one way and classes that never load.";
 
 const { title, description = defaultDescription, index = true, mainClass = '' } = Astro.props;
 const fullTitle = title ? `${title} | ${siteName}` : `${siteName}: find the code that never runs in production`;
