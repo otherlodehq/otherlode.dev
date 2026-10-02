@@ -1,0 +1,119 @@
+---
+import Base from '../layouts/Base.astro';
+import { contactEmail, earlyAccessMailto } from '../lib/site';
+import { companySizes, contactPath, emailPattern, honeypotField, maxLength } from '../lib/contact-form';
+---
+
+<Base
+  title="Ask for early access"
+  description="Tell us about the JVM services you run, and we'll get back to you about early access to Otherlode."
+>
+  <section aria-labelledby="early-access-title">
+    <div class="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-12">
+      <div class="lg:col-span-5">
+        <h1 id="early-access-title" class="display text-[clamp(2.5rem,7vw,4.5rem)]">Ask for early access</h1>
+        <p class="mt-5 max-w-[30rem] text-muted-foreground">
+          We set up each account by hand for now. Tell us who you are and what you run, and we'll reply by email.
+        </p>
+        <p class="mt-4 max-w-[30rem] text-muted-foreground">
+          Or email <a href={earlyAccessMailto} class="underline">{contactEmail}</a>.
+        </p>
+      </div>
+
+      <form method="post" action={contactPath} class="relative rounded-xl border bg-card p-5 sm:p-8 lg:col-span-7">
+        <p class="text-[0.9375rem] text-muted-foreground">Fields marked <span class="text-signal-text">*</span> are required.</p>
+
+        <div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div>
+            <label for="name" class="field-label">Name <span class="text-signal-text" aria-hidden="true">*</span></label>
+            <input id="name" name="name" type="text" required maxlength={maxLength.name} autocomplete="name" class="field-input" />
+          </div>
+
+          <div>
+            <label for="email" class="field-label">Work email <span class="text-signal-text" aria-hidden="true">*</span></label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              pattern={emailPattern}
+              maxlength={maxLength.email}
+              autocomplete="email"
+              spellcheck="false"
+              class="field-input"
+            />
+          </div>
+
+          <div>
+            <label for="company" class="field-label">Company <span class="text-signal-text" aria-hidden="true">*</span></label>
+            <input
+              id="company"
+              name="company"
+              type="text"
+              required
+              maxlength={maxLength.company}
+              autocomplete="organization"
+              class="field-input"
+            />
+          </div>
+
+          <div>
+            <label for="company_size" class="field-label">
+              Company size <span class="text-signal-text" aria-hidden="true">*</span>
+            </label>
+            <select id="company_size" name="company_size" required class="field-input">
+              <option value="">Choose one</option>
+              {companySizes.map((size) => <option value={size}>{size} people</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label for="job_title" class="field-label">Job title</label>
+            <input
+              id="job_title"
+              name="job_title"
+              type="text"
+              maxlength={maxLength.job_title}
+              autocomplete="organization-title"
+              class="field-input"
+            />
+          </div>
+
+          <div>
+            <label for="jvm_stack" class="field-label">Your JVM stack</label>
+            <input
+              id="jvm_stack"
+              name="jvm_stack"
+              type="text"
+              maxlength={maxLength.jvm_stack}
+              autocomplete="off"
+              aria-describedby="jvm_stack-hint"
+              class="field-input"
+            />
+            <span id="jvm_stack-hint" class="field-hint">For example, Kotlin and Spring Boot.</span>
+          </div>
+
+          <div class="sm:col-span-2">
+            <label for="message" class="field-label">Anything else?</label>
+            <span id="message-hint" class="field-hint">
+              Such as how many services you run, or what you'd most like to find.
+            </span>
+            <textarea id="message" name="message" rows="5" maxlength={maxLength.message} aria-describedby="message-hint" class="field-input"></textarea>
+          </div>
+        </div>
+
+        <div class="honeypot" aria-hidden="true">
+          <label for={honeypotField}>Leave this field empty</label>
+          <input id={honeypotField} name={honeypotField} type="text" tabindex="-1" autocomplete="off" />
+        </div>
+
+        <div class="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p class="text-[0.9375rem] text-muted-foreground">
+            Our <a href="/privacy" class="underline">privacy policy</a> says what we do with these details.
+          </p>
+          <button type="submit" class="button cursor-pointer">Send request</button>
+        </div>
+      </form>
+    </div>
+  </section>
+</Base>

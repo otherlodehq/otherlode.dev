@@ -1,12 +1,33 @@
-// An assets-only Worker: Cloudflare serves the files in dist/ and runs no
-// code, so public/_headers applies to every response.
+// Cloudflare serves the files in dist/. Only POST /contact runs the code in
+// worker/, which checks an early access request and passes it to the Apps
+// Script in apps-script/. Every page a person sees is a static file, so
+// public/_headers applies to all of them.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "otherlode-dev",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-10-02",
   "assets": {
     "directory": "./dist/",
+    "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "html_handling": "auto-trailing-slash"
-  }
+    "html_handling": "auto-trailing-slash",
+    // A form POST is a navigation request, which never reaches the Worker
+    // when not_found_handling is set, unless its path is listed here.
+    "run_worker_first": ["/contact"]
+  },
+  // Workers Logs would keep each request's metadata, its IP address
+  // included, which the privacy policy does not allow for. `wrangler tail`
+  // still shows the Worker's log lines live.
+  "observability": { "enabled": false },
+  "ratelimits": [
+    {
+      "name": "CONTACT_LIMIT",
+      "namespace_id": "1001",
+      "simple": { "limit": 5, "period": 60 }
+    }
+  ]
+  // CONTACT_ENDPOINT and CONTACT_TOKEN are secrets, set in the dashboard or
+  // with `wrangler secret put`. Without them the form sends people to
+  // /contact-problem.
 }

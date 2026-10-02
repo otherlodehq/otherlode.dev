@@ -12,7 +12,8 @@ npm install
 npm run dev       # local server with reload, at http://localhost:4321
 npm run build     # static build into dist/, then the CSP check
 npm run preview   # serve dist/ locally
-npm run verify    # astro check, then the build
+npm run test      # the Worker's tests (vitest)
+npm run verify    # astro check, the tests, then the build
 ```
 
 `npm run build` runs `astro build` and then `scripts/check-csp.mjs`, so a
@@ -23,7 +24,10 @@ every page in `dist/` and fails on:
   attribute or an inline event handler such as `onclick=`;
 - a `javascript:` URL or a `data:` URL in any attribute;
 - a `src`, `srcset` or `href` on `script`, `link`, `img`, `iframe` or
-  `source` that points at another site. Plain `<a href>` links are allowed.
+  `source` that points at another site. Plain `<a href>` links are allowed;
+- a `<form action>`, or a `formaction` on a button or input, that points at
+  another site. The CSP sends `form-action 'self'`, so a browser would not
+  submit it.
 
 It also fails on a `data:` URL, an off-site `url()` or an off-site
 `@import` in the built CSS. `npm run check:csp` runs the check alone on an
@@ -34,16 +38,20 @@ existing `dist/`.
 - `src/layouts/Base.astro`: the page shell, with the head, meta and Open Graph tags and the canonical URL.
 - `src/layouts/Prose.astro`: the layout for long text pages written in Markdown, such as `src/pages/privacy.md`.
 - `src/components/`: the shared header, footer and the mountain ridge.
+- `src/pages/early-access.astro`: the early access form. It posts to `/contact`. `src/pages/thanks.astro` and `src/pages/contact-problem.astro` are the pages a post redirects to. Both carry `noindex` and are left out of the sitemap.
+- `src/lib/contact-form.ts`: the form's paths, field limits and company size choices.
 - `src/styles/global.css`: Tailwind and the colour tokens, which follow the product UI's tokens.
 - `public/_headers`: the security headers Cloudflare sends, including the Content-Security-Policy.
-- `wrangler.jsonc`: the Cloudflare Worker that serves `dist/`. It runs no code.
+- `wrangler.jsonc`: the Cloudflare Worker that serves `dist/` and runs `worker/` for `/contact` only.
+- `worker/`: the code behind the early access form. `contact.ts` checks a request and passes it on; `index.ts` sends `/contact` to it and everything else to the static files.
+- `apps-script/contact.gs`: the Google Apps Script that receives each request, adds it to a sheet and emails `hello@otherlode.dev`. It is pasted into Google, not deployed from here.
 
 ## Deploy
 
 Cloudflare Workers Builds builds the site from GitHub on every push to
-`master` and deploys it as an assets-only Worker, `otherlode-dev`, set
-up in `wrangler.jsonc`. Cloudflare Pages is deprecated in favour of
-Workers static assets.
+`master` and deploys it as the Worker `otherlode-dev`, set up in
+`wrangler.jsonc`. Cloudflare Pages is deprecated in favour of Workers
+static assets.
 
 | Setting | Value |
 |---|---|
@@ -94,12 +102,100 @@ Then check that the security headers arrived:
 curl -sSI https://otherlode.dev/ | grep -iE '^(content-security-policy|strict-transport-security):'
 ```
 
+## The early access form
+
+`/early-access` is a plain HTML form with no client JavaScript. It posts
+to `/contact`, the only path that runs code (`run_worker_first` in
+`wrangler.jsonc`). The Worker:
+
+1. answers anything but `POST` with 405;
+2. limits each client to 5 requests a minute (the `CONTACT_LIMIT`
+   binding, keyed on the IPv4 address or the IPv6 /64; counts are per
+   Cloudflare location, so the limit is rough);
+3. takes only a form body of at most 64 KB;
+4. refuses a post whose `Origin` or `Sec-Fetch-Site` header shows that
+   another site sent it;
+5. drops a request whose hidden `hp_ref` field is filled, which only a
+   bot does, and redirects it to `/thanks` as if it had worked;
+6. checks the fields against `src/lib/contact-form.ts`, the same limits
+   the page uses, and refuses line breaks in single-line fields;
+7. POSTs the fields as JSON, with a shared token, to the Apps Script,
+   and waits up to 25 seconds for its answer.
+
+Every outcome is a 303 redirect to `/thanks` or `/contact-problem`, both
+static pages, so `public/_headers` covers every page a person sees. A
+failure, or a dropped bot, logs a short reason code such as
+`contact: bad_email` and nothing from the request. Workers Logs is off
+(`observability` in `wrangler.jsonc`), since it would store each
+request's metadata, IP address included; watch the log lines live with
+`npx wrangler tail otherlode-dev`.
+
+The Apps Script (`apps-script/contact.gs`) runs as `luke@otherlode.dev`
+in Google Workspace. It checks the token, appends a row to the sheet it
+is bound to, and emails `hello@otherlode.dev` with Reply-To set to the
+person who asked. A daily trigger runs `pruneOldRows`, which deletes rows
+older than `RETENTION_DAYS`. Apps Script cannot set an HTTP status, so it
+always answers 200, after a redirect, and the Worker reads `ok` in the
+JSON body.
+
+### Setting it up
+
+1. As `luke@otherlode.dev`, create a Google Sheet, open Extensions >
+   Apps Script, and paste `apps-script/contact.gs` in place of `Code.gs`.
+2. In Project Settings > Script properties, set `CONTACT_TOKEN` to a
+   random value (`openssl rand -hex 32 | pbcopy` keeps it off the
+   screen) and `RETENTION_DAYS` to `730`, the 2 years the privacy policy
+   gives.
+3. Run `requestsSheet` once from the editor and grant the two
+   permissions it asks for. `@OnlyCurrentDoc` limits it to this sheet.
+4. Deploy > New deployment > Web app, execute as Me, access Anyone. Copy
+   the URL that ends in `/exec`.
+5. Add a time-driven trigger: `pruneOldRows`, day timer.
+6. After the Worker has deployed once, set two secrets on `otherlode-dev`
+   in the Cloudflare dashboard (Settings > Variables and Secrets) or with
+   `wrangler secret put`: `CONTACT_ENDPOINT`, the `/exec` URL, and
+   `CONTACT_TOKEN`, the same value as the script property. Until both
+   are set, the form sends people to `/contact-problem`.
+
+Changing the script means pasting it again and making a new version of
+the same deployment (Deploy > Manage deployments > Edit), which keeps
+the `/exec` URL.
+
+If the notification email fails, the script still keeps the row and
+answers success, so the person is not told to send again. The script's
+execution log says the email failed.
+
+### Once a year: replace the sheet
+
+`pruneOldRows` deletes a row, but the sheet's version history keeps it.
+The privacy policy promises a request is gone within 3 years, so once a
+year:
+
+1. File > Make a copy. The copy has the rows and the script, but no
+   version history, no deployment and no trigger.
+2. In the copy's Apps Script, set `CONTACT_TOKEN` and `RETENTION_DAYS`
+   again, since a copy is unlikely to keep script properties. Then repeat
+   steps 3 to 5 above: run `requestsSheet`, deploy a new web app and add
+   the `pruneOldRows` trigger.
+3. Put the new `/exec` URL in the Worker's `CONTACT_ENDPOINT` secret and
+   send a test request.
+4. Delete the old sheet, then delete it from Drive's trash.
+
+### Trying it locally
+
+`npx wrangler dev --env-file <file>` runs the Worker and the static files
+together, with the rate limit simulated. Put `CONTACT_ENDPOINT` and
+`CONTACT_TOKEN` in that file, pointing at a test endpoint rather than
+the real script, and keep it out of the repo.
+
 ## No third parties, no cookies
 
 The site loads nothing from a third party and sets no cookies. The privacy
 policy says so, so it has to stay true. Fonts are self-hosted through
 Fontsource. There is no analytics, no embed and no CDN. The CSP in
-`public/_headers` allows only the site's own origin.
+`public/_headers` allows only the site's own origin. The one thing that
+leaves Cloudflare is an early access request, which the Worker sends to
+Google Apps Script on the server side; the privacy policy names it.
 
 A change that adds a third-party request, a cookie or analytics must
 update the privacy policy in the same commit.

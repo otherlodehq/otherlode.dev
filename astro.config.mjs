@@ -17,7 +17,12 @@ export default defineConfig({
     inlineStylesheets: 'never',
     format: 'file',
   },
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      // The pages the contact form redirects to are not for search engines.
+      filter: (page) => !/\/(thanks|contact-problem)$/.test(new URL(page).pathname),
+    }),
+  ],
   markdown: {
     rehypePlugins: [rehypeTableScroll],
   },

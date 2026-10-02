@@ -12,8 +12,9 @@
     "preview": "astro preview",
     "check": "astro check",
     "check:csp": "node scripts/check-csp.mjs",
-    "verify": "astro check && npm run build",
-    "astro": "astro"
+    "verify": "astro check && npm run test && npm run build",
+    "astro": "astro",
+    "test": "vitest run"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.3.1",
@@ -28,6 +29,7 @@
     "@astrojs/check": "^0.9.10",
     "parse5": "^8.0.1",
     "typescript": "^6.0.3",
+    "vitest": "^5.0.3",
     "wrangler": "^4.147.0"
   }
 }

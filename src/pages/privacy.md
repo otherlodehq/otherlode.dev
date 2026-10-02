@@ -41,9 +41,33 @@ This website sets no cookies, runs no analytics and loads nothing from
 other sites.
 
 Cloudflare serves the website. To deliver pages and block attacks, it
-handles each visitor's IP address and browser details. We don't receive
-that data, except that Cloudflare's dashboard shows us the IP address
-of a request it blocks as an attack.
+handles each visitor's IP address and browser details. We don't keep
+that data. Cloudflare's dashboard can show us the IP address of a
+request it blocks as an attack, and our tools can show requests to our
+code as they happen, but we don't record either.
+
+## Early access requests
+
+The early access form asks for your name, work email, company and
+company size, and, if you choose, your job title, the JVM languages and
+frameworks you use, and a message. You need to give the first four for
+us to reply.
+
+When you send the form, our code at Cloudflare checks it and passes it
+to Google Workspace. There it is added to a spreadsheet only we can
+open, and we get an email about it with your address set as the reply
+address. Cloudflare also uses your IP address, for up to a minute, to
+stop the same address sending more than a few requests at once. We
+don't store your IP address with the request.
+
+We use the request to reply to you and to set up early access. We keep
+it in the spreadsheet for 2 years, then delete it. Google's version
+history of the spreadsheet can still hold a deleted request, so once a
+year we replace the spreadsheet with a fresh copy and delete the old
+one, history and all. Google keeps a deleted file for about 25 days
+before it is gone for good, so a request is gone within 3 years and a
+month at most. The
+email about it is kept like any other email to us, below.
 
 ## Email you send us
 
@@ -51,7 +75,7 @@ Email to our addresses, such as `hello@otherlode.dev` and
 `privacy@otherlode.dev`, lands in a mailbox that Google Workspace hosts
 for us. We use it to reply to you, and to talk about early access if
 you asked. We keep correspondence while we are in
-touch, and delete it [RETENTION: e.g. 2 years] after our last contact.
+touch, and delete it 2 years after our last contact.
 Email that forms part of a customer contract is kept for 6 years after
 the contract ends, the time limit for legal claims.
 
@@ -179,6 +203,7 @@ customer, and the customer chooses the lawful basis.
 | What | Why |
 | --- | --- |
 | Website requests | To serve the site and block attacks |
+| Early access requests | To reply to you and set up early access |
 | Email | To answer you |
 | Account, sessions and cookies | To let the people our customer chose sign in, and keep everyone else out |
 | Audit log | To show the customer who had access and what changed |
@@ -197,8 +222,8 @@ it safe.
 | Google Cloud | Stores the security logs | London, UK |
 | Google Cloud | Stores request logs and our own logs | [LOG REGION] |
 | WorkOS | Runs sign-in, single sign-on and directory sync | United States |
-| Cloudflare | Serves this website and runs our domain | Worldwide |
-| Google Workspace | Hosts our mailbox | Worldwide |
+| Cloudflare | Serves this website, runs our domain, and passes early access requests to Google Workspace | Worldwide |
+| Google Workspace | Hosts our mailbox and the spreadsheet of early access requests | Worldwide |
 
 We don't sell personal data, and we don't use it for advertising.
 
@@ -226,7 +251,8 @@ the safeguards that apply.
 | Request logs and our own logs | 30 days |
 | Security logs | 400 days |
 | Database backups | 7 days |
-| Email | [RETENTION] after our last contact, or 6 years after a customer contract ends |
+| Early access requests | 2 years in the spreadsheet, and up to 1 year and a month more in its version history and Google's trash |
+| Email | 2 years after our last contact, or 6 years after a customer contract ends |
 
 When a customer leaves, we delete what we hold for them: accounts,
 sessions, the audit log, agent reports and API keys, and their records

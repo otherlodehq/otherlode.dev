@@ -1,0 +1,37 @@
+---
+import Base from '../layouts/Base.astro';
+import Ridge from '../components/Ridge.astro';
+import { contactEmail, earlyAccessHref, earlyAccessMailto } from '../lib/site';
+---
+
+<Base
+  title="Request not sent"
+  description="Your early access request didn't go through."
+  index={false}
+  mainClass="flex flex-col"
+>
+  <section aria-labelledby="problem-title" class="flex flex-1 flex-col">
+    <div class="mx-auto w-full max-w-6xl px-4 pt-16 pb-12 sm:px-6 sm:pt-24">
+      <h1 id="problem-title" class="display max-w-[40rem] text-[clamp(2.5rem,7vw,4.5rem)]">
+        Your request didn't go through.
+      </h1>
+      <p class="mt-5 max-w-[34rem] text-muted-foreground">It's usually one of these:</p>
+      <ul class="mt-3 max-w-[34rem] list-disc space-y-1.5 pl-5 text-muted-foreground">
+        <li>A required field was empty, or a field was too long.</li>
+        <li>The email address didn't look like an email address.</li>
+        <li>Several requests came from your network within a minute. Wait a minute and try again.</li>
+        <li>Something went wrong on our side, or it took too long. Your request may have reached us anyway, so
+          email us rather than sending it again.</li>
+      </ul>
+      <p class="mt-5 max-w-[34rem] text-muted-foreground">
+        Your browser's back button should take you to the form with your answers still filled in. You can also
+        email <a href={earlyAccessMailto} class="underline">{contactEmail}</a> and tell us about the JVM services you
+        run.
+      </p>
+      <p class="mt-8">
+        <a href={earlyAccessHref} class="button">Go to the form</a>
+      </p>
+    </div>
+    <Ridge class="mt-auto h-16 sm:h-24 lg:h-32" />
+  </section>
+</Base>

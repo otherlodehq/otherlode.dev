@@ -34,6 +34,13 @@ const LOADING_ATTRIBUTES = {
   use: ['href', 'xlink:href'],
 };
 
+/** Attributes that name where a form submits, by element. An empty one means the page itself. */
+const SUBMITTING_ATTRIBUTES = {
+  form: ['action'],
+  button: ['formaction'],
+  input: ['formaction'],
+};
+
 /** Yields every file under dir whose name ends with one of the extensions. */
 async function* filesUnder(dir, extensions) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -100,6 +107,15 @@ function checkHtml(html) {
       if (/^on/i.test(name)) report(`inline event handler ${name}=`);
       if (isJavascriptUrl(value)) report(`javascript: URL in ${name}=`);
       if (/^\s*data:/i.test(value) && name !== 'content') report(`data: URL in ${name}=`);
+    }
+
+    // public/_headers sends form-action 'self', so a browser would refuse
+    // to submit a form to another site.
+    for (const name of SUBMITTING_ATTRIBUTES[element.tagName] ?? []) {
+      const value = attr(name);
+      if (value !== undefined && value.trim() !== '' && isOffSite(value)) {
+        report(`off-site <${element.tagName} ${name}="${value}">`);
+      }
     }
 
     for (const name of LOADING_ATTRIBUTES[element.tagName] ?? []) {

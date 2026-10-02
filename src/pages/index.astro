@@ -1,7 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import Ridge from '../components/Ridge.astro';
-import { agentRepo, collectorRepo, contactEmail, earlyAccessHref } from '../lib/site';
+import { agentRepo, collectorRepo, contactEmail, earlyAccessHref, earlyAccessMailto } from '../lib/site';
 
 /**
  * One kind of finding, with optional examples from the agent's demo app.
@@ -96,7 +96,7 @@ const security = [
         <div class="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-5">
           <a href={earlyAccessHref} class="button">Ask for early access</a>
           <p class="text-[0.9375rem] text-muted-foreground">
-            It's early days. Email <a href={`mailto:${contactEmail}`} class="underline">{contactEmail}</a> and we'll get you set up.
+            It's early days. You can also email <a href={earlyAccessMailto} class="underline">{contactEmail}</a>.
           </p>
         </div>
       </div>
@@ -279,11 +279,14 @@ java -javaagent:otherlode-agent-&lt;version&gt;.jar -jar app.jar</code></pre>
         We're in early access.
       </h2>
       <p class="mt-5 max-w-[36rem] text-muted-foreground">
-        We're setting accounts up by hand for now, so there's no sign-up form. Tell us a bit about the JVM services
-        you run and we'll take it from there.
+        We're setting accounts up by hand for now. Tell us a bit about the JVM services you run and we'll take it
+        from there.
       </p>
-      <div class="mt-8">
-        <a href={earlyAccessHref} class="button">Email {contactEmail}</a>
+      <div class="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-5">
+        <a href={earlyAccessHref} class="button">Ask for early access</a>
+        <p class="text-[0.9375rem] text-muted-foreground">
+          Or email <a href={earlyAccessMailto} class="underline">{contactEmail}</a>.
+        </p>
       </div>
     </div>
   </section>

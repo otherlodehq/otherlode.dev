@@ -1,8 +1,11 @@
 /** The address that handles early access requests and general mail. */
 export const contactEmail = 'hello@otherlode.dev';
 
+/** The page with the early access form. */
+export const earlyAccessHref = '/early-access';
+
 /** A mailto link for an early access request, with the subject filled in. */
-export const earlyAccessHref = `mailto:${contactEmail}?subject=${encodeURIComponent('Otherlode early access')}`;
+export const earlyAccessMailto = `mailto:${contactEmail}?subject=${encodeURIComponent('Otherlode early access')}`;
 
 /** The open source agent's repository. */
 export const agentRepo = 'https://github.com/otherlodehq/otherlode-agent';
