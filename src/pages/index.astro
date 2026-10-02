@@ -21,22 +21,22 @@ function withCode(text: string): { text: string; code: boolean }[] {
 const findings: Finding[] = [
   {
     title: 'Endpoints nobody calls',
-    body: "Routes your service exposes that no request has ever hit. Works with Spring MVC, Ktor, JAX-RS and the JDK's built-in HttpServer.",
+    body: "Routes no request has ever hit, in Spring MVC, Ktor, JAX-RS or the JDK's HttpServer.",
     examples: [{ code: '/promo', verdict: 'never called' }],
   },
   {
     title: 'Methods that never run',
-    body: "Methods no instance has ever run. Constructors only show up when they're an unused overload, one that never ran while another did, so you won't wade through every private constructor.",
+    body: "Methods no instance has run. Constructors only show up as unused overloads, so private constructors stay off the list.",
     examples: [{ code: 'constructor(pounds: Int, pence: Int)', verdict: 'unused overload' }],
   },
   {
     title: 'Branches that only go one way',
-    body: "An `if` or `switch` where one outcome has never happened. You get the condition the code checked, plus the lines only that outcome would have reached.",
+    body: "An `if` or `switch` outcome that's never happened, with the lines only it would reach.",
     examples: [{ code: 'discounted > 100.0', verdict: 'was never true' }],
   },
   {
     title: 'Classes that never loaded',
-    body: "Switch on the startup scan and Otherlode can name classes that never even loaded. It also catches the ones that loaded but never ran their initialiser, or never had an instance made.",
+    body: "Turn on the startup scan to see classes that never loaded, plus ones never initialised or instantiated.",
     examples: [
       { code: 'PromoRepository', verdict: 'never loaded' },
       { code: 'AuditLog', verdict: 'never initialised' },
@@ -45,38 +45,38 @@ const findings: Finding[] = [
   },
   {
     title: 'Dependencies you might not need',
-    body: "Jars on your classpath that never loaded a class, or that your code never refers to. Treat these as leads, not verdicts: reflection and service loaders can still use a jar quietly.",
+    body: "Jars that never loaded a class, or that your code never references. Worth a check, since reflection can still use them.",
   },
   {
     title: 'Default parameters nobody changes',
-    body: "Kotlin and Scala parameters with a default value. If no call ever passes one, you can drop the parameter. If every call passes it, the default's doing nothing.",
+    body: "Kotlin and Scala defaults that no call overrides, or that every call does.",
   },
   {
     title: 'Dead code behind one branch',
-    body: "When a branch never goes one way, Otherlode gathers up the methods and classes that only that path leads to. Delete that side of the condition and the whole lot goes with it.",
+    body: "Everything that only an untaken branch leads to, grouped so you can delete it in one go.",
   },
   {
     title: 'Code only your tests call',
-    body: "Run the agent in your test JVM too, and Otherlode names the tests that still call code production never touches.",
+    body: "Run the agent in your tests too, and see which tests call code production never touches.",
   },
 ];
 
 const security = [
   {
     title: 'Open source on your side',
-    body: "The agent and collector are open source under Apache 2.0, so you can read every line that runs in your network.",
+    body: "The agent and collector are Apache 2.0, so you can read everything that runs in your network.",
   },
   {
     title: 'Keep string literals at home',
-    body: "The collector can blank out the string literals in your conditions before anything leaves your network, either all of them or just the ones matching your patterns. It's off by default, and a hash of each literal still travels in the report's keys.",
+    body: "The collector can blank out string literals in your conditions before reports leave your network. It's off by default, and hashes of the literals are still sent.",
   },
   {
     title: 'Data in London',
-    body: "Otherlode's database and backups live in Google Cloud's London region (europe-west2).",
+    body: "The database and backups live in Google Cloud's London region.",
   },
   {
     title: 'Sign in your way',
-    body: "Your team signs in with Google, Microsoft or GitHub, or through your own SAML or OIDC single sign-on.",
+    body: "Google, Microsoft, GitHub, or your own SAML or OIDC single sign-on.",
   },
 ];
 ---
@@ -89,14 +89,13 @@ const security = [
           Find the code that never runs in production.
         </h1>
         <p class="mt-6 max-w-[34rem] text-[1.1875rem] leading-relaxed text-muted-foreground">
-          Otherlode keeps count of what your Java, Kotlin and Scala services actually run in production. Leave it
-          running for a few weeks across every instance, and it'll show you what never did: endpoints nobody
-          calls, methods nobody hits, and branches that never go the other way.
+          Otherlode tracks what your Java, Kotlin and Scala services actually run, across every instance. Give
+          it a few weeks and it shows you what never did.
         </p>
         <div class="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-5">
           <a href={earlyAccessHref} class="button">Ask for early access</a>
           <p class="text-[0.9375rem] text-muted-foreground">
-            It's early days. You can also email <a href={earlyAccessMailto} class="underline">{contactEmail}</a>.
+            Or email <a href={earlyAccessMailto} class="underline">{contactEmail}</a>.
           </p>
         </div>
       </div>
@@ -133,7 +132,7 @@ const security = [
           </div>
         </div>
         <figcaption class="mt-3 text-[0.875rem] text-muted-foreground">
-          A real finding from the demo app in the agent's repo.
+          From the demo app in the agent's repo.
         </figcaption>
       </figure>
     </div>
@@ -145,8 +144,7 @@ const security = [
       <div class="max-w-[40rem]">
         <h2 id="finds-title" class="heading text-[clamp(2rem,5vw,3rem)]">What it finds</h2>
         <p class="mt-4 text-ground-muted">
-          Otherlode looks at your whole fleet before it calls anything dead. Code only counts as unused if none of
-          the instances you're looking at ran it, so one quiet server won't get your code flagged.
+          Code only counts as dead if no instance ran it, so one quiet server won't flag anything.
         </p>
       </div>
 
@@ -184,7 +182,7 @@ const security = [
       <div class="max-w-[40rem]">
         <h2 id="how-title" class="heading text-[clamp(2rem,5vw,3rem)]">How it works</h2>
         <p class="mt-4 text-muted-foreground">
-          Two open source pieces run inside your network and send us counts. We turn those counts into findings.
+          Two open source pieces run in your network and send us counts. We turn them into findings.
         </p>
       </div>
 
@@ -197,9 +195,8 @@ const security = [
               <div class="min-w-0">
                 <h4 class="text-[1.1875rem] font-semibold">The agent</h4>
                 <p class="mt-2">
-                  A jar you attach to your app with <code class="whitespace-nowrap text-[0.9em]">-javaagent</code>. It counts which
-                  methods, endpoints and branches run, and sends the totals to your collector, every 60 seconds by
-                  default. Switch on the startup scan and it'll spot classes that never load, too.
+                  A jar you attach with <code class="whitespace-nowrap text-[0.9em]">-javaagent</code>. It counts which methods,
+                  endpoints and branches run and sends the totals to your collector every minute.
                 </p>
                 <p class="mt-3 text-[0.9375rem]">
                   <a href={agentRepo} class="underline">otherlode-agent on GitHub</a>
@@ -211,8 +208,7 @@ const security = [
               <div class="min-w-0">
                 <h4 class="text-[1.1875rem] font-semibold">The collector</h4>
                 <p class="mt-2">
-                  A server you run in your own network. It gathers up the agents' reports and passes them on to
-                  Otherlode with your API key.
+                  A server in your network that forwards the agents' reports to Otherlode with your API key.
                 </p>
                 <p class="mt-3 text-[0.9375rem]">
                   <a href={collectorRepo} class="underline">otherlode-collector on GitHub</a>
@@ -222,8 +218,7 @@ const security = [
           </ol>
           <figure class="mt-8 min-w-0 border-t border-dashed pt-6">
             <figcaption class="text-[0.9375rem] text-muted-foreground">
-              To attach the agent, tell it the service's name, which packages to watch and where your collector
-              lives. The last line switches on the startup scan, which you'll need for never-loaded classes.
+              Name the service, the packages to watch and your collector. The last line turns on the startup scan.
             </figcaption>
             <pre class="mt-3 overflow-x-auto rounded-lg bg-muted px-4 py-3 text-[0.8125rem] leading-relaxed"><code>OTHERLODE_SERVICE_NAME=checkout \
 OTHERLODE_INCLUDE_PACKAGES=com.acme.checkout \
@@ -231,7 +226,7 @@ OTHERLODE_ENDPOINT=http://&lt;your-collector&gt;:4319 \
 OTHERLODE_STATIC_BASELINE_ENABLED=true \
 java -javaagent:otherlode-agent-&lt;version&gt;.jar -jar app.jar</code></pre>
             <p class="mt-3 text-[0.9375rem] text-muted-foreground">
-              There's no published release yet, so build the jar from the{' '}
+              No release yet, so build the jar from the{' '}
               <a href={agentRepo} class="underline">agent's repo</a> with{' '}
               <code class="whitespace-nowrap text-[0.9em]">./gradlew build</code>.
             </p>
@@ -246,8 +241,7 @@ java -javaagent:otherlode-agent-&lt;version&gt;.jar -jar app.jar</code></pre>
               <div class="min-w-0">
                 <h4 class="text-[1.1875rem] font-semibold">Otherlode</h4>
                 <p class="mt-2">
-                  Merges the reports from every instance of a service over weeks, and shows you the findings in a
-                  web UI.
+                  Merges reports from every instance over weeks and shows the findings in a web UI.
                 </p>
               </div>
             </li>
@@ -279,8 +273,7 @@ java -javaagent:otherlode-agent-&lt;version&gt;.jar -jar app.jar</code></pre>
         We're in early access.
       </h2>
       <p class="mt-5 max-w-[36rem] text-muted-foreground">
-        We're setting accounts up by hand for now. Tell us a bit about the JVM services you run and we'll take it
-        from there.
+        We're setting accounts up by hand for now. Tell us what you run and we'll take it from there.
       </p>
       <div class="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-5">
         <a href={earlyAccessHref} class="button">Ask for early access</a>

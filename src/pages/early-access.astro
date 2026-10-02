@@ -6,14 +6,14 @@ import { companySizes, contactPath, emailPattern, honeypotField, maxLength } fro
 
 <Base
   title="Ask for early access"
-  description="Tell us about the JVM services you run, and we'll get back to you about early access to Otherlode."
+  description="Ask for early access to Otherlode."
 >
   <section aria-labelledby="early-access-title">
     <div class="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-12">
       <div class="lg:col-span-5">
         <h1 id="early-access-title" class="display text-[clamp(2.5rem,7vw,4.5rem)]">Ask for early access</h1>
         <p class="mt-5 max-w-[30rem] text-muted-foreground">
-          We set up each account by hand for now. Tell us who you are and what you run, and we'll reply by email.
+          We're setting accounts up by hand for now. Tell us a bit about you and we'll be in touch.
         </p>
         <p class="mt-4 max-w-[30rem] text-muted-foreground">
           Or email <a href={earlyAccessMailto} class="underline">{contactEmail}</a>.
@@ -96,7 +96,7 @@ import { companySizes, contactPath, emailPattern, honeypotField, maxLength } fro
           <div class="sm:col-span-2">
             <label for="message" class="field-label">Anything else?</label>
             <span id="message-hint" class="field-hint">
-              Such as how many services you run, or what you'd most like to find.
+              Like how many services you run.
             </span>
             <textarea id="message" name="message" rows="5" maxlength={maxLength.message} aria-describedby="message-hint" class="field-input"></textarea>
           </div>
@@ -109,7 +109,7 @@ import { companySizes, contactPath, emailPattern, honeypotField, maxLength } fro
 
         <div class="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p class="text-[0.9375rem] text-muted-foreground">
-            Our <a href="/privacy" class="underline">privacy policy</a> says what we do with these details.
+            See our <a href="/privacy" class="underline">privacy policy</a> for how we use this.
           </p>
           <button type="submit" class="button cursor-pointer">Send request</button>
         </div>
