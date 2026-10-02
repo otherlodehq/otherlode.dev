@@ -5,10 +5,10 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
 
-# Keep the pages.dev addresses out of search engines; only otherlode.dev
-# should be indexed.
-https://:project.pages.dev/*
+# Keep the workers.dev addresses, preview versions included, out of search
+# engines; only otherlode.dev should be indexed.
+https://:worker.:subdomain.workers.dev/*
   X-Robots-Tag: noindex
 
-https://:version.:project.pages.dev/*
+https://:version.:worker.:subdomain.workers.dev/*
   X-Robots-Tag: noindex

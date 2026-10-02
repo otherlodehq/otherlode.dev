@@ -16,7 +16,7 @@ npm run verify    # astro check, then the build
 ```
 
 `npm run build` runs `astro build` and then `scripts/check-csp.mjs`, so a
-build that breaks the CSP fails, on Cloudflare Pages too. The check parses
+build that breaks the CSP fails, on Cloudflare's build too. The check parses
 every page in `dist/` and fails on:
 
 - an inline `<script>` without a `src`, a `<style>` element, a `style=`
@@ -35,29 +35,38 @@ existing `dist/`.
 - `src/layouts/Prose.astro`: the layout for long text pages written in Markdown, such as `src/pages/privacy.md`.
 - `src/components/`: the shared header, footer and the mountain ridge.
 - `src/styles/global.css`: Tailwind and the colour tokens, which follow the product UI's tokens.
-- `public/_headers`: the security headers Cloudflare Pages sends, including the Content-Security-Policy.
+- `public/_headers`: the security headers Cloudflare sends, including the Content-Security-Policy.
+- `wrangler.jsonc`: the Cloudflare Worker that serves `dist/`. It runs no code.
 
 ## Deploy
 
-Cloudflare Pages builds the site from GitHub on every push to `master`.
+Cloudflare Workers Builds builds the site from GitHub on every push to
+`master` and deploys it as an assets-only Worker, `otherlode-dev`, set
+up in `wrangler.jsonc`. Cloudflare Pages is deprecated in favour of
+Workers static assets.
 
 | Setting | Value |
 |---|---|
 | Production branch | `master` |
 | Build command | `npm run build` |
-| Build output directory | `dist` |
-| Node version | 22 (from `.nvmrc`) |
+| Deploy command | `npx wrangler deploy` |
+| Node version | 22.12 or later (`NODE_VERSION` in the build settings) |
+
+`html_handling` serves `privacy.html` at `/privacy`, and
+`not_found_handling` serves `404.html` with status 404. The
+`workers.dev` addresses send `X-Robots-Tag: noindex`, so only
+`otherlode.dev` is indexed.
 
 ### Cloudflare settings that would break the privacy policy
 
 Some Cloudflare features change pages on the way out. Keep these off for
-the `otherlode.dev` zone and the Pages project:
+the `otherlode.dev` zone and the Worker:
 
 - **Email Address Obfuscation** (Scrape Shield). It injects a script from
   `/cdn-cgi/` and rewrites `mailto:` links. The script is same-origin, so
   the CSP allows it, and the site would no longer ship without scripts.
 - **Bot Fight Mode** (Security, Bots). It sets a `__cf_bm` cookie.
-- **Web Analytics** on the Pages project, and **Rocket Loader**. Both
+- **Web Analytics** on the Worker, and **Rocket Loader**. Both
   inject scripts, and Web Analytics loads one from
   `static.cloudflareinsights.com`.
 
