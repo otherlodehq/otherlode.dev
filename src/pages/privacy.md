@@ -47,9 +47,10 @@ of a request it blocks as an attack.
 
 ## Email you send us
 
-Email to any `@otherlode.dev` address lands in a mailbox that
-Google Workspace hosts for us. We use it to reply to you, and to talk about
-early access if you asked. We keep correspondence while we are in
+Email to our addresses, such as `hello@otherlode.dev` and
+`privacy@otherlode.dev`, lands in a mailbox that Google Workspace hosts
+for us. We use it to reply to you, and to talk about early access if
+you asked. We keep correspondence while we are in
 touch, and delete it [RETENTION: e.g. 2 years] after our last contact.
 Email that forms part of a customer contract is kept for 6 years after
 the contract ends, the time limit for legal claims.
