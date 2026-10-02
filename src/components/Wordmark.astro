@@ -1,0 +1,64 @@
+---
+import { crackPoints, hatchedPath, solidPath, wordmarkWidth } from '../lib/wordmark';
+
+/**
+ * The Otherlode wordmark. OTHER is hatched, like unworked ground on a
+ * geological section, and LODE is solid. A crack runs through the whole
+ * word. The letters take the text colour, so the wordmark follows light and
+ * dark mode, and the crack shows whatever is behind it.
+ */
+interface Props {
+  /** Prefix for the ids inside the SVG. Each wordmark on a page needs its own. */
+  id: string;
+  class?: string;
+}
+
+const { id, class: className = '' } = Astro.props;
+const width = wordmarkWidth + 0.4;
+---
+
+<svg
+  class:list={['block w-auto', className]}
+  viewBox={`-0.2 -0.2 ${width} 8.4`}
+  width="183"
+  height="22"
+  role="img"
+  aria-label="Otherlode"
+>
+  <defs>
+    <mask id={`${id}-crack`} maskUnits="userSpaceOnUse" x="-1" y="-1" width={width + 2} height="10">
+      <rect x="-1" y="-1" width={width + 2} height="10" fill="#fff" />
+      <polyline
+        points={crackPoints}
+        fill="none"
+        stroke="#000"
+        stroke-width="0.7"
+        stroke-linejoin="miter"
+        stroke-miterlimit="10"
+      />
+    </mask>
+    <pattern
+      id={`${id}-hatch`}
+      patternUnits="userSpaceOnUse"
+      width="0.9"
+      height="0.9"
+      patternTransform="rotate(45)"
+    >
+      <rect width="0.42" height="0.9" fill="currentColor" />
+    </pattern>
+    <clipPath id={`${id}-other`}>
+      <path d={hatchedPath} />
+    </clipPath>
+  </defs>
+  <g mask={`url(#${id}-crack)`}>
+    <path fill="currentColor" d={solidPath} />
+    <rect
+      clip-path={`url(#${id}-other)`}
+      x="-1"
+      y="-1"
+      width={width + 2}
+      height="10"
+      fill={`url(#${id}-hatch)`}
+    />
+  </g>
+</svg>

@@ -1,4 +1,5 @@
 ---
+import Wordmark from './Wordmark.astro';
 import { earlyAccessHref } from '../lib/site';
 ---
 
@@ -6,13 +7,13 @@ import { earlyAccessHref } from '../lib/site';
   <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
     <a href="/" class="flex items-center gap-2.5 rounded-md no-underline">
       <img src="/otherlode-badge.svg" alt="" width="40" height="38" class="size-10" />
-      <span class="heading text-[1.375rem]">Otherlode</span>
+      <Wordmark id="header-wordmark" class="h-[1.125rem] sm:h-[1.375rem]" />
     </a>
     <nav aria-label="Main">
       <ul class="flex items-center gap-5 text-[0.9375rem]">
         <li class="hidden sm:block"><a href="/#finds" class="no-underline hover:underline">What it finds</a></li>
         <li class="hidden sm:block"><a href="/#how" class="no-underline hover:underline">How it works</a></li>
-        <li><a href={earlyAccessHref} class="button px-3.5 py-2 text-[0.9375rem]">Early access</a></li>
+        <li><a href={earlyAccessHref} class="button whitespace-nowrap px-3.5 py-2 text-[0.9375rem]">Early access</a></li>
       </ul>
     </nav>
   </div>

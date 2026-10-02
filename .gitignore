@@ -7,3 +7,6 @@ dist/
 .dev.vars*
 .env*
 .wrangler/
+
+# Python environment for scripts/wordmark
+.venv-wordmark/
