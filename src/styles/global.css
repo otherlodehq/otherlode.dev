@@ -1,0 +1,291 @@
+@import "tailwindcss";
+@import "@fontsource-variable/instrument-sans/wdth.css";
+@import "@fontsource-variable/jetbrains-mono/wght.css";
+
+/*
+  Colour tokens follow the product UI (otherlode-server web/src/index.css),
+  so the site and the app read as one thing. The ridge colours come from
+  the badge's mountain range. "Ground" is the dark band under the ridge.
+*/
+:root {
+  --background: #F5F7F8;
+  --foreground: #172026;
+  --card: #FFFFFF;
+  --muted: #EEF1F3;
+  --muted-foreground: #56626C;
+  --border: #DCE1E5;
+  --ring: #8A949C;
+  --signal: #C2410C;
+  --signal-foreground: #FFFFFF;
+  --signal-text: #B23C0B;
+
+  --ridge-far: #D8D2C8;
+  --ridge-mid: #B8B0A4;
+  --ridge-near: #958C80;
+  --ground: #172026;
+  --ground-foreground: #E6EAED;
+  --ground-muted: #A3AEB6;
+  --ground-border: #2E3A43;
+  --ground-signal-text: #F4A26E;
+
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0E1418;
+    --foreground: #E6EAED;
+    --card: #161E24;
+    --muted: #222B32;
+    --muted-foreground: #97A2AB;
+    --border: #2A343C;
+    --ring: #6B7680;
+    --signal-text: #F4A26E;
+
+    --ridge-far: #2A333B;
+    --ridge-mid: #212930;
+    --ridge-near: #192026;
+    --ground: #080C0F;
+    --ground-foreground: #E6EAED;
+    --ground-muted: #97A2AB;
+    --ground-border: #1F282F;
+    --ground-signal-text: #F4A26E;
+  }
+}
+
+@theme inline {
+  --font-sans: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-signal: var(--signal);
+  --color-signal-foreground: var(--signal-foreground);
+  --color-signal-text: var(--signal-text);
+  --color-ground: var(--ground);
+  --color-ground-foreground: var(--ground-foreground);
+  --color-ground-muted: var(--ground-muted);
+  --color-ground-border: var(--ground-border);
+  --color-ground-signal-text: var(--ground-signal-text);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    overflow-x: clip;
+  }
+
+  /* JetBrains Mono joins == and != into one glyph. Conditions tell == from
+     ===, so code shows each character as typed. */
+  code,
+  pre,
+  .font-mono {
+    font-family: var(--font-mono);
+    font-variant-ligatures: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--foreground);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  .ground :focus-visible {
+    outline-color: var(--ground-foreground);
+  }
+
+  a {
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
+  }
+
+  a:hover {
+    text-decoration-thickness: 2px;
+  }
+}
+
+@layer components {
+  /* Headlines use the font's condensed width (font-stretch) and a heavy weight. */
+  .display {
+    font-stretch: 80%;
+    font-weight: 640;
+    letter-spacing: -0.01em;
+    line-height: 0.98;
+    text-wrap: balance;
+  }
+
+  .heading {
+    font-stretch: 85%;
+    font-weight: 620;
+    letter-spacing: -0.005em;
+    line-height: 1.08;
+    text-wrap: balance;
+  }
+
+  .ridge-far {
+    color: var(--ridge-far);
+  }
+
+  .ridge-mid {
+    color: var(--ridge-mid);
+  }
+
+  .ridge-near {
+    color: var(--ridge-near);
+  }
+
+  .ridge-ground {
+    color: var(--ground);
+  }
+
+  .ridge path {
+    fill: currentColor;
+    stroke: currentColor;
+    stroke-width: 8;
+    stroke-linejoin: round;
+  }
+
+  .button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 0.5rem;
+    background-color: var(--foreground);
+    color: var(--background);
+    padding: 0.75rem 1.25rem;
+    font-weight: 600;
+    text-decoration: none;
+    line-height: 1.2;
+  }
+
+  .button:hover {
+    background-color: color-mix(in oklab, var(--foreground) 86%, var(--background));
+  }
+
+  .chip-never {
+    display: inline-block;
+    border-radius: 0.375rem;
+    background-color: var(--signal);
+    color: var(--signal-foreground);
+    padding: 0.125rem 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .prose {
+    max-width: 68ch;
+  }
+
+  .prose h1 {
+    font-size: clamp(2.25rem, 5vw, 3.25rem);
+    margin-bottom: 1.5rem;
+    font-stretch: 80%;
+    font-weight: 640;
+    line-height: 1;
+  }
+
+  .prose h2 {
+    font-size: 1.5rem;
+    margin-top: 2.5rem;
+    margin-bottom: 0.75rem;
+    font-stretch: 85%;
+    font-weight: 620;
+    line-height: 1.15;
+  }
+
+  .prose h3 {
+    font-size: 1.1875rem;
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+
+  .prose p,
+  .prose ul,
+  .prose ol {
+    margin-bottom: 1rem;
+  }
+
+  .prose ul {
+    list-style: disc;
+    padding-left: 1.25rem;
+  }
+
+  .prose ol {
+    list-style: decimal;
+    padding-left: 1.25rem;
+  }
+
+  .prose li + li {
+    margin-top: 0.25rem;
+  }
+
+  .prose a {
+    text-decoration: underline;
+  }
+
+  /* A wide table scrolls inside its own box, so the page never scrolls
+     sideways. src/lib/rehype-table-scroll.mjs adds the box. */
+  .prose .table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+  }
+
+  .prose table {
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+
+  .prose th,
+  .prose td {
+    min-width: 9rem;
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .prose thead th {
+    background-color: var(--muted);
+    font-weight: 600;
+  }
+
+  .prose tbody td {
+    background-color: var(--card);
+  }
+
+  .prose code {
+    font-size: 0.9em;
+    background-color: var(--muted);
+    border-radius: 0.25rem;
+    padding: 0.05em 0.3em;
+  }
+}

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://otherlode.dev/sitemap-index.xml

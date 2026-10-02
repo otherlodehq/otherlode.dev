@@ -1,0 +1,22 @@
+---
+import { agentRepo, collectorRepo, contactEmail } from '../lib/site';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t">
+  <div class="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 text-[0.9375rem] text-muted-foreground sm:flex-row sm:items-start sm:justify-between sm:px-6">
+    <div class="flex items-center gap-2.5">
+      <img src="/otherlode-badge.svg" alt="" width="28" height="27" class="size-7" />
+      <p>&copy; {year} Otherlode</p>
+    </div>
+    <nav aria-label="Footer">
+      <ul class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-x-6">
+        <li><a href={`mailto:${contactEmail}`} class="underline">{contactEmail}</a></li>
+        <li><a href={agentRepo} class="underline">Agent on GitHub</a></li>
+        <li><a href={collectorRepo} class="underline">Collector on GitHub</a></li>
+        <li><a href="/privacy" class="underline">Privacy policy</a></li>
+      </ul>
+    </nav>
+  </div>
+</footer>

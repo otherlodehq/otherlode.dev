@@ -1,0 +1,290 @@
+---
+import Base from '../layouts/Base.astro';
+import Ridge from '../components/Ridge.astro';
+import { agentRepo, collectorRepo, contactEmail, earlyAccessHref } from '../lib/site';
+
+/**
+ * One kind of finding, with optional examples from the agent's demo app.
+ * Text in backticks in `body` renders as code.
+ */
+interface Finding {
+  title: string;
+  body: string;
+  examples?: { code: string; verdict: string }[];
+}
+
+/** Splits text on backticks so the quoted parts can render as code. */
+function withCode(text: string): { text: string; code: boolean }[] {
+  return text.split('`').map((part, i) => ({ text: part, code: i % 2 === 1 }));
+}
+
+const findings: Finding[] = [
+  {
+    title: 'Endpoints never called',
+    body: "Routes your service serves that no request reached. Endpoint modules cover Spring MVC, Ktor, JAX-RS and the JDK's HttpServer.",
+    examples: [{ code: '/promo', verdict: 'never called' }],
+  },
+  {
+    title: 'Methods never run',
+    body: 'Methods that no instance ran. A constructor is listed only as an unused overload: one that never ran while another did.',
+    examples: [{ code: 'constructor(pounds: Int, pence: Int)', verdict: 'unused overload' }],
+  },
+  {
+    title: 'Outcomes that never happened',
+    body: 'An `if` or `switch` outcome that never happened. You see the condition the code checked, and the lines that only that outcome reaches.',
+    examples: [{ code: 'discounted > 100.0', verdict: 'was never true' }],
+  },
+  {
+    title: 'Classes never loaded, initialised or instantiated',
+    body: 'An optional startup scan lists your classes, so Otherlode can name the ones that never loaded at all. It also names classes that loaded but never ran their initialiser or never made an instance.',
+    examples: [
+      { code: 'PromoRepository', verdict: 'never loaded' },
+      { code: 'AuditLog', verdict: 'never initialised' },
+      { code: 'ReceiptPrinter', verdict: 'never instantiated' },
+    ],
+  },
+  {
+    title: 'Dependencies never used',
+    body: 'Jars on the classpath that never loaded a class, or that your code never refers to. Treat these as leads to check, since code can still use a jar through reflection or a service loader.',
+  },
+  {
+    title: 'Optional parameters always or never supplied',
+    body: 'A Kotlin or Scala parameter with a default value. If no call ever passes it, the parameter can go. If every call passes it, the default is dead.',
+  },
+  {
+    title: 'Dead code behind one branch',
+    body: 'When an outcome never happened, Otherlode groups the methods and classes that only it leads to. Delete that side of the condition and the whole group goes with it.',
+  },
+  {
+    title: 'Code only tests call',
+    body: 'Run the agent in your test JVM too. Otherlode then names the tests that call code production never runs.',
+  },
+];
+
+const security = [
+  {
+    title: 'Open source in your network',
+    body: 'The agent and the collector are open source under the Apache 2.0 licence. You can read the code that runs on your machines.',
+  },
+  {
+    title: 'Redaction in the collector',
+    body: 'Redaction is a collector setting and is off by default. Turned on, it replaces string literals in your conditions, either all of them or those that match your patterns, before a report leaves your network. A hash of each literal still goes in the report\'s keys.',
+  },
+  {
+    title: 'Database in London',
+    body: "Otherlode's database and its backups are in Google Cloud's London region, europe-west2.",
+  },
+  {
+    title: 'How people sign in',
+    body: 'People sign in with Google, Microsoft or GitHub, or through your own SAML or OIDC single sign-on.',
+  },
+];
+---
+
+<Base>
+  <section aria-labelledby="hero-title" class="relative">
+    <div class="mx-auto grid max-w-6xl grid-cols-1 gap-12 px-4 pt-14 pb-10 sm:px-6 sm:pt-20 lg:grid-cols-12 lg:gap-10 lg:pt-24 lg:pb-14">
+      <div class="lg:col-span-7">
+        <h1 id="hero-title" class="display text-[clamp(2.75rem,8.5vw,5.25rem)]">
+          Find the code that never runs in production.
+        </h1>
+        <p class="mt-6 max-w-[34rem] text-[1.1875rem] leading-relaxed text-muted-foreground">
+          Otherlode records what your Java, Kotlin and Scala services run in production. It adds up the counts
+          from every instance of a service over weeks, then lists what never ran: endpoints, methods, branch
+          outcomes, classes and more.
+        </p>
+        <div class="mt-8 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-5">
+          <a href={earlyAccessHref} class="button">Ask for early access</a>
+          <p class="text-[0.9375rem] text-muted-foreground">
+            Early access is by email to <a href={`mailto:${contactEmail}`} class="underline">{contactEmail}</a>.
+          </p>
+        </div>
+      </div>
+
+      <figure class="self-end lg:col-span-5">
+        <div class="rounded-xl border bg-card p-5 sm:p-6">
+          <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span class="chip-never">Never hit</span>
+            <span class="text-[0.9375rem]">
+              <code class="text-[0.875rem]">handleCheckout</code>{' '}
+              <span class="text-muted-foreground">in</span>{' '}
+              <code class="text-[0.875rem] text-muted-foreground">DemoServerMain.kt:71</code>
+            </span>
+          </div>
+          <p class="mt-4 text-[0.9375rem] leading-relaxed">
+            <code class="rounded bg-muted px-1.5 py-0.5 text-[0.8125rem] [overflow-wrap:anywhere] sm:text-[0.875rem]">System.getenv("ENABLE_LEGACY_DISCOUNT") == "true"</code>{' '}
+            <span class="font-semibold text-signal-text">was never true.</span>{' '}
+            <span class="text-muted-foreground">
+              It is the only path to <code class="text-[0.8125rem]">DemoServerMain.kt:72</code>.
+            </span>
+          </p>
+          <div class="mt-5 border-t pt-4">
+            <p class="text-[0.875rem] text-muted-foreground">Delete that side of the <code class="text-[0.8125rem]">if</code> and these go with it:</p>
+            <ul class="mt-2 space-y-1.5 text-[0.9375rem]">
+              <li class="flex flex-wrap justify-between gap-x-4">
+                <code class="text-[0.8125rem] sm:text-[0.875rem]">LegacyDiscountCalculator</code>
+                <span class="text-muted-foreground">never loaded</span>
+              </li>
+              <li class="flex flex-wrap justify-between gap-x-4">
+                <code class="text-[0.8125rem] sm:text-[0.875rem]">LegacyRates</code>
+                <span class="text-muted-foreground">never loaded</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <figcaption class="mt-3 text-[0.875rem] text-muted-foreground">
+          A finding from the demo app in the agent's repository.
+        </figcaption>
+      </figure>
+    </div>
+    <Ridge class="h-24 sm:h-28 lg:h-40" />
+  </section>
+
+  <section id="finds" aria-labelledby="finds-title" class="ground scroll-mt-4 bg-ground text-ground-foreground">
+    <div class="mx-auto max-w-6xl px-4 pt-10 pb-20 sm:px-6 sm:pt-12 sm:pb-24">
+      <div class="max-w-[40rem]">
+        <h2 id="finds-title" class="heading text-[clamp(2rem,5vw,3rem)]">What it finds</h2>
+        <p class="mt-4 text-ground-muted">
+          Otherlode judges every finding across the whole fleet. Code counts as unused only when no instance in
+          scope ran it, so one quiet server is not enough to call it dead.
+        </p>
+      </div>
+
+      <ul class="mt-12 grid grid-cols-1 gap-x-12 sm:grid-cols-2">
+        {
+          findings.map((finding) => (
+            <li class="border-t border-ground-border py-6">
+              <h3 class="text-[1.1875rem] font-semibold leading-snug">{finding.title}</h3>
+              <p class="mt-2 max-w-[36rem] text-ground-muted">
+                {withCode(finding.body).map((part) => (part.code ? <code class="text-[0.9em]">{part.text}</code> : part.text))}
+              </p>
+              {finding.examples && (
+                <ul class="mt-3 space-y-1 text-[0.9375rem]">
+                  {finding.examples.map((example) => (
+                    <li>
+                      <code class="text-[0.875rem]">{example.code}</code>{' '}
+                      <span class="text-ground-signal-text">{example.verdict}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))
+        }
+      </ul>
+      <p class="mt-6 text-[0.875rem] text-ground-muted">
+        The examples are real findings from the demo app in the{' '}
+        <a href={agentRepo} class="underline">agent's repository</a>.
+      </p>
+    </div>
+  </section>
+
+  <section id="how" aria-labelledby="how-title" class="scroll-mt-4">
+    <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+      <div class="max-w-[40rem]">
+        <h2 id="how-title" class="heading text-[clamp(2rem,5vw,3rem)]">How it works</h2>
+        <p class="mt-4 text-muted-foreground">
+          Two open source parts run in your network. They send counts to the hosted service, which turns them
+          into findings.
+        </p>
+      </div>
+
+      <div class="mt-12 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div class="rounded-xl border-2 border-dashed p-5 sm:p-6 lg:col-span-2">
+          <h3 class="text-[0.9375rem] font-semibold text-muted-foreground">In your network</h3>
+          <ol class="mt-4 grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-6">
+            <li class="flex gap-4">
+              <span class="heading text-[2rem] leading-none text-muted-foreground" aria-hidden="true">1</span>
+              <div class="min-w-0">
+                <h4 class="text-[1.1875rem] font-semibold">The agent</h4>
+                <p class="mt-2">
+                  A jar you attach to your app with <code class="whitespace-nowrap text-[0.9em]">-javaagent</code>. It counts which
+                  methods, endpoints and branch outcomes run, and sends the counts to your collector every 60
+                  seconds by default. An optional startup scan finds classes that never load at all.
+                </p>
+                <p class="mt-3 text-[0.9375rem]">
+                  <a href={agentRepo} class="underline">otherlode-agent on GitHub</a>
+                </p>
+              </div>
+            </li>
+            <li class="flex gap-4">
+              <span class="heading text-[2rem] leading-none text-muted-foreground" aria-hidden="true">2</span>
+              <div class="min-w-0">
+                <h4 class="text-[1.1875rem] font-semibold">The collector</h4>
+                <p class="mt-2">
+                  A server you run in your own network. It takes the agents' reports and forwards them to
+                  Otherlode with your API key.
+                </p>
+                <p class="mt-3 text-[0.9375rem]">
+                  <a href={collectorRepo} class="underline">otherlode-collector on GitHub</a>
+                </p>
+              </div>
+            </li>
+          </ol>
+          <figure class="mt-8 min-w-0 border-t border-dashed pt-6">
+            <figcaption class="text-[0.9375rem] text-muted-foreground">
+              Attach the agent with a service name, the packages to count and your collector's address. The last
+              setting turns on the startup scan, which never-loaded findings need.
+            </figcaption>
+            <pre class="mt-3 overflow-x-auto rounded-lg bg-muted px-4 py-3 text-[0.8125rem] leading-relaxed"><code>OTHERLODE_SERVICE_NAME=checkout \
+OTHERLODE_INCLUDE_PACKAGES=com.acme.checkout \
+OTHERLODE_ENDPOINT=http://&lt;your-collector&gt;:4319 \
+OTHERLODE_STATIC_BASELINE_ENABLED=true \
+java -javaagent:otherlode-agent-&lt;version&gt;.jar -jar app.jar</code></pre>
+            <p class="mt-3 text-[0.9375rem] text-muted-foreground">
+              The agent has no published release. Build the jar from the{' '}
+              <a href={agentRepo} class="underline">agent's repository</a> with{' '}
+              <code class="whitespace-nowrap text-[0.9em]">./gradlew build</code>.
+            </p>
+          </figure>
+        </div>
+
+        <div class="self-start rounded-xl border bg-card p-5 sm:p-6">
+          <h3 class="text-[0.9375rem] font-semibold text-muted-foreground">Hosted by Otherlode</h3>
+          <ol start="3" class="mt-4">
+            <li class="flex gap-4">
+              <span class="heading text-[2rem] leading-none text-muted-foreground" aria-hidden="true">3</span>
+              <div class="min-w-0">
+                <h4 class="text-[1.1875rem] font-semibold">Otherlode</h4>
+                <p class="mt-2">
+                  Merges the reports from every instance of a service, over weeks, and shows the findings in a
+                  web UI.
+                </p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="security" aria-labelledby="security-title" class="scroll-mt-4 border-t">
+    <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+      <h2 id="security-title" class="heading max-w-[40rem] text-[clamp(2rem,5vw,3rem)]">Security and hosting</h2>
+      <dl class="mt-10 grid grid-cols-1 gap-x-12 gap-y-8 sm:grid-cols-2">
+        {
+          security.map((item) => (
+            <div>
+              <dt class="text-[1.1875rem] font-semibold leading-snug">{item.title}</dt>
+              <dd class="mt-2 max-w-[36rem] text-muted-foreground">{item.body}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </section>
+
+  <section aria-labelledby="access-title" class="border-t bg-muted">
+    <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+      <h2 id="access-title" class="display max-w-[44rem] text-[clamp(2.25rem,6vw,3.75rem)]">
+        Otherlode is in early access.
+      </h2>
+      <p class="mt-5 max-w-[36rem] text-muted-foreground">
+        We set up each account by hand, so there is no sign-up form. Email us about the JVM services you run.
+      </p>
+      <div class="mt-8">
+        <a href={earlyAccessHref} class="button">Email {contactEmail}</a>
+      </div>
+    </div>
+  </section>
+</Base>

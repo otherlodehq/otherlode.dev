@@ -1,0 +1,22 @@
+---
+import Base from './Base.astro';
+
+/**
+ * Props for a long text page written in Markdown. Astro passes the
+ * Markdown frontmatter in as `frontmatter`.
+ */
+interface Props {
+  frontmatter: {
+    title: string;
+    description?: string;
+  };
+}
+
+const { frontmatter } = Astro.props;
+---
+
+<Base title={frontmatter.title} description={frontmatter.description}>
+  <article class="prose mx-auto px-4 py-14 sm:px-6 sm:py-20">
+    <slot />
+  </article>
+</Base>
