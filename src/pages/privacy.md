@@ -171,9 +171,9 @@ methods, parameters, source files, web routes and libraries. It is
 about the code, and it has no hostnames, IP addresses, user
 names or request contents. A few fields can still hold personal data:
 
-- A library's file path can include a user's home folder, such as
-  `/Users/<name>/.m2/...`. This happens mostly on a developer's own
-  machine.
+- A library's file path can name a folder on the machine. The agent
+  writes the running user's home folder as `~`, as in `~/.m2/...`, but a
+  path under another user's home folder still shows their user name.
 - Text written into the code, such as a fixed string in an `if`
   condition, is reported as it appears. The collector can replace these
   strings with a placeholder before they leave the customer's network.
