@@ -69,7 +69,9 @@ static assets.
 ### Cloudflare settings that would break the privacy policy
 
 Some Cloudflare features change pages on the way out. Keep these off for
-the `otherlode.dev` zone and the Worker:
+the `otherlode.dev` zone and the Worker. Terraform in the private server
+repo, `deploy/cloudflare`, pins the zone's settings, so change them there
+and not in the dashboard:
 
 - **Email Address Obfuscation** (Scrape Shield). It injects a script from
   `/cdn-cgi/` and rewrites `mailto:` links. The script is same-origin, so
