@@ -125,7 +125,7 @@ privacy policies.
 
 If you sign in but no customer has given you an account, we don't let
 you in and we add nothing to our database. WorkOS still makes a record
-of you when you sign in, and our logs may hold your email address for
+of you when you sign in, and our logs may hold your WorkOS user ID for
 30 days. Ask us and we will delete the WorkOS record.
 
 ### Sessions and cookies
@@ -142,7 +142,6 @@ The service uses these cookies and browser storage:
 | `__Host-otherlode_session` | Keeps you signed in | Up to 30 days |
 | `__Host-otherlode_login` | Protects the sign-in step from forgery | 10 minutes |
 | `__Host-otherlode_login_choice` | Holds your place while you choose an account | 5 minutes |
-| `sidebar_state` | Records whether the sidebar is open or closed | 7 days |
 | `otherlode.environment.*` (browser storage) | Remembers the environment you last chose for each service | Until you clear it |
 
 Each one is needed for the service to work or records a choice you made
@@ -157,7 +156,8 @@ team lists the account's users. An entry can name you by your email
 address and your WorkOS user ID. When a directory changes your email
 address, the entry keeps both the old and the new one.
 Entries made from your browser, such as a sign-in or a change an admin
-makes, also hold the IP address the request came from.
+makes, also hold the IP address the request came from. We remove that
+address after a year.
 
 We keep audit entries for as long as the customer is with us, so they
 can always see who had access. Removing one person's account does not
@@ -186,7 +186,7 @@ names or request contents. A few fields can still hold personal data:
 The service runs on Google Cloud, and its logs hold some personal data.
 Google Cloud records each request with its IP address, browser details
 and web address. Our own logs can hold an email address, for example
-when a sign-in fails. We keep both for 30 days.
+when our team lists a customer's users. We keep both for 30 days.
 
 Security logs record when our team connects to the database or reads a
 secret. They also keep any database query we run from Google Cloud's
@@ -244,6 +244,7 @@ the safeguards that apply.
 | Account choice at sign-in | Deleted within a day of expiring, 5 minutes after it starts |
 | Sessions | Deleted within a day of expiring, after 7 days without use or 30 days in total |
 | Audit log | Until the customer leaves |
+| IP addresses in the audit log | 1 year |
 | Agent reports | Until the customer leaves, or asks us to delete them |
 | Your record at WorkOS | Until the customer leaves, or you ask us to delete it |
 | Your record at WorkOS, if you have no account | Until you ask us to delete it |
