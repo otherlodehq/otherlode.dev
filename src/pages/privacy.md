@@ -220,7 +220,7 @@ it safe.
 | --- | --- | --- |
 | Google Cloud | Hosts the service, its database and backups | London, UK |
 | Google Cloud | Stores the security logs | London, UK |
-| Google Cloud | Stores request logs and our own logs | [LOG REGION] |
+| Google Cloud | Stores request logs and our own logs | London, UK |
 | WorkOS | Runs sign-in, single sign-on and directory sync | United States |
 | Cloudflare | Serves this website, runs our domain, and passes early access requests to Google Workspace | Worldwide |
 | Google Workspace | Hosts our mailbox and the spreadsheet of early access requests | Worldwide |
