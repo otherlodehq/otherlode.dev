@@ -1,0 +1,43 @@
+---
+/**
+ * A short excerpt of source code, one row per line, with an optional line
+ * number and a note at the right. A line that never ran is hatched in the
+ * signal colour. The excerpt scrolls sideways inside its own box on a
+ * narrow screen.
+ */
+
+export interface CodeLine {
+  /** The line number, or none for a note under the line above. */
+  n?: number;
+  code: string;
+  /** Text at the right, such as a hit count. */
+  note?: string;
+  /** Text at the right in the signal colour, such as "never true". */
+  verdict?: string;
+  /** Hatches the line, for code that never ran. */
+  dead?: boolean;
+  /** Shows the code in the muted colour, for a note rather than code. */
+  muted?: boolean;
+}
+
+interface Props {
+  lines: CodeLine[];
+}
+
+const { lines } = Astro.props;
+---
+
+<div class="code-lines">
+  <div class="code-lines-inner">
+    {
+      lines.map((line) => (
+        <div class:list={['code-line', { 'never-ran': line.dead }]}>
+          <span class="code-line-number">{line.n}</span>
+          <code class:list={{ 'text-muted-foreground': line.muted }}>{line.code}</code>
+          {/* One line, since a code line keeps its whitespace. */}
+          <span class:list={['code-line-note', { 'font-bold text-signal-text': line.verdict }]}>{line.verdict ?? line.note}</span>
+        </div>
+      ))
+    }
+  </div>
+</div>

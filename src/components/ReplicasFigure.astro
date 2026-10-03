@@ -1,0 +1,66 @@
+---
+/**
+ * Three replicas, each running a different set of methods, joined into one
+ * row for the whole service. The one method no replica ran is hatched in
+ * the signal colour.
+ */
+
+/** Which of the eight methods each replica ran, as 1 for ran and 0 for not. */
+const replicas = ['11010110', '10110101', '11100110'];
+
+const merged = Array.from({ length: 8 }, (_, i) => replicas.some((bits) => bits[i] === '1'));
+const rowTop = [16, 98, 180];
+---
+
+<svg class="diagram block h-auto w-full" viewBox="0 0 720 250" role="img" aria-labelledby="replicas-figure-title">
+  <title id="replicas-figure-title">Three replicas each ran a different set of methods. Together, one method never ran on any replica.</title>
+  <defs>
+    <pattern id="replicas-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect class="diagram-hatch-ground" width="7" height="7"></rect>
+      <rect class="diagram-hatch-line" width="2" height="7"></rect>
+    </pattern>
+    <marker id="replicas-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="diagram-arrow" d="M0 0 L8 4 L0 8 Z"></path>
+    </marker>
+  </defs>
+
+  <path class="diagram-edge" d="M276 44 C360 44 360 126 438 126" marker-end="url(#replicas-arrow)"></path>
+  <path class="diagram-edge" d="M276 126 H438" marker-end="url(#replicas-arrow)"></path>
+  <path class="diagram-edge" d="M276 208 C360 208 360 126 438 126" marker-end="url(#replicas-arrow)"></path>
+
+  {
+    replicas.map((bits, row) => (
+      <g>
+        <rect class="diagram-node" x="16" y={rowTop[row]} width="260" height="56" />
+        <text class="diagram-label" x="30" y={rowTop[row] + 33}>
+          replica {row + 1}
+        </text>
+        {[...bits].map((bit, i) => (
+          <rect
+            class:list={['diagram-cell', { 'diagram-cell-ran': bit === '1' }]}
+            x={124 + i * 18}
+            y={rowTop[row] + 18}
+            width="14"
+            height="20"
+          />
+        ))}
+      </g>
+    ))
+  }
+
+  <rect class="diagram-node" x="440" y="86" width="264" height="80"></rect>
+  <text class="diagram-label" x="454" y="112">all replicas</text>
+  {
+    merged.map((ran, i) => (
+      <rect
+        class:list={['diagram-cell', ran ? 'diagram-cell-ran' : 'diagram-cell-dead']}
+        fill={ran ? undefined : 'url(#replicas-hatch)'}
+        x={454 + i * 30}
+        y="124"
+        width="24"
+        height="28"
+      />
+    ))
+  }
+  <text class="diagram-label diagram-label-dead" x="704" y="192" text-anchor="end">never ran anywhere</text>
+</svg>

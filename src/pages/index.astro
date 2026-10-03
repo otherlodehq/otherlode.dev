@@ -1,98 +1,133 @@
 ---
 import Base from '../layouts/Base.astro';
+import CodeLines, { type CodeLine } from '../components/CodeLines.astro';
+import CodePathsFigure from '../components/CodePathsFigure.astro';
+import ReplicasFigure from '../components/ReplicasFigure.astro';
 import Ridge from '../components/Ridge.astro';
 import { agentRepo, contactEmail, earlyAccessHref, earlyAccessMailto } from '../lib/site';
 
-/**
- * One kind of finding, with optional examples from the agent's demo app.
- * Text in backticks in `body` renders as code.
- */
-interface Finding {
-  title: string;
-  body: string;
-  examples?: { code: string; verdict: string }[];
+/** One row of a short list, such as an endpoint and its call count. A row with a verdict never ran. */
+interface TallyRow {
+  code: string;
+  note?: string;
+  verdict?: string;
 }
 
-/** Splits text on backticks so the quoted parts can render as code. */
-function withCode(text: string): { text: string; code: boolean }[] {
-  return text.split('`').map((part, i) => ({ text: part, code: i % 2 === 1 }));
+/** One kind of finding, shown as a short list or as a few lines of code. */
+interface Finding {
+  title: string;
+  file?: string;
+  rows?: TallyRow[];
+  lines?: CodeLine[];
 }
 
 const findings: Finding[] = [
   {
     title: 'Endpoint never called',
-    body: "Routes no request has ever matched, in Spring MVC, Ktor, JAX-RS or the JDK's `HttpServer`.",
-    examples: [{ code: '/promo', verdict: 'never called' }],
+    rows: [
+      { code: 'POST /orders', note: '18,204 calls' },
+      { code: 'GET /orders/{id}', note: '52,911 calls' },
+      { code: 'POST /promo', verdict: 'never called' },
+    ],
   },
   {
     title: 'Method never hit',
-    body: "Methods no instance has run.",
-    examples: [{ code: 'constructor(pounds: Int, pence: Int)', verdict: 'unused overload' }],
+    file: 'RefundService.kt',
+    lines: [
+      { n: 40, code: 'fun refund(order: Order)', note: '1,204 hits' },
+      { n: 41, code: 'fun refund(order: Order, reason: String)', note: '318 hits' },
+      { n: 58, code: 'fun refundLegacy(order: Order)', verdict: 'never hit', dead: true },
+    ],
   },
   {
-    title: 'Branch outcome never taken',
-    body: "An `if` or `switch` outcome that has never happened, with the lines only it would reach.",
-    examples: [{ code: 'discounted > 100.0', verdict: 'was never true' }],
+    title: 'Branch never taken',
+    file: 'PricingService.kt',
+    lines: [
+      { n: 71, code: 'if (customer.isLegacy()) {', verdict: 'never true' },
+      { n: 72, code: '    total = legacyDiscount(total)', dead: true },
+      { n: 73, code: '}' },
+      { n: 74, code: 'return total', note: '18,204 hits' },
+    ],
   },
   {
-    title: 'Class never loaded, initialised or instantiated',
-    body: "Classes that never loaded, never initialised or never had an instance made.",
-    examples: [
-      { code: 'PromoRepository', verdict: 'never loaded' },
+    title: 'Class never used',
+    rows: [
+      { code: 'LegacyDiscount', verdict: 'never loaded' },
       { code: 'AuditLog', verdict: 'never initialised' },
       { code: 'ReceiptPrinter', verdict: 'never instantiated' },
     ],
   },
   {
-    title: 'Unreached cluster',
-    body: "Everything that only an untaken branch leads to, grouped so you can delete it in one go.",
-  },
-  {
-    title: 'Dependency never loaded or referenced',
-    body: "Jars that never loaded a class, or that your code never references.",
-  },
-  {
-    title: 'Default always or never used',
-    body: "Kotlin and Scala default parameters that no call overrides, or that every call does.",
+    title: 'Dependency never used',
+    rows: [
+      { code: 'jackson-module-kotlin 2.17.1', note: '212 of 380 classes' },
+      { code: 'kotlinx-coroutines-core 1.8.1', note: '96 of 1,140 classes' },
+      { code: 'commons-csv 1.10.0', verdict: 'never loaded' },
+    ],
   },
   {
     title: 'Called only by tests',
-    body: "Code only your tests run, and which tests run it.",
+    file: 'CartService.kt',
+    lines: [
+      { n: 88, code: 'fun recalculate(cart: Cart)', verdict: '0 hits in production', dead: true },
+      { code: '  run by CartTest.recalculatesTotals', muted: true },
+      { code: '  run by CartTest.handlesEmptyCart', muted: true },
+    ],
   },
+];
+
+const before: CodeLine[] = [
+  { n: 1, code: 'fun checkout(cart: Cart) {' },
+  { n: 2, code: '    if (flags.foo) {', verdict: 'never true', dead: true },
+  { n: 3, code: '        bar(cart)', dead: true },
+  { n: 4, code: '    }', dead: true },
+  { n: 5, code: '    charge(cart)', note: '18,204 hits' },
+  { n: 6, code: '}' },
+  { n: 7, code: '' },
+  { n: 8, code: 'fun bar(cart: Cart) = baz(cart)', verdict: 'only from line 3', dead: true },
+  { n: 9, code: '', dead: true },
+  { n: 10, code: 'fun baz(cart: Cart) {', verdict: 'only from line 8', dead: true },
+  { n: 11, code: '    ...', dead: true },
+  { n: 12, code: '}', dead: true },
+];
+
+const after: CodeLine[] = [
+  { n: 1, code: 'fun checkout(cart: Cart) {' },
+  { n: 2, code: '    charge(cart)' },
+  { n: 3, code: '}' },
 ];
 
 const security = [
   {
     title: 'Open source where it runs',
-    body: "The agent and collector are Apache 2.0.",
+    body: 'The agent and collector are Apache 2.0.',
   },
   {
     title: 'String literals stay home',
-    body: "The collector can blank out string literals in your conditions before reports leave your network.",
+    body: 'The collector can blank them out before reports leave your network.',
   },
   {
     title: 'Data in London',
-    body: "The database and backups live in Google Cloud's London region.",
+    body: "Database and backups in Google Cloud's London region.",
   },
   {
     title: 'Your sign-in',
-    body: "Google, Microsoft, GitHub, or your own SAML or OIDC single sign-on.",
+    body: 'Google, Microsoft, GitHub, or your own SAML or OIDC.',
   },
 ];
 ---
 
 <Base>
-  <section aria-labelledby="hero-title" class="relative">
-    <div class="mx-auto grid max-w-6xl grid-cols-1 gap-12 px-4 pt-12 pb-12 sm:px-6 sm:pt-16 lg:grid-cols-12 lg:gap-14 lg:pt-20 lg:pb-16">
-      <div class="lg:col-span-7">
+  <section aria-labelledby="hero-title">
+    <div class="mx-auto grid max-w-6xl grid-cols-1 gap-12 px-4 pt-12 pb-16 sm:px-6 sm:pt-16 lg:grid-cols-12 lg:gap-14 lg:pt-20 lg:pb-20">
+      <div class="lg:col-span-6 lg:self-center">
         <h1 id="hero-title" class="display text-[clamp(2.375rem,6vw,4.25rem)]">
           Traces find the motherlode. <span class="whitespace-nowrap">What about</span> the{' '}
           <span class="whitespace-nowrap"><span class="text-signal-text">other</span>lode?</span>
         </h1>
-        <p class="mt-6 max-w-[34rem] text-[1.1875rem] leading-relaxed">
-          <strong class="font-bold">Find the code that never runs in production.</strong>{' '}
-          Otherlode tracks what your Java, Kotlin and Scala services actually run, across every instance, and
-          shows you what never did.
+        <p class="mt-6 max-w-[32rem] text-[1.1875rem] leading-relaxed">
+          <strong class="font-bold">Find the code that never runs in production</strong>, across every instance of your
+          Java, Kotlin and Scala services.
         </p>
         <div class="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-5">
           <a href={earlyAccessHref} class="button">Ask for early access</a>
@@ -102,47 +137,26 @@ const security = [
         </div>
       </div>
 
-      <figure class="lg:col-span-5 lg:self-center">
-        <div class="box">
-          <div class="box-bar">
-            <span class="tag">Finding</span>
-            <code class="box-meta">DemoServerMain.kt:71</code>
-          </div>
-          <div class="px-4 pt-4 pb-5 text-[0.9375rem] leading-relaxed sm:px-5">
-            <p class="font-bold"><code class="text-[0.9375em]">handleCheckout</code></p>
-            <dl>
-              <div class="mt-3.5 border-t-2 border-muted pt-3">
-                <dt class="text-[0.8125rem] font-extrabold text-muted-foreground">Branch outcome never taken</dt>
-                <dd class="mt-1.5">
-                  <code class="bg-muted px-1.5 py-0.5 text-[0.8125rem] [overflow-wrap:anywhere] sm:text-[0.875rem]">System.getenv("ENABLE_LEGACY_DISCOUNT") == "true"</code>{' '}
-                  <span class="font-bold text-signal-text">was never true.</span>
-                </dd>
-              </div>
-              <div class="mt-3.5 border-t-2 border-muted pt-3">
-                <dt class="text-[0.8125rem] font-extrabold text-muted-foreground">Unreached code behind it</dt>
-                <dd class="mt-1.5">
-                  Only that outcome reaches <code class="text-[0.8125rem]">DemoServerMain.kt:72</code>, so it{' '}
-                  <span class="font-bold text-signal-text">never runs.</span>
-                </dd>
-              </div>
-              <div class="mt-3.5 border-t-2 border-muted pt-3">
-                <dt class="text-[0.8125rem] font-extrabold text-muted-foreground">Classes that go with it</dt>
-                <dd class="mt-1.5">
-                  <ul class="space-y-1">
-                    <li class="flex flex-wrap justify-between gap-x-4">
-                      <code class="text-[0.8125rem] sm:text-[0.875rem]">LegacyDiscountCalculator</code>
-                      <span class="font-bold text-signal-text">never loaded</span>
-                    </li>
-                    <li class="flex flex-wrap justify-between gap-x-4">
-                      <code class="text-[0.8125rem] sm:text-[0.875rem]">LegacyRates</code>
-                      <span class="font-bold text-signal-text">never loaded</span>
-                    </li>
-                  </ul>
-                </dd>
-              </div>
-            </dl>
-          </div>
+      <figure class="box lg:col-span-6 lg:self-center">
+        <div class="box-bar">
+          <span class="tag">checkout</span>
+          <span class="box-meta">6 replicas</span>
         </div>
+        <CodePathsFigure />
+      </figure>
+    </div>
+  </section>
+
+  <section aria-labelledby="replicas-title" class="relative border-t-2 border-ink">
+    <div class="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 px-4 pt-16 pb-12 sm:px-6 sm:pt-20 lg:grid-cols-[1fr_1.35fr] lg:gap-14">
+      <div>
+        <h2 id="replicas-title" class="display text-[clamp(2rem,4vw,3rem)]">Every replica, one answer.</h2>
+        <p class="mt-4 max-w-[28rem] text-muted-foreground">
+          Run the agent on every replica. Code only counts as never run when none of them ran it.
+        </p>
+      </div>
+      <figure class="box">
+        <ReplicasFigure />
       </figure>
     </div>
     <Ridge class="h-16 sm:h-24 lg:h-28" />
@@ -152,46 +166,57 @@ const security = [
     <div class="mx-auto max-w-6xl px-4 pt-6 pb-20 sm:px-6 sm:pb-24">
       <h2 id="finds-title" class="display text-[clamp(2rem,4vw,3rem)]">What it finds</h2>
 
-      <div class="box mt-8">
-        <div class="box-bar" aria-hidden="true"></div>
-        <table class="findings-table">
-          <thead>
-            <tr>
-              <th scope="col">Finding</th>
-              <th scope="col">What it means</th>
-              <th scope="col">Example</th>
-            </tr>
-          </thead>
-          <tbody>
-            {
-              findings.map((finding) => (
-                <tr>
-                  <th scope="row">{finding.title}</th>
-                  <td>
-                    {withCode(finding.body).map((part) => (part.code ? <code class="text-[0.9em]">{part.text}</code> : part.text))}
-                  </td>
-                  <td>
-                    {finding.examples && (
-                      <ul class="space-y-1">
-                        {finding.examples.map((example) => (
-                          <li>
-                            <code class="text-[0.875rem]">{example.code}</code>{' '}
-                            <span class="font-bold text-signal-text">{example.verdict}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </td>
-                </tr>
-              ))
-            }
-          </tbody>
-        </table>
+      <div class="mt-8 grid grid-cols-1 gap-7 lg:grid-cols-2">
+        {
+          findings.map((finding) => (
+            <div class="box min-w-0">
+              <div class="box-bar">
+                <h3 class="tag">{finding.title}</h3>
+                {finding.file && <code class="box-meta">{finding.file}</code>}
+              </div>
+              {finding.rows && (
+                <ul class="tally">
+                  {finding.rows.map((row) => (
+                    <li class:list={{ 'never-ran': row.verdict }}>
+                      <code>{row.code}</code>
+                      <span class:list={{ 'font-bold text-signal-text': row.verdict }}>{row.verdict ?? row.note}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {finding.lines && <CodeLines lines={finding.lines} />}
+            </div>
+          ))
+        }
       </div>
     </div>
   </section>
 
-  <section id="how" aria-labelledby="how-title" class="scroll-mt-4">
+  <section aria-labelledby="cut-title" class="border-t-2 border-ink">
+    <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+      <h2 id="cut-title" class="display text-[clamp(2rem,4vw,3rem)]">Delete it in one go.</h2>
+      <p class="mt-4 max-w-[34rem] text-muted-foreground">Everything behind a branch that never runs, grouped together.</p>
+
+      <div class="mt-8 grid grid-cols-1 items-start gap-7 lg:grid-cols-2">
+        <div class="box min-w-0">
+          <div class="box-bar">
+            <span class="tag">Before</span>
+            <code class="box-meta">Checkout.kt</code>
+          </div>
+          <CodeLines lines={before} />
+        </div>
+        <div class="box min-w-0">
+          <div class="box-bar">
+            <span class="tag">After</span>
+            <span class="box-meta">9 lines fewer</span>
+          </div>
+          <CodeLines lines={after} />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" aria-labelledby="how-title" class="scroll-mt-4 border-t-2 border-ink bg-muted">
     <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
       <h2 id="how-title" class="display text-[clamp(2rem,4vw,3rem)]">How it works</h2>
 
@@ -201,8 +226,7 @@ const security = [
           <div class="box">
             <div class="box-bar"><span class="tag">Agent</span><span class="box-meta">In your JVM</span></div>
             <p class="px-4 pt-4 pb-5 text-[0.9375rem] sm:px-5">
-              Counts which methods, endpoints, branches and classes run, on every instance. Attach it with{' '}
-              <code class="whitespace-nowrap text-[0.9em]">-javaagent</code>.
+              Counts what runs. Attach it with <code class="whitespace-nowrap text-[0.9em]">-javaagent</code>.
             </p>
           </div>
         </div>
@@ -216,9 +240,7 @@ const security = [
         <div class="flow-node col-start-3">
           <div class="box">
             <div class="box-bar"><span class="tag">Collector</span></div>
-            <p class="px-4 pt-4 pb-5 text-[0.9375rem] sm:px-5">
-              Gathers counts from every agent. Can blank out string literals before anything leaves your network.
-            </p>
+            <p class="px-4 pt-4 pb-5 text-[0.9375rem] sm:px-5">Gathers counts from every agent. Can blank out string literals.</p>
           </div>
         </div>
         <div class="flow-wire col-start-4">
@@ -231,7 +253,7 @@ const security = [
         <div class="flow-node col-start-5">
           <div class="box">
             <div class="box-bar"><span class="tag">Otherlode</span><span class="box-meta">Hosted</span></div>
-            <p class="px-4 pt-4 pb-5 text-[0.9375rem] sm:px-5">Merges every instance and shows you what never ran.</p>
+            <p class="px-4 pt-4 pb-5 text-[0.9375rem] sm:px-5">Merges every replica and shows what never ran.</p>
           </div>
         </div>
       </div>
@@ -256,8 +278,8 @@ const security = [
     </div>
   </section>
 
-  <section id="security" aria-labelledby="security-title" class="scroll-mt-4">
-    <div class="mx-auto max-w-6xl px-4 pb-20 sm:px-6 sm:pb-24">
+  <section id="security" aria-labelledby="security-title" class="scroll-mt-4 border-t-2 border-ink">
+    <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
       <h2 id="security-title" class="display text-[clamp(2rem,4vw,3rem)]">Security and hosting</h2>
       <div class="box mt-8">
         <div class="box-bar" aria-hidden="true"></div>

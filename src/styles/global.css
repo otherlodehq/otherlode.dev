@@ -401,6 +401,186 @@
     }
   }
 
+  /* Code that never ran is hatched in the signal colour, like OTHER in
+     the wordmark. */
+  .never-ran {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      color-mix(in oklab, var(--signal-text) 20%, transparent) 0 2px,
+      transparent 2px 7px
+    );
+  }
+
+  /* A short list in a finding's box, such as endpoints and their counts. */
+  .tally > li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.25rem 1rem;
+    border-bottom: 1px solid var(--hatch);
+    padding: 0.5rem 0.875rem;
+    font-size: 0.875rem;
+  }
+
+  .tally > li:last-child {
+    border-bottom: 0;
+  }
+
+  .tally code {
+    font-size: 0.8125rem;
+  }
+
+  /* A few lines of source code with line numbers and notes at the right.
+     It scrolls sideways in its own box on a narrow screen. */
+  .code-lines {
+    overflow-x: auto;
+    padding-block: 0.625rem;
+    font-size: 0.8125rem;
+    line-height: 1.85;
+  }
+
+  /* As wide as the longest line, so a hatched line stays hatched when
+     the excerpt scrolls. */
+  .code-lines-inner {
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .code-line {
+    display: grid;
+    grid-template-columns: 1.625rem minmax(max-content, 1fr) auto;
+    column-gap: 0.875rem;
+    padding-inline: 0.875rem;
+    white-space: pre;
+  }
+
+  .code-line-number {
+    font-family: var(--font-mono);
+    color: var(--muted-foreground);
+    text-align: right;
+  }
+
+  .code-line-note {
+    padding-left: 0.75rem;
+    text-align: right;
+  }
+
+  /* The hero's call graph and the replicas picture. Colours come from the
+     tokens, so both follow the dark theme. A hatched shape gets its fill
+     from its own fill attribute, which names its picture's pattern. */
+  .diagram text {
+    font-family: var(--font-mono);
+    font-variant-ligatures: none;
+  }
+
+  .diagram-node {
+    stroke: var(--ink);
+    stroke-width: 2;
+  }
+
+  .diagram-node:not(.diagram-node-dead) {
+    fill: var(--card);
+  }
+
+  .diagram-node-dead {
+    stroke: var(--signal-text);
+  }
+
+  .diagram-node-unloaded {
+    stroke-dasharray: 5 4;
+  }
+
+  .diagram-hatch-ground {
+    fill: var(--card);
+  }
+
+  .diagram-hatch-line {
+    fill: var(--signal-text);
+    opacity: 0.28;
+  }
+
+  .diagram-edge {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 2;
+  }
+
+  .diagram-edge-dead {
+    stroke: var(--signal-text);
+  }
+
+  .diagram-arrow {
+    fill: var(--ink);
+  }
+
+  .diagram-arrow-dead {
+    fill: var(--signal-text);
+  }
+
+  .diagram-name {
+    font-size: 13px;
+    font-weight: 600;
+    fill: var(--foreground);
+  }
+
+  .diagram-badge {
+    fill: var(--muted);
+  }
+
+  .diagram-badge-dead {
+    fill: var(--signal);
+  }
+
+  .diagram-badge-text {
+    font-size: 10.5px;
+    fill: var(--foreground);
+  }
+
+  .diagram-badge-text-dead {
+    font-weight: 700;
+    fill: var(--signal-foreground);
+  }
+
+  .diagram .diagram-legend,
+  .diagram .diagram-label {
+    font-family: var(--font-sans);
+  }
+
+  .diagram-legend {
+    font-size: 12.5px;
+    fill: var(--muted-foreground);
+  }
+
+  .diagram-label {
+    font-size: 14px;
+    font-weight: 700;
+    fill: var(--foreground);
+  }
+
+  .diagram-label-dead {
+    fill: var(--signal-text);
+  }
+
+  .diagram-cell {
+    stroke: var(--ring);
+    stroke-width: 1.5;
+  }
+
+  .diagram-cell:not(.diagram-cell-dead) {
+    fill: none;
+  }
+
+  .diagram-cell.diagram-cell-ran {
+    fill: var(--ink);
+    stroke: var(--ink);
+  }
+
+  .diagram-cell-dead {
+    stroke: var(--signal-text);
+    stroke-width: 2;
+  }
+
   /* How it works: three boxes joined by arrows, two of them inside a
      dashed outline for your network. Below 62rem they stack. */
   .flow {

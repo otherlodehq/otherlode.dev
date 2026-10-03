@@ -1,0 +1,108 @@
+---
+/**
+ * The hero's picture: a small call graph of a checkout service, drawn
+ * after the code paths graph in the product. Code that ran has a plain
+ * border and a count. Code that never ran is hatched in the signal colour.
+ */
+
+interface Node {
+  x: number;
+  y: number;
+  width: number;
+  name: string;
+  badge: string;
+  ran: boolean;
+  /** Draws a dashed border, for a class that never loaded. */
+  unloaded?: boolean;
+}
+
+interface Edge {
+  d: string;
+  ran: boolean;
+}
+
+const nodes: Node[] = [
+  { x: 16, y: 40, width: 160, name: 'POST /orders', badge: '18,204 calls', ran: true },
+  { x: 216, y: 40, width: 160, name: 'checkout', badge: '18,204 runs', ran: true },
+  { x: 420, y: 16, width: 180, name: 'charge', badge: '18,204 runs', ran: true },
+  { x: 420, y: 104, width: 180, name: 'applyLegacyDiscount', badge: 'never ran', ran: false },
+  { x: 16, y: 200, width: 160, name: 'POST /promo', badge: 'never called', ran: false },
+  { x: 216, y: 200, width: 160, name: 'redeemPromo', badge: 'never ran', ran: false },
+  { x: 420, y: 200, width: 180, name: 'PromoCodes', badge: 'never loaded', ran: false, unloaded: true },
+];
+
+const edges: Edge[] = [
+  { d: 'M176 66 H214', ran: true },
+  { d: 'M376 66 C398 66 398 42 418 42', ran: true },
+  { d: 'M376 66 C398 66 398 130 418 130', ran: false },
+  { d: 'M176 226 H214', ran: false },
+  { d: 'M376 226 H418', ran: false },
+];
+
+/** The badge's width for its text, at 10.5px JetBrains Mono. */
+function badgeWidth(text: string): number {
+  return Math.round(text.length * 6.3 + 12);
+}
+---
+
+<svg class="diagram block h-auto w-full" viewBox="0 0 616 310" role="img" aria-labelledby="code-paths-title">
+  <title id="code-paths-title">
+    POST /orders runs checkout, which runs charge. applyLegacyDiscount, also called from checkout, never ran. POST /promo
+    was never called, so redeemPromo never ran and PromoCodes never loaded.
+  </title>
+  <defs>
+    <pattern id="code-paths-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect class="diagram-hatch-ground" width="7" height="7"></rect>
+      <rect class="diagram-hatch-line" width="2" height="7"></rect>
+    </pattern>
+    <marker id="code-paths-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="diagram-arrow" d="M0 0 L8 4 L0 8 Z"></path>
+    </marker>
+    <marker id="code-paths-arrow-dead" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
+      <path class="diagram-arrow-dead" d="M0 0 L8 4 L0 8 Z"></path>
+    </marker>
+  </defs>
+
+  {
+    edges.map((edge) => (
+      <path
+        class:list={['diagram-edge', { 'diagram-edge-dead': !edge.ran }]}
+        d={edge.d}
+        marker-end={edge.ran ? 'url(#code-paths-arrow)' : 'url(#code-paths-arrow-dead)'}
+      />
+    ))
+  }
+
+  {
+    nodes.map((node) => (
+      <g>
+        <rect
+          class:list={['diagram-node', { 'diagram-node-dead': !node.ran, 'diagram-node-unloaded': node.unloaded }]}
+          fill={node.ran ? undefined : 'url(#code-paths-hatch)'}
+          x={node.x}
+          y={node.y}
+          width={node.width}
+          height="52"
+        />
+        <text class="diagram-name" x={node.x + 12} y={node.y + 21}>
+          {node.name}
+        </text>
+        <rect
+          class:list={['diagram-badge', { 'diagram-badge-dead': !node.ran }]}
+          x={node.x + 12}
+          y={node.y + 30}
+          width={badgeWidth(node.badge)}
+          height="16"
+        />
+        <text class:list={['diagram-badge-text', { 'diagram-badge-text-dead': !node.ran }]} x={node.x + 18} y={node.y + 42}>
+          {node.badge}
+        </text>
+      </g>
+    ))
+  }
+
+  <rect class="diagram-node" x="16" y="278" width="14" height="14"></rect>
+  <text class="diagram-legend" x="38" y="290">Ran</text>
+  <rect class="diagram-node diagram-node-dead" fill="url(#code-paths-hatch)" x="84" y="278" width="14" height="14"></rect>
+  <text class="diagram-legend" x="106" y="290">Never ran</text>
+</svg>
