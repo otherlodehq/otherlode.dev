@@ -788,4 +788,210 @@
     border-radius: 0.25rem;
     padding: 0.05em 0.3em;
   }
+
+  /* A code block in Markdown reads like the terminal on the homepage. */
+  .prose pre {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    border: 2px solid var(--ink);
+    background-color: var(--terminal);
+    color: var(--terminal-foreground);
+    padding: 1rem 1.125rem;
+    font-size: 0.84375rem;
+    line-height: 1.7;
+  }
+
+  .prose pre code {
+    background: none;
+    border-radius: 0;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  /* Prism's token classes. The CSP rules out Shiki, which colours tokens
+     with style= attributes. */
+  .prose pre .token.comment,
+  .prose pre .token.prolog {
+    color: var(--terminal-muted);
+  }
+
+  .prose pre .token.keyword,
+  .prose pre .token.builtin,
+  .prose pre .token.function {
+    color: var(--ground-signal-text);
+  }
+
+  .prose pre .token.string,
+  .prose pre .token.number,
+  .prose pre .token.boolean {
+    color: #E7C9A0;
+  }
+
+  /* The docs: a sidebar of pages, the page, and its headings on wide screens. */
+  .docs {
+    display: grid;
+    gap: 2.5rem;
+  }
+
+  @media (min-width: 48rem) {
+    .docs {
+      grid-template-columns: 14rem minmax(0, 1fr);
+    }
+  }
+
+  @media (min-width: 72rem) {
+    .docs {
+      grid-template-columns: 14rem minmax(0, 1fr) 12rem;
+    }
+  }
+
+  .docs-article {
+    min-width: 0;
+  }
+
+  /* On a phone the page comes first and the list of pages after it. */
+  @media (max-width: 47.99rem) {
+    .docs-sidebar {
+      order: 1;
+      border-top: 2px solid var(--ink);
+      padding-top: 2rem;
+    }
+  }
+
+  .docs-sidebar,
+  .docs-toc {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-self: start;
+    font-size: 0.9375rem;
+  }
+
+  .docs-toc {
+    display: none;
+    position: sticky;
+    top: 1.5rem;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  @media (min-width: 72rem) {
+    .docs-toc {
+      display: flex;
+    }
+  }
+
+  .docs-sidebar-heading {
+    margin-bottom: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  .docs-sidebar ul,
+  .docs-toc ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .docs-sidebar li a,
+  .docs-sidebar-home {
+    display: block;
+    border-left: 2px solid transparent;
+    padding: 0.1875rem 0.625rem;
+    text-decoration: none;
+  }
+
+  .docs-sidebar li a:hover,
+  .docs-sidebar-home:hover {
+    text-decoration: underline;
+  }
+
+  .docs-sidebar a[aria-current='page'] {
+    border-left-color: var(--signal);
+    background-color: var(--card);
+    font-weight: 600;
+  }
+
+  .docs-sidebar .field-input {
+    margin-top: 0;
+  }
+
+  .docs-toc a {
+    color: var(--muted-foreground);
+    text-decoration: none;
+  }
+
+  .docs-toc a:hover {
+    color: var(--foreground);
+    text-decoration: underline;
+  }
+
+  .docs-toc-sub {
+    padding-left: 0.75rem;
+  }
+
+  .docs-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--signal-text);
+  }
+
+  .prose .docs-eyebrow {
+    margin-bottom: 0.5rem;
+  }
+
+  .docs-page-footer {
+    margin-top: 3rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+    font-size: 0.9375rem;
+    color: var(--muted-foreground);
+  }
+
+  .docs-pager {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .docs-search-status {
+    color: var(--muted-foreground);
+  }
+
+  .prose .docs-search-form {
+    margin-bottom: 1rem;
+  }
+
+  .prose .docs-search-results {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .docs-search-results li + li {
+    margin-top: 1.25rem;
+  }
+
+  .docs-search-results a {
+    font-weight: 600;
+  }
+
+  .docs-search-results p {
+    margin: 0.25rem 0 0;
+    color: var(--muted-foreground);
+  }
+
+  .docs-search-results mark {
+    background-color: var(--muted);
+    color: var(--foreground);
+    font-weight: 600;
+  }
 }

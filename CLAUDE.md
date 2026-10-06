@@ -27,3 +27,17 @@ fails on inline ones.
 Write the privacy policy in plain English with short sentences. Change it
 only to keep it factually accurate. Copy and style passes over the site
 leave it alone, since every sentence there is a commitment.
+
+## Docs
+
+The docs at `/docs` come from four places. `src/content/docs/start/` is
+written here. `agent/`, `collector/` and `server/` are copies of each
+source repo's `docs/site/`, made by `scripts/sync-docs.sh`. Edit those
+pages in their source repo, never here, or the next sync undoes it.
+
+## Decisions
+
+Each decision's reasoning, rejected options and consequences live in its
+ADR under `docs/adr/`; a new decision gets a new ADR plus a line here.
+
+- [0001](docs/adr/0001-the-docs-are-written-beside-the-code-and-published-here.md): Each repo writes its customer docs in `docs/site/`; a release or deploy opens a pull request that copies them to `/docs` here; the site's own layout and Pagefind, not Starlight; no inline scripts, with `'wasm-unsafe-eval'` added for Pagefind.

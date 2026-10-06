@@ -1,7 +1,8 @@
 # otherlode.dev
 
 The marketing site for Otherlode, at https://otherlode.dev. It is a static
-Astro site styled with Tailwind CSS. It ships no client JavaScript.
+Astro site styled with Tailwind CSS. No page has an inline script. The
+only client JavaScript is the docs search, served as a file.
 
 ## Run it
 
@@ -16,7 +17,9 @@ npm run test      # the Worker's tests (vitest)
 npm run verify    # astro check, the tests, then the build
 ```
 
-`npm run build` runs `astro build` and then `scripts/check-csp.mjs`, so a
+`npm run build` runs `astro build`, then `scripts/index-docs.mjs`, which
+builds the docs search index (see [Docs](#docs)), then
+`scripts/check-csp.mjs`, so a
 build that breaks the CSP fails, on Cloudflare's build too. The check parses
 every page in `dist/` and fails on:
 
@@ -45,6 +48,7 @@ existing `dist/`.
 - `public/_headers`: the security headers Cloudflare sends, including the Content-Security-Policy.
 - `wrangler.jsonc`: the Cloudflare Worker that serves `dist/` and runs `worker/` for `/contact` only.
 - `worker/`: the code behind the early access form. `contact.ts` checks a request and passes it on; `index.ts` sends `/contact` to it and everything else to the static files.
+- `src/content/docs/`, `src/layouts/Docs.astro`, `src/pages/docs/` and `src/lib/docs.ts`: the docs. See [Docs](#docs).
 - `apps-script/contact.gs`: the Google Apps Script that receives each request, adds it to a sheet and emails `hello@otherlode.dev`. It is pasted into Google, not deployed from here.
 
 ## Deploy
@@ -75,7 +79,7 @@ and not in the dashboard:
 
 - **Email Address Obfuscation** (Scrape Shield). It injects a script from
   `/cdn-cgi/` and rewrites `mailto:` links. The script is same-origin, so
-  the CSP allows it, and the site would no longer ship without scripts.
+  the CSP allows it, and nobody here reviewed it.
 - **Bot Fight Mode** (Security, Bots). It sets a `__cf_bm` cookie.
 - **Web Analytics** on the Worker, and **Rocket Loader**. Both
   inject scripts, and Web Analytics loads one from
@@ -87,8 +91,8 @@ loads nothing from other sites, so any of these would make it false.
 ### Check after each deploy
 
 Fetch the live pages as a browser would and look for a cookie or any
-script. The site ships no `<script>` tag at all, so any match was added on
-the way out. This should print nothing:
+script. These pages ship no `<script>` tag at all, so any match was added
+on the way out. This should print nothing:
 
 ```sh
 ua='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36'
@@ -205,9 +209,78 @@ update the privacy policy in the same commit.
 
 ## Docs
 
-Product docs will live in this repo at `/docs`, built with Starlight. It
-gets installed when the first docs page is written, not before. Starlight
-needs CSP work first: its theme switcher runs an inline script and its
-search (Pagefind) loads scripts and WebAssembly. Both need changes to the
-CSP in `public/_headers` and to `scripts/check-csp.mjs`, made on purpose
-in the same commit.
+The product docs are served at `/docs`. Each section is one folder under
+`src/content/docs/`, and `src/lib/docs.ts` lists the sections in sidebar
+order:
+
+| Section | Folder | Written in |
+|---|---|---|
+| Start | `start/` | this repo |
+| Agent | `agent/` | `otherlode-agent`, `docs/site/` |
+| Collector | `collector/` | `otherlode-collector`, `docs/site/` |
+| Findings and accounts | `server/` | `otherlode-server`, `docs/site/` |
+
+Only `start/` is edited here. The other three are copies, so a change
+goes in the source repo, in the same pull request as the code it
+describes. ADR 0001 has the reasons.
+
+### A page
+
+A page is a Markdown file with this frontmatter:
+
+```md
+---
+title: Attach the agent
+description: Add the agent to a JVM and point it at a collector.
+order: 10
+---
+```
+
+`title` becomes the page's `h1`, so the Markdown starts at `##`.
+`order` sorts the pages within a section, lowest first, then by title.
+The file's path gives its URL: `agent/attach.md` is `/docs/agent/attach`.
+A file whose name starts with `_` is not a page.
+
+`/docs` and `/docs/search`, and the header's Docs link, appear only once
+there is at least one page. Until then the build warns that the `docs`
+collection is empty, which is expected.
+
+Code blocks are coloured by Prism, which marks tokens with classes.
+Astro's default, Shiki, writes a `style=` attribute on every token,
+which the CSP blocks.
+
+### Search
+
+`scripts/index-docs.mjs` runs Pagefind over the built `/docs` pages
+after `astro build`. It indexes only the part of each page marked
+`data-pagefind-body`, and removes the search UIs Pagefind also writes,
+since their CSS has `data:` URLs. `/docs/search` loads the index with
+`src/scripts/docs-search.ts`, which Astro bundles into a file.
+
+Pagefind runs as WebAssembly, so `script-src` in `public/_headers`
+carries `'wasm-unsafe-eval'`. That lets the browser compile WebAssembly.
+It does not allow `eval` or inline scripts.
+
+`astro dev` has no index, so search works only on a build:
+`npm run build && npm run preview`.
+
+### How a source repo's pages get here
+
+`scripts/sync-docs.sh` copies a source repo's `docs/site/` folder over
+its section's folder, leaving out `README.md`, and opens a pull request
+on this repo from the branch `docs-sync/<section>`, or updates the one
+already open. A merged pull request deploys like any other change.
+
+The source repos run it once their code has shipped:
+
+- `otherlode-agent` and `otherlode-collector`: the `docs` job in
+  `release.yml`, after the GitHub release for a `v*.*.*` tag. An agent
+  release can stop at a draft until its Central Portal deployment is
+  published, so merge the pull request once the release is out.
+- `otherlode-server`: the `docs` job in `ci.yml`, after a deploy to
+  production.
+
+Each job needs the repository secret `OTHERLODE_DEV_DOCS_TOKEN`: a
+fine-grained token, or a GitHub App token, with contents and pull
+request write access to `otherlodehq/otherlode.dev` and nothing else.
+Without it the job logs a notice and does nothing.

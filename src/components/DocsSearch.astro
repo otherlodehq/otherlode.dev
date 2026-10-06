@@ -1,0 +1,17 @@
+---
+/**
+ * The search box and results on /docs/search. src/scripts/docs-search.ts
+ * runs the query against the Pagefind index that `npm run build` writes to
+ * dist/pagefind/. Astro bundles the script into a file, which the CSP
+ * allows.
+ */
+---
+
+<form method="get" role="search" class="docs-search-form">
+  <label for="docs-search" class="field-label">Search for</label>
+  <input id="docs-search" name="q" type="search" class="field-input" />
+</form>
+<p id="docs-search-status" class="docs-search-status" aria-live="polite"></p>
+<ol id="docs-search-results" class="docs-search-results"></ol>
+
+<script src="../scripts/docs-search.ts"></script>

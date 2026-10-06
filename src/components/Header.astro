@@ -1,6 +1,10 @@
 ---
 import Wordmark from './Wordmark.astro';
 import { earlyAccessHref } from '../lib/site';
+import { docsGroups, docsHref } from '../lib/docs';
+
+// /docs is built only once it has a page, so the link waits for one too.
+const hasDocs = (await docsGroups()).length > 0;
 ---
 
 <header class="border-b-2 border-ink">
@@ -14,6 +18,7 @@ import { earlyAccessHref } from '../lib/site';
         <li class="hidden sm:block"><a href="/#finds" class="no-underline hover:underline">What it finds</a></li>
         <li class="hidden sm:block"><a href="/#how" class="no-underline hover:underline">How it works</a></li>
         <li class="hidden md:block"><a href="/#security" class="no-underline hover:underline">Security</a></li>
+        {hasDocs && <li><a href={docsHref} class="no-underline hover:underline">Docs</a></li>}
         <li><a href={earlyAccessHref} class="button button-small whitespace-nowrap text-[0.9375rem]">Early access</a></li>
       </ul>
     </nav>

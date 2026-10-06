@@ -1,0 +1,72 @@
+---
+import type { MarkdownHeading } from 'astro';
+import Base from './Base.astro';
+import { docsHref, docsPageHref, docsSearchHref, type DocsGroup, type DocsPage } from '../lib/docs';
+
+/** Props for any page under /docs. */
+interface Props {
+  title: string;
+  description: string;
+  /** The sidebar's sections and pages. */
+  groups: DocsGroup[];
+  /** The page being shown, which the sidebar marks. Absent on the docs home and search. */
+  current?: DocsPage;
+  /** The page's h2 and h3 headings, listed beside it on wide screens. */
+  headings?: MarkdownHeading[];
+  /** Set false for a page search engines should skip. */
+  index?: boolean;
+}
+
+const { title, description, groups, current, headings = [], index = true } = Astro.props;
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+<Base title={title} description={description} index={index}>
+  <div class="docs mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+    <nav class="docs-sidebar" aria-label="Docs">
+      <form action={docsSearchHref} method="get" role="search" class="docs-search-form">
+        <label for="docs-search-sidebar" class="sr-only">Search the docs</label>
+        <input id="docs-search-sidebar" name="q" type="search" placeholder="Search the docs" class="field-input" />
+      </form>
+      <a href={docsHref} class="docs-sidebar-home">Docs home</a>
+      {
+        groups.map(({ section, pages }) => (
+          <div>
+            <h2 class="docs-sidebar-heading">{section.title}</h2>
+            <ul>
+              {pages.map((page) => (
+                <li>
+                  <a
+                    href={docsPageHref(page)}
+                    aria-current={page.id === current?.id ? 'page' : undefined}
+                  >
+                    {page.data.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </nav>
+
+    <article class="docs-article prose" data-pagefind-body={current ? '' : undefined}>
+      <slot />
+    </article>
+
+    {
+      toc.length > 0 && (
+        <nav class="docs-toc" aria-label="On this page">
+          <h2 class="docs-sidebar-heading">On this page</h2>
+          <ul>
+            {toc.map((h) => (
+              <li class:list={[{ 'docs-toc-sub': h.depth === 3 }]}>
+                <a href={`#${h.slug}`}>{h.text}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )
+    }
+  </div>
+</Base>

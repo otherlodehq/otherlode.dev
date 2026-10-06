@@ -1,0 +1,108 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { render } from 'astro:content';
+import DocsSearch from '../../components/DocsSearch.astro';
+import Docs from '../../layouts/Docs.astro';
+import {
+  docsGroups,
+  docsPageHref,
+  readingOrder,
+  sectionOf,
+  sourceOf,
+  type DocsGroup,
+  type DocsPage,
+} from '../../lib/docs';
+
+/**
+ * Builds the docs home, the search page and one page per docs entry. With
+ * no entries it builds nothing, so /docs does not exist until it has
+ * something to show.
+ */
+export const getStaticPaths = (async () => {
+  const groups = await docsGroups();
+  const pages = readingOrder(groups);
+  if (pages.length === 0) return [];
+
+  return [
+    { params: { slug: undefined }, props: { kind: 'home' as const, groups } },
+    { params: { slug: 'search' }, props: { kind: 'search' as const, groups } },
+    ...pages.map((page, i) => ({
+      params: { slug: page.id },
+      props: { kind: 'page' as const, groups, page, previous: pages[i - 1], next: pages[i + 1] },
+    })),
+  ];
+}) satisfies GetStaticPaths;
+
+type Props =
+  | { kind: 'home' | 'search'; groups: DocsGroup[] }
+  | { kind: 'page'; groups: DocsGroup[]; page: DocsPage; previous?: DocsPage; next?: DocsPage };
+
+const props = Astro.props as Props;
+const rendered = props.kind === 'page' ? await render(props.page) : undefined;
+---
+
+{
+  props.kind === 'home' && (
+    <Docs
+      title="Docs"
+      description="How to set up the Otherlode agent and collector, and how to read what Otherlode finds."
+      groups={props.groups}
+    >
+      <h1>Docs</h1>
+      {props.groups.map(({ section, pages }) => (
+        <>
+          <h2>{section.title}</h2>
+          <ul>
+            {pages.map((page) => (
+              <li>
+                <a href={docsPageHref(page)}>{page.data.title}</a>: {page.data.description}
+              </li>
+            ))}
+          </ul>
+        </>
+      ))}
+    </Docs>
+  )
+}
+
+{
+  props.kind === 'search' && (
+    <Docs title="Search the docs" description="Search the Otherlode docs." groups={props.groups} index={false}>
+      <h1>Search the docs</h1>
+      <DocsSearch />
+    </Docs>
+  )
+}
+
+{
+  props.kind === 'page' && rendered && (
+    <Docs
+      title={props.page.data.title}
+      description={props.page.data.description}
+      groups={props.groups}
+      current={props.page}
+      headings={rendered.headings}
+    >
+      <p class="docs-eyebrow" data-pagefind-ignore>{sectionOf(props.page).title}</p>
+      <h1>{props.page.data.title}</h1>
+      <rendered.Content />
+      <footer class="docs-page-footer" data-pagefind-ignore>
+        <p>
+          Source: <code>{sourceOf(props.page)}</code>
+        </p>
+        <nav aria-label="Previous and next page" class="docs-pager">
+          {props.previous && (
+            <a href={docsPageHref(props.previous)} rel="prev">
+              Previous: {props.previous.data.title}
+            </a>
+          )}
+          {props.next && (
+            <a href={docsPageHref(props.next)} rel="next">
+              Next: {props.next.data.title}
+            </a>
+          )}
+        </nav>
+      </footer>
+    </Docs>
+  )
+}

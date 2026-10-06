@@ -24,6 +24,10 @@ export default defineConfig({
     }),
   ],
   markdown: {
+    // Shiki writes each token's colour into a style= attribute, which the
+    // CSP blocks. Prism marks tokens with classes, and global.css colours
+    // them.
+    syntaxHighlight: 'prism',
     rehypePlugins: [rehypeTableScroll],
   },
   vite: {
