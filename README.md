@@ -79,7 +79,7 @@ and not in the dashboard:
 
 - **Email Address Obfuscation** (Scrape Shield). It injects a script from
   `/cdn-cgi/` and rewrites `mailto:` links. The script is same-origin, so
-  the CSP allows it, and nobody here reviewed it.
+  the CSP allows it, but it is code we did not write.
 - **Bot Fight Mode** (Security, Bots). It sets a `__cf_bm` cookie.
 - **Web Analytics** on the Worker, and **Rocket Loader**. Both
   inject scripts, and Web Analytics loads one from

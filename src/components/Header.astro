@@ -3,7 +3,7 @@ import Wordmark from './Wordmark.astro';
 import { earlyAccessHref } from '../lib/site';
 import { docsGroups, docsHref } from '../lib/docs';
 
-// /docs is built only once it has a page, so the link waits for one too.
+// /docs is built only once it has a page, so the link is shown only then.
 const hasDocs = (await docsGroups()).length > 0;
 ---
 

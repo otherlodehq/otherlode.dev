@@ -789,7 +789,7 @@
     padding: 0.05em 0.3em;
   }
 
-  /* A code block in Markdown reads like the terminal on the homepage. */
+  /* A code block in Markdown looks like the terminal on the homepage. */
   .prose pre {
     margin: 1.5rem 0;
     overflow-x: auto;

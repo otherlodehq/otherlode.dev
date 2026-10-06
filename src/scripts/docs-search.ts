@@ -1,8 +1,8 @@
 /**
  * Searches the docs with Pagefind and lists what it finds. The query comes
  * from `?q=`, so the sidebar's search box and this page's own form both
- * work as plain GET forms. Results are built with DOM calls, never
- * innerHTML.
+ * work as plain GET forms. The results are built with DOM calls and never
+ * with innerHTML.
  */
 
 interface PagefindResultData {
@@ -18,7 +18,7 @@ interface Pagefind {
 /** How many results the page shows. */
 const MAX_RESULTS = 20;
 
-/** The index is written after astro build, so its path must stay out of Vite's hands. */
+/** The build writes the index after astro build, so Vite must not try to resolve this path. */
 const PAGEFIND_PATH = '/pagefind/pagefind.js';
 
 const form = document.querySelector<HTMLFormElement>('.docs-article form[role="search"]');
