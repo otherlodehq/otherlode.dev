@@ -172,8 +172,13 @@ const page =
       <page.rendered.Content />
       <footer class="docs-page-footer" data-pagefind-ignore>
         <p>
-          Source: <code>{sourceOf(props.doc)}</code>
-          {props.doc.version && <> at {props.doc.version}</>}
+          Edit this page in <code>{sourceOf(props.doc)}</code>.
+          {props.doc.version && (
+            <>
+              {' '}
+              It was copied from {props.doc.section.source.repo} {props.doc.version}.
+            </>
+          )}
         </p>
         <nav aria-label="Previous and next page" class="docs-pager">
           {page.previous && (

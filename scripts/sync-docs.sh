@@ -2,10 +2,10 @@
 # Copies one source repo's docs/site/ folder into this repo's docs and opens
 # a pull request with the change, or updates the one already open. For agent
 # and collector the folder goes to src/content/docs/<section>/<version>/,
-# beside the earlier releases, which it never touches. Running it again for
-# the same version replaces that version's folder. Run it by hand with
-# the fixed docs/site/ to fix a released version's docs. For server it
-# replaces src/content/docs/server/.
+# beside the earlier releases. Once a release's folder is on master it is
+# edited here like any other file, so this never replaces it: a re-run of
+# a release's job would undo the fixes. For server it replaces
+# src/content/docs/server/.
 #
 # The source repos' release and deploy workflows run it from a checkout of
 # this repo, so a page reaches the site only once its code has shipped and
@@ -66,6 +66,12 @@ source_dir=$(cd "$source_dir" && pwd)
 cd "$(dirname "$0")/.."
 
 git fetch --quiet origin master
+
+if [ "$section" != server ] && [ -n "$(git ls-tree origin/master -- "$target")" ]; then
+  echo "sync-docs: $target is already on master; edit it there. Delete it in a pull request first to copy it again."
+  exit 0
+fi
+
 git checkout --quiet -B "$branch" origin/master
 
 # The target folder is replaced whole, so a page deleted at the source is

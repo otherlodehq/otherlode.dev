@@ -220,9 +220,20 @@ order:
 | Collector | `collector/<version>/` | `otherlode-collector`, `docs/site/` | one folder per release |
 | Findings and accounts | `server/` | `otherlode-server`, `docs/site/` | none |
 
-Only `start/` is edited here. The other three are copies, so a change
-goes in the source repo, in the same pull request as the code it
-describes. ADR 0001 has the reasons.
+Where to edit a page:
+
+- `start/`: here.
+- `server/`: in `otherlode-server`, in the same pull request as the code
+  it describes. The next sync replaces the folder here.
+- A release folder, such as `agent/v0.1.0/`: here, in its folder, when
+  it is wrong about that release. Its only job is to describe that
+  release's code, so a fix is a normal pull request to this repo. If the
+  same mistake is in the source repo's `docs/site/`, fix it there too,
+  or the next release copies it again.
+- What the next release says: in `otherlode-agent` or
+  `otherlode-collector`, in the same pull request as the code.
+
+ADRs 0001 and 0002 have the reasons.
 
 ### Versions
 
@@ -296,18 +307,12 @@ It does not allow `eval` or inline scripts.
 leaving out `README.md`, and opens a pull request on this repo, or
 updates the one already open. For the agent and collector it writes
 `<section>/<version>/` from the branch `docs-sync/<section>-<version>`
-and never touches another release's folder. Running it again for the
-same version replaces that folder. To fix a released version's docs,
-run it by hand for that version with a checkout of the fixed
-`docs/site/`, for example from the source repo's master:
-
-```sh
-GH_TOKEN=<token> scripts/sync-docs.sh agent ../otherlode-agent/docs/site "otherlode-agent v0.2.0 docs fix" v0.2.0
-```
-
-A re-run of the release's `docs` job copies the tag's own docs again,
-since a tag never moves, so it cannot carry a fix. For the server the
-script replaces `server/` from the branch `docs-sync/server`. A merged pull request deploys like any other change.
+and never touches another release's folder. Once a release's folder is
+on master, the script does nothing for that release, so a re-run of a
+release's job cannot undo a fix made here. To copy a release again,
+delete its folder in a pull request first. For the server the script
+replaces `server/` from the branch `docs-sync/server`. A merged pull
+request deploys like any other change.
 
 The source repos run it once their code has shipped:
 

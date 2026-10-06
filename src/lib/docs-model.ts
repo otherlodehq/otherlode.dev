@@ -146,12 +146,18 @@ export function changeAnchor(version: string, slug: string): string {
   return `${version}-${slug.replaceAll('/', '-')}`;
 }
 
-/** Returns where a page's Markdown lives, such as `otherlode-agent/docs/site/attach.md`. */
+/**
+ * Returns the file to edit to change a page. A release's page is edited in
+ * this repo, in its release folder, such as
+ * `otherlode.dev/src/content/docs/agent/v0.1.0/attach.md`. Any other page
+ * is edited where it is written, such as
+ * `otherlode-server/docs/site/findings.md`.
+ */
 export function sourceOf(doc: Doc): string {
+  const file = `${doc.slug}.md`;
+  if (doc.version) return `otherlode.dev/src/content/docs/${doc.section.id}/${doc.version}/${file}`;
   const { repo, path } = doc.section.source;
-  const file = doc.entry.filePath?.split('/').slice(-1)[0] ?? `${doc.slug.split('/').slice(-1)[0]}.md`;
-  const dir = doc.slug.split('/').slice(0, -1).join('/');
-  return `${repo}/${path}/${dir ? `${dir}/` : ''}${file}`;
+  return `${repo}/${path}/${file}`;
 }
 
 /** Returns the text the changes page compares: the title and the Markdown body. */

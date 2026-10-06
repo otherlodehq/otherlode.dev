@@ -31,10 +31,14 @@ leave it alone, since every sentence there is a commitment.
 ## Docs
 
 The docs at `/docs` come from four places. `src/content/docs/start/` is
-written here. `agent/`, `collector/` and `server/` are copies of each
-source repo's `docs/site/`, made by `scripts/sync-docs.sh`. Edit those
-pages in their source repo, never here, or the next sync undoes it. `agent/` and `collector/` hold one folder
-per release; never edit an older release's folder by hand.
+written here. `agent/`, `collector/` and `server/` are copied from each
+source repo's `docs/site/` by `scripts/sync-docs.sh`. Edit `server/` in
+its source repo, since the next sync replaces it. `agent/` and
+`collector/` hold one folder per release. Fix a release's folder here
+when it is wrong about that release, since its job is to describe that
+release's code; the sync never replaces a release already on master. Put
+the same fix in the source repo's `docs/site/` when it still applies, or
+the next release copies the mistake again.
 
 ## Decisions
 
@@ -42,4 +46,4 @@ Each decision's reasoning, rejected options and consequences live in its
 ADR under `docs/adr/`; a new decision gets a new ADR plus a line here.
 
 - [0001](docs/adr/0001-the-docs-are-written-beside-the-code-and-published-here.md): Each repo writes its customer docs in `docs/site/`; a release or deploy opens a pull request that copies them to `/docs` here; the site's own layout and Pagefind, not Starlight; no inline scripts, with `'wasm-unsafe-eval'` added for Pagefind.
-- [0002](docs/adr/0002-agent-and-collector-docs-are-kept-per-release.md): Agent and collector docs keep a folder per release; the latest reads without a version and every release with one; a release menu, a "changed in" line and a changes page with line diffs against the previous release; start and server docs have no versions.
+- [0002](docs/adr/0002-agent-and-collector-docs-are-kept-per-release.md): Agent and collector docs keep a folder per release, fixed here when wrong about that release and never replaced by a later sync; the latest reads without a version and every release with one; a release menu, a "changed in" line and a changes page with line diffs against the previous release; start and server docs have no versions.

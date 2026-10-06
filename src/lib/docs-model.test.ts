@@ -6,6 +6,7 @@ import {
   docHref,
   lastChange,
   releaseChanges,
+  sourceOf,
   versionedHref,
   type DocsEntry,
   type DocsSection,
@@ -48,6 +49,14 @@ describe('buildDocs', () => {
 
   it('refuses a page outside every section', () => {
     expect(() => buildDocs([entry('other/page')], sections)).toThrow(/not a section/);
+  });
+});
+
+describe('sourceOf', () => {
+  it('points a release page at its folder here and any other page at its source repo', () => {
+    const all = buildDocs([entry('agent/v0.1.0/guides/attach'), entry('start/how-it-works')], sections);
+    expect(sourceOf(all[1].versions[0].docs[0])).toBe('otherlode.dev/src/content/docs/agent/v0.1.0/guides/attach.md');
+    expect(sourceOf(all[0].versions[0].docs[0])).toBe('otherlode.dev/src/content/docs/start/how-it-works.md');
   });
 });
 
