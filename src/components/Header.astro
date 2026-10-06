@@ -1,10 +1,10 @@
 ---
 import Wordmark from './Wordmark.astro';
 import { earlyAccessHref } from '../lib/site';
-import { docsGroups, docsHref } from '../lib/docs';
+import { docsHref, loadDocs } from '../lib/docs';
 
 // /docs is built only once it has a page, so the link is shown only then.
-const hasDocs = (await docsGroups()).length > 0;
+const hasDocs = (await loadDocs()).length > 0;
 ---
 
 <header class="border-b-2 border-ink">

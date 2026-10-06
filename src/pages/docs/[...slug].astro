@@ -1,44 +1,91 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import { render } from 'astro:content';
+import DocsChanges from '../../components/DocsChanges.astro';
 import DocsSearch from '../../components/DocsSearch.astro';
+import DocsVersionMenu from '../../components/DocsVersionMenu.astro';
 import Docs from '../../layouts/Docs.astro';
 import {
-  docsGroups,
-  docsPageHref,
+  changesHref,
+  docsHref,
+  latestHref,
+  loadDocs,
   readingOrder,
-  sectionOf,
+  sidebarFor,
   sourceOf,
-  type DocsGroup,
-  type DocsPage,
+  versionedHref,
+  type DocsDoc,
+  type DocsSectionDocs,
 } from '../../lib/docs';
 
 /**
- * Builds the docs home, the search page and one page per docs entry. With
- * no entries it builds nothing, so /docs does not exist until it has
- * something to show.
+ * Builds the docs home, the search page, each section's changes page and
+ * every docs page. A page at a section's latest version, or in a section
+ * without versions, is built at `/docs/<section>/<slug>`. In a section with
+ * versions, every release's pages are also built at
+ * `/docs/<section>/<version>/<slug>`, so a link to one release keeps
+ * working after the next. With no pages it builds nothing, so /docs does
+ * not exist until it has something to show.
  */
 export const getStaticPaths = (async () => {
-  const groups = await docsGroups();
-  const pages = readingOrder(groups);
-  if (pages.length === 0) return [];
+  const all = await loadDocs();
+  if (all.length === 0) return [];
+  const param = (href: string) => href.slice(docsHref.length + 1);
 
   return [
-    { params: { slug: undefined }, props: { kind: 'home' as const, groups } },
-    { params: { slug: 'search' }, props: { kind: 'search' as const, groups } },
-    ...pages.map((page, i) => ({
-      params: { slug: page.id },
-      props: { kind: 'page' as const, groups, page, previous: pages[i - 1], next: pages[i + 1] },
-    })),
+    { params: { slug: undefined }, props: { kind: 'home' as const, all } },
+    { params: { slug: 'search' }, props: { kind: 'search' as const, all } },
+    ...all.flatMap((sectionDocs) => [
+      ...sectionDocs.versions[0].docs.map((doc) => ({
+        params: { slug: param(latestHref(doc)) },
+        props: { kind: 'page' as const, all, sectionDocs, doc, pinned: false },
+      })),
+      ...(sectionDocs.section.versioned
+        ? sectionDocs.versions.flatMap((release) =>
+            release.docs.map((doc) => ({
+              params: { slug: param(versionedHref(doc)) },
+              props: { kind: 'page' as const, all, sectionDocs, doc, pinned: true },
+            })),
+          )
+        : []),
+      ...(sectionDocs.versions.length > 1
+        ? [
+            {
+              params: { slug: param(changesHref(sectionDocs.section)) },
+              props: { kind: 'changes' as const, all, sectionDocs },
+            },
+          ]
+        : []),
+    ]),
   ];
 }) satisfies GetStaticPaths;
 
 type Props =
-  | { kind: 'home' | 'search'; groups: DocsGroup[] }
-  | { kind: 'page'; groups: DocsGroup[]; page: DocsPage; previous?: DocsPage; next?: DocsPage };
+  | { kind: 'home' | 'search'; all: DocsSectionDocs[] }
+  | { kind: 'changes'; all: DocsSectionDocs[]; sectionDocs: DocsSectionDocs }
+  | { kind: 'page'; all: DocsSectionDocs[]; sectionDocs: DocsSectionDocs; doc: DocsDoc; pinned: boolean };
 
 const props = Astro.props as Props;
-const rendered = props.kind === 'page' ? await render(props.page) : undefined;
+const latestSidebar = sidebarFor(props.all);
+
+const page =
+  props.kind === 'page'
+    ? await (async () => {
+        const { sectionDocs, doc, pinned } = props;
+        const sidebar = pinned ? sidebarFor(props.all, { sectionDocs, version: doc.version! }) : latestSidebar;
+        const href = pinned ? versionedHref(doc) : latestHref(doc);
+        const order = readingOrder(sidebar);
+        const at = order.findIndex((item) => item.href === href);
+        return {
+          sidebar,
+          href,
+          previous: order[at - 1],
+          next: order[at + 1],
+          rendered: await render(doc.entry),
+          title: pinned ? `${doc.entry.data.title} (${doc.section.title} ${doc.version})` : doc.entry.data.title,
+        };
+      })()
+    : undefined;
 ---
 
 {
@@ -46,16 +93,21 @@ const rendered = props.kind === 'page' ? await render(props.page) : undefined;
     <Docs
       title="Docs"
       description="How to set up the Otherlode agent and collector, and how to read what Otherlode finds."
-      groups={props.groups}
+      sidebar={latestSidebar}
+      currentHref={docsHref}
     >
       <h1>Docs</h1>
-      {props.groups.map(({ section, pages }) => (
+      {latestSidebar.map((group) => (
         <>
-          <h2>{section.title}</h2>
+          <h2>
+            {group.title}
+            {group.version && <span class="docs-heading-version">{group.version}</span>}
+          </h2>
           <ul>
-            {pages.map((page) => (
+            {group.items.map((item) => (
               <li>
-                <a href={docsPageHref(page)}>{page.data.title}</a>: {page.data.description}
+                <a href={item.href}>{item.label}</a>
+                {item.doc && <>: {item.doc.entry.data.description}</>}
               </li>
             ))}
           </ul>
@@ -67,38 +119,71 @@ const rendered = props.kind === 'page' ? await render(props.page) : undefined;
 
 {
   props.kind === 'search' && (
-    <Docs title="Search the docs" description="Search the Otherlode docs." groups={props.groups} index={false}>
+    <Docs
+      title="Search the docs"
+      description="Search the Otherlode docs."
+      sidebar={latestSidebar}
+      currentHref={`${docsHref}/search`}
+      index={false}
+    >
       <h1>Search the docs</h1>
+      <p>Search covers the latest release of each part.</p>
       <DocsSearch />
     </Docs>
   )
 }
 
 {
-  props.kind === 'page' && rendered && (
+  props.kind === 'changes' && (
     <Docs
-      title={props.page.data.title}
-      description={props.page.data.description}
-      groups={props.groups}
-      current={props.page}
-      headings={rendered.headings}
+      title={`${props.sectionDocs.section.title} docs changes`}
+      description={`What changed in the ${props.sectionDocs.section.title.toLowerCase()} docs in each release.`}
+      sidebar={latestSidebar}
+      currentHref={changesHref(props.sectionDocs.section)}
     >
-      <p class="docs-eyebrow" data-pagefind-ignore>{sectionOf(props.page).title}</p>
-      <h1>{props.page.data.title}</h1>
-      <rendered.Content />
+      <p class="docs-eyebrow">{props.sectionDocs.section.title}</p>
+      <h1>Docs changes</h1>
+      <p>
+        Each release of the {props.sectionDocs.section.title.toLowerCase()} docs, newest first, against the release
+        before it.
+      </p>
+      <DocsChanges sectionDocs={props.sectionDocs} />
+    </Docs>
+  )
+}
+
+{
+  props.kind === 'page' && page && (
+    <Docs
+      title={page.title}
+      description={props.doc.entry.data.description}
+      sidebar={page.sidebar}
+      currentHref={page.href}
+      headings={page.rendered.headings}
+      index={!props.pinned}
+      searchable={!props.pinned}
+      pinned={props.pinned && props.doc.version !== props.sectionDocs.versions[0].version}
+    >
+      <p class="docs-eyebrow" data-pagefind-ignore>
+        {props.doc.section.title}
+      </p>
+      <h1>{props.doc.entry.data.title}</h1>
+      {props.doc.version && <DocsVersionMenu sectionDocs={props.sectionDocs} doc={props.doc} />}
+      <page.rendered.Content />
       <footer class="docs-page-footer" data-pagefind-ignore>
         <p>
-          Source: <code>{sourceOf(props.page)}</code>
+          Source: <code>{sourceOf(props.doc)}</code>
+          {props.doc.version && <> at {props.doc.version}</>}
         </p>
         <nav aria-label="Previous and next page" class="docs-pager">
-          {props.previous && (
-            <a href={docsPageHref(props.previous)} rel="prev">
-              Previous: {props.previous.data.title}
+          {page.previous && (
+            <a href={page.previous.href} rel="prev">
+              Previous: {page.previous.label}
             </a>
           )}
-          {props.next && (
-            <a href={docsPageHref(props.next)} rel="next">
-              Next: {props.next.data.title}
+          {page.next && (
+            <a href={page.next.href} rel="next">
+              Next: {page.next.label}
             </a>
           )}
         </nav>

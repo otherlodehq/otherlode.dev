@@ -213,16 +213,40 @@ The product docs are served at `/docs`. Each section is one folder under
 `src/content/docs/`, and `src/lib/docs.ts` lists the sections in sidebar
 order:
 
-| Section | Folder | Written in |
-|---|---|---|
-| Start | `start/` | this repo |
-| Agent | `agent/` | `otherlode-agent`, `docs/site/` |
-| Collector | `collector/` | `otherlode-collector`, `docs/site/` |
-| Findings and accounts | `server/` | `otherlode-server`, `docs/site/` |
+| Section | Folder | Written in | Versions |
+|---|---|---|---|
+| Start | `start/` | this repo | none |
+| Agent | `agent/<version>/` | `otherlode-agent`, `docs/site/` | one folder per release |
+| Collector | `collector/<version>/` | `otherlode-collector`, `docs/site/` | one folder per release |
+| Findings and accounts | `server/` | `otherlode-server`, `docs/site/` | none |
 
 Only `start/` is edited here. The other three are copies, so a change
 goes in the source repo, in the same pull request as the code it
 describes. ADR 0001 has the reasons.
+
+### Versions
+
+The agent and collector docs keep a folder per release, such as
+`agent/v0.2.0/`, named for the release's tag. The highest version is the
+latest. ADR 0002 has the reasons.
+
+- `/docs/agent/attach` is the latest release's page. Only these pages are
+  in the sitemap and the search index.
+- `/docs/agent/v0.1.0/attach` is one release's page. Every release,
+  the latest included, is built at such a URL, so a link to a release
+  keeps working after the next one. These pages carry `noindex`, and an
+  older release's page says which release is the latest.
+- Each page has a release menu, a `<details>` of plain links. It names
+  the release that last added or changed the page, when that is not the
+  oldest release, and links to its diff.
+- `/docs/agent/changes`, once a section has two releases, lists what
+  each release added, changed and removed against the one before it,
+  with a line diff of each changed page's Markdown and title. The diffs
+  are worked out at build time (`src/lib/docs-model.ts` and
+  `src/lib/docs-diff.ts`), so the page needs no script.
+
+Git stores identical files once, so a release whose pages did not change
+adds almost nothing to the repo.
 
 ### A page
 
@@ -238,8 +262,10 @@ order: 10
 
 `title` becomes the page's `h1`, so the Markdown starts at `##`.
 `order` sorts the pages within a section, lowest first, then by title.
-The file's path gives its URL: `agent/attach.md` is `/docs/agent/attach`.
-A file whose name starts with `_` is not a page.
+The file's path gives its URL: `agent/v0.2.0/attach.md` is
+`/docs/agent/attach` while v0.2.0 is the latest. A file whose name
+starts with `_` is not a page. A versioned section refuses a page named
+`changes`, since its changes page takes that path.
 
 `/docs` and `/docs/search`, and the header's Docs link, appear only once
 there is at least one page. Until then the build warns that the `docs`
@@ -266,10 +292,22 @@ It does not allow `eval` or inline scripts.
 
 ### How a source repo's pages get here
 
-`scripts/sync-docs.sh` copies a source repo's `docs/site/` folder over
-its section's folder, leaving out `README.md`, and opens a pull request
-on this repo from the branch `docs-sync/<section>`, or updates the one
-already open. A merged pull request deploys like any other change.
+`scripts/sync-docs.sh` copies a source repo's `docs/site/` folder,
+leaving out `README.md`, and opens a pull request on this repo, or
+updates the one already open. For the agent and collector it writes
+`<section>/<version>/` from the branch `docs-sync/<section>-<version>`
+and never touches another release's folder. Running it again for the
+same version replaces that folder. To fix a released version's docs,
+run it by hand for that version with a checkout of the fixed
+`docs/site/`, for example from the source repo's master:
+
+```sh
+GH_TOKEN=<token> scripts/sync-docs.sh agent ../otherlode-agent/docs/site "otherlode-agent v0.2.0 docs fix" v0.2.0
+```
+
+A re-run of the release's `docs` job copies the tag's own docs again,
+since a tag never moves, so it cannot carry a fix. For the server the
+script replaces `server/` from the branch `docs-sync/server`. A merged pull request deploys like any other change.
 
 The source repos run it once their code has shipped:
 

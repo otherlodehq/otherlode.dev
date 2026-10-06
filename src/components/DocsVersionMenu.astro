@@ -1,0 +1,73 @@
+---
+import {
+  changeAnchor,
+  changesHref,
+  isLatest,
+  lastChange,
+  latestHref,
+  versionedHref,
+  type DocsDoc,
+  type DocsSectionDocs,
+} from '../lib/docs';
+
+/**
+ * The release menu at the top of a page in a section with versions, and a
+ * line naming the release that last added or changed the page. The menu
+ * is a <details> element of plain links, so it needs no script.
+ */
+interface Props {
+  sectionDocs: DocsSectionDocs;
+  doc: DocsDoc;
+}
+
+const { sectionDocs, doc } = Astro.props;
+const latestVersion = sectionDocs.versions[0].version;
+
+const choices = sectionDocs.versions.map((release) => {
+  const target = release.docs.find((d) => d.slug === doc.slug) ?? release.docs[0];
+  return {
+    version: release.version!,
+    href: isLatest(sectionDocs, target) ? latestHref(target) : versionedHref(target),
+    current: release.version === doc.version,
+    hasPage: target.slug === doc.slug,
+  };
+});
+
+const change = lastChange(sectionDocs, doc);
+const changeLink = change ? `${changesHref(doc.section)}#${changeAnchor(change.version, doc.slug)}` : undefined;
+---
+
+<div class="docs-version-bar" data-pagefind-ignore>
+  <details class="docs-versions">
+    <summary>
+      <span class="sr-only">Release: </span>{doc.version}{doc.version === latestVersion && ' (latest)'}
+    </summary>
+    <ul>
+      {
+        choices.map((choice) => (
+          <li>
+            <a href={choice.href} aria-current={choice.current ? 'page' : undefined}>
+              {choice.version}
+              {choice.version === latestVersion && ' (latest)'}
+              {!choice.hasPage && <span class="docs-versions-note"> (no such page)</span>}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </details>
+  {
+    change && (
+      <p class="docs-version-change">
+        {change.kind === 'added' ? 'Added' : 'Changed'} in {change.version}. <a href={changeLink}>See the changes</a>
+      </p>
+    )
+  }
+</div>
+{
+  doc.version !== latestVersion && (
+    <p class="docs-version-old" data-pagefind-ignore>
+      These are the docs for {doc.section.title.toLowerCase()} {doc.version}. The latest release is {latestVersion}.
+    </p>
+  )
+}

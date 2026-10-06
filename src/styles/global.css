@@ -963,6 +963,152 @@
     gap: 1rem;
   }
 
+  .docs-sidebar-version,
+  .docs-heading-version {
+    margin-left: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted-foreground);
+  }
+
+  .docs-heading-version {
+    font-size: 0.875rem;
+  }
+
+  /* The release menu: a <details> whose list opens over the page. */
+  .docs-version-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.9375rem;
+  }
+
+  .docs-versions {
+    position: relative;
+  }
+
+  .docs-versions summary {
+    cursor: pointer;
+    border: 2px solid var(--ink);
+    background-color: var(--card);
+    padding: 0.125rem 0.625rem;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  .docs-versions[open] summary {
+    box-shadow: 3px 3px 0 var(--shadow);
+  }
+
+  .prose .docs-versions ul {
+    position: absolute;
+    z-index: 10;
+    top: calc(100% + 0.375rem);
+    left: 0;
+    min-width: 12rem;
+    margin: 0;
+    padding: 0.25rem 0;
+    list-style: none;
+    border: 2px solid var(--ink);
+    background-color: var(--card);
+    box-shadow: 4px 4px 0 var(--shadow);
+  }
+
+  .prose .docs-versions li + li {
+    margin-top: 0;
+  }
+
+  .prose .docs-versions a {
+    display: block;
+    padding: 0.25rem 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    text-decoration: none;
+  }
+
+  .prose .docs-versions a:hover {
+    background-color: var(--muted);
+  }
+
+  .docs-versions a[aria-current='page'] {
+    font-weight: 700;
+  }
+
+  .docs-versions-note,
+  .prose .docs-version-change {
+    margin: 0;
+    color: var(--muted-foreground);
+  }
+
+  .prose .docs-version-old {
+    border: 2px solid var(--ink);
+    border-left-width: 6px;
+    border-left-color: var(--signal);
+    background-color: var(--card);
+    padding: 0.625rem 0.875rem;
+    font-size: 0.9375rem;
+  }
+
+  /* The changes page. Diff lines are marked by class and by their first
+     character, so the colour is never the only sign. */
+  .docs-release + .docs-release {
+    margin-top: 3rem;
+    border-top: 2px solid var(--ink);
+  }
+
+  .prose .docs-release-against {
+    color: var(--muted-foreground);
+  }
+
+  .docs-change {
+    margin: 1rem 0 1.5rem;
+  }
+
+  .docs-change summary {
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .docs-change-links {
+    margin-left: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 400;
+  }
+
+  .prose pre.docs-diff {
+    margin-top: 0.5rem;
+    border-color: var(--border);
+    background-color: var(--card);
+    color: var(--foreground);
+    padding: 0.75rem 0;
+    white-space: pre;
+  }
+
+  .docs-diff span {
+    display: block;
+    padding: 0 1rem;
+  }
+
+  .docs-diff-add {
+    background-color: color-mix(in oklab, #3f8f4a 22%, transparent);
+  }
+
+  .docs-diff-del {
+    background-color: color-mix(in oklab, var(--signal) 20%, transparent);
+  }
+
+  .docs-diff-skip {
+    color: var(--muted-foreground);
+    font-style: italic;
+  }
+
   .docs-search-status {
     color: var(--muted-foreground);
   }

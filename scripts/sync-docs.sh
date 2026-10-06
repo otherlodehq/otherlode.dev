@@ -1,32 +1,56 @@
 #!/usr/bin/env bash
-# Copies one source repo's docs/site/ folder into src/content/docs/<section>/
-# and opens a pull request on this repo with the change, or updates the one
-# already open. The source repos' release and deploy workflows run it from a
-# checkout of this repo, so a page reaches the site only once its code has
-# shipped and someone has merged the pull request.
+# Copies one source repo's docs/site/ folder into this repo's docs and opens
+# a pull request with the change, or updates the one already open. For agent
+# and collector the folder goes to src/content/docs/<section>/<version>/,
+# beside the earlier releases, which it never touches. Running it again for
+# the same version replaces that version's folder. Run it by hand with
+# the fixed docs/site/ to fix a released version's docs. For server it
+# replaces src/content/docs/server/.
 #
-#   scripts/sync-docs.sh <section> <source-dir> <label>
+# The source repos' release and deploy workflows run it from a checkout of
+# this repo, so a page reaches the site only once its code has shipped and
+# someone has merged the pull request.
+#
+#   scripts/sync-docs.sh <section> <source-dir> <label> [version]
 #
 #   section     agent, collector or server
 #   source-dir  the source repo's docs/site/ folder
 #   label       what shipped, such as "otherlode-agent v0.1.0", for the
 #               commit and the pull request
+#   version     the release, such as v0.1.0; needed for agent and
+#               collector, refused for server
 #
 # It needs GH_TOKEN with contents and pull request write access to this
 # repo, and a checkout whose origin can be pushed to.
 set -euo pipefail
 
-if [ "$#" -ne 3 ]; then
-  echo "usage: scripts/sync-docs.sh <section> <source-dir> <label>" >&2
+if [ "$#" -lt 3 ] || [ "$#" -gt 4 ]; then
+  echo "usage: scripts/sync-docs.sh <section> <source-dir> <label> [version]" >&2
   exit 2
 fi
 
 section=$1
 source_dir=$2
 label=$3
+version=${4:-}
 
 case "$section" in
-  agent | collector | server) ;;
+  agent | collector)
+    if ! [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+      echo "sync-docs: $section needs a version such as v1.2.3, not '$version'" >&2
+      exit 2
+    fi
+    target="src/content/docs/$section/$version"
+    branch="docs-sync/$section-$version"
+    ;;
+  server)
+    if [ -n "$version" ]; then
+      echo "sync-docs: server docs have no versions" >&2
+      exit 2
+    fi
+    target="src/content/docs/$section"
+    branch="docs-sync/$section"
+    ;;
   *)
     echo "sync-docs: unknown section '$section'; expected agent, collector or server" >&2
     exit 2
@@ -37,16 +61,16 @@ if [ ! -d "$source_dir" ]; then
   echo "sync-docs: $source_dir is not a directory" >&2
   exit 1
 fi
+source_dir=$(cd "$source_dir" && pwd)
 
 cd "$(dirname "$0")/.."
-target="src/content/docs/$section"
-branch="docs-sync/$section"
 
 git fetch --quiet origin master
 git checkout --quiet -B "$branch" origin/master
 
-# The folder is replaced whole, so a page deleted at the source is deleted
-# here. README.md explains the folder to contributors and is not a page.
+# The target folder is replaced whole, so a page deleted at the source is
+# deleted here. README.md explains the folder to contributors and is not a
+# page.
 rm -rf "$target"
 mkdir -p "$target"
 cp -R "$source_dir/." "$target/"

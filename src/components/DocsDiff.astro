@@ -1,0 +1,23 @@
+---
+import { diffMarkdown } from '../lib/docs-diff';
+
+/**
+ * A line diff of two Markdown sources. Each line starts with +, - or a
+ * space, so the colour is never the only sign of what changed.
+ */
+interface Props {
+  before: string;
+  after: string;
+  label: string;
+}
+
+const { before, after, label } = Astro.props;
+const prefix = { add: '+', del: '-', same: ' ' } as const;
+const lines = diffMarkdown(before, after).map((line) =>
+  line.kind === 'skip'
+    ? { className: 'docs-diff-skip', text: `@@ ${line.count} unchanged ${line.count === 1 ? 'line' : 'lines'} @@` }
+    : { className: `docs-diff-${line.kind}`, text: `${prefix[line.kind]} ${line.text}` },
+);
+---
+
+<pre class="docs-diff" aria-label={label}>{lines.map((line) => <span class={line.className}>{line.text}</span>)}</pre>

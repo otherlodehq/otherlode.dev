@@ -19,8 +19,12 @@ export default defineConfig({
   },
   integrations: [
     sitemap({
-      // The pages the contact form redirects to are not for search engines.
-      filter: (page) => !/\/(thanks|contact-problem)$/.test(new URL(page).pathname),
+      // The pages the contact form redirects to, the docs search and the
+      // docs at a release's own URL carry noindex, so they stay out.
+      filter: (page) => {
+        const path = new URL(page).pathname;
+        return !/\/(thanks|contact-problem)$/.test(path) && !/^\/docs\/(search$|[^/]+\/v\d+\.\d+\.\d+\/)/.test(path);
+      },
     }),
   ],
   markdown: {

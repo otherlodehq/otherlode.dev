@@ -1,0 +1,83 @@
+---
+import DocsDiff from './DocsDiff.astro';
+import {
+  changeAnchor,
+  comparableText,
+  releaseChanges,
+  versionedHref,
+  docHref,
+  type DocsSectionDocs,
+} from '../lib/docs';
+
+/**
+ * A section's changes page: for each release, newest first, the pages it
+ * added, changed and removed, with a line diff of each change. The diffs
+ * compare the Markdown source, title included, so a reader sees exactly
+ * what the source repo changed.
+ */
+interface Props {
+  sectionDocs: DocsSectionDocs;
+}
+
+const { sectionDocs } = Astro.props;
+const releases = releaseChanges(sectionDocs);
+---
+
+{
+  releases.map((release) => (
+    <section class="docs-release">
+      <h2 id={release.version}>{release.version}</h2>
+      <p class="docs-release-against">Compared with {release.previous}.</p>
+      {release.added.length + release.changed.length + release.removed.length === 0 && <p>No page changed.</p>}
+
+      {release.added.length > 0 && (
+        <>
+          <h3>Added</h3>
+          <ul>
+            {release.added.map((doc) => (
+              <li id={changeAnchor(release.version, doc.slug)}>
+                <a href={docHref(sectionDocs, doc)}>{doc.entry.data.title}</a>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      {release.changed.length > 0 && (
+        <>
+          <h3>Changed</h3>
+          {release.changed.map(({ doc, before }) => (
+            <details class="docs-change" id={changeAnchor(release.version, doc.slug)} open>
+              <summary>
+                {doc.entry.data.title}
+                <span class="docs-change-links">
+                  <a href={docHref(sectionDocs, doc)}>{release.version}</a>
+                  {' · '}
+                  <a href={versionedHref(before)}>{release.previous}</a>
+                </span>
+              </summary>
+              <DocsDiff
+                before={comparableText(before)}
+                after={comparableText(doc)}
+                label={`Changes to ${doc.entry.data.title} in ${release.version}`}
+              />
+            </details>
+          ))}
+        </>
+      )}
+
+      {release.removed.length > 0 && (
+        <>
+          <h3>Removed</h3>
+          <ul>
+            {release.removed.map((doc) => (
+              <li id={changeAnchor(release.version, doc.slug)}>
+                <a href={versionedHref(doc)}>{doc.entry.data.title}</a> (last in {release.previous})
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  ))
+}

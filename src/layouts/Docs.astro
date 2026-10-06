@@ -1,23 +1,36 @@
 ---
 import type { MarkdownHeading } from 'astro';
 import Base from './Base.astro';
-import { docsHref, docsPageHref, docsSearchHref, type DocsGroup, type DocsPage } from '../lib/docs';
+import { docsHref, docsSearchHref, type SidebarGroup } from '../lib/docs';
 
 /** Props for any page under /docs. */
 interface Props {
   title: string;
   description: string;
-  /** The sidebar's sections and pages. */
-  groups: DocsGroup[];
-  /** The page being shown, which the sidebar marks. Absent on the docs home and search. */
-  current?: DocsPage;
+  /** The sidebar's headings and links. */
+  sidebar: SidebarGroup[];
+  /** The URL path of the page being shown, which the sidebar marks. */
+  currentHref?: string;
   /** The page's h2 and h3 headings, listed beside it on wide screens. */
   headings?: MarkdownHeading[];
   /** Set false for a page search engines should skip. */
   index?: boolean;
+  /** Set true for a page the docs search should index. */
+  searchable?: boolean;
+  /** Set true when the page shows an older release, so the home link reads "Latest docs". */
+  pinned?: boolean;
 }
 
-const { title, description, groups, current, headings = [], index = true } = Astro.props;
+const {
+  title,
+  description,
+  sidebar,
+  currentHref,
+  headings = [],
+  index = true,
+  searchable = false,
+  pinned = false,
+} = Astro.props;
 const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
 ---
 
@@ -28,19 +41,19 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
         <label for="docs-search-sidebar" class="sr-only">Search the docs</label>
         <input id="docs-search-sidebar" name="q" type="search" placeholder="Search the docs" class="field-input" />
       </form>
-      <a href={docsHref} class="docs-sidebar-home">Docs home</a>
+      <a href={docsHref} class="docs-sidebar-home">{pinned ? 'Latest docs' : 'Docs home'}</a>
       {
-        groups.map(({ section, pages }) => (
+        sidebar.map((group) => (
           <div>
-            <h2 class="docs-sidebar-heading">{section.title}</h2>
+            <h2 class="docs-sidebar-heading">
+              {group.title}
+              {group.version && <span class="docs-sidebar-version">{group.version}</span>}
+            </h2>
             <ul>
-              {pages.map((page) => (
+              {group.items.map((item) => (
                 <li>
-                  <a
-                    href={docsPageHref(page)}
-                    aria-current={page.id === current?.id ? 'page' : undefined}
-                  >
-                    {page.data.title}
+                  <a href={item.href} aria-current={item.href === currentHref ? 'page' : undefined}>
+                    {item.label}
                   </a>
                 </li>
               ))}
@@ -50,7 +63,7 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
       }
     </nav>
 
-    <article class="docs-article prose" data-pagefind-body={current ? '' : undefined}>
+    <article class="docs-article prose" data-pagefind-body={searchable ? '' : undefined}>
       <slot />
     </article>
 
