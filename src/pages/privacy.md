@@ -245,7 +245,8 @@ the safeguards that apply.
 | Sessions | Deleted within a day of expiring, after 7 days without use or 30 days in total |
 | Audit log | Until the customer leaves |
 | IP addresses in the audit log | 1 year |
-| Agent reports | Until the customer leaves, or asks us to delete them |
+| Agent reports, the detail of each run of the customer's app | 30 days after the run last reported, or a longer or shorter period of at least 7 days that the customer agrees with us. A daily job deletes them |
+| Agent reports, the summary of which code each service has run and when | Until the customer leaves, or asks us to delete them |
 | Your record at WorkOS | Until the customer leaves, or you ask us to delete it |
 | Your record at WorkOS, if you have no account | Until you ask us to delete it |
 | WorkOS's event history | [WORKOS RETENTION] |
