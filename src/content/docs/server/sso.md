@@ -4,7 +4,7 @@ description: Connect your identity provider through the Admin Portal, verify you
 order: 50
 ---
 
-Single sign-on lets your people sign in to `https://app.otherlode.dev` through your company's identity provider, such as Okta or Entra, over SAML or OIDC. You set it up on the **Single sign-on** page, which only an admin sees. The page is in the admin area, beside **Users**, **API keys**, and **Audit log**.
+Single sign-on lets your people sign in to `https://app.otherlode.dev` through your company's identity provider, such as Okta or Entra, over SAML or OIDC. You set it up on the **Single sign-on** page, which only an admin sees. The page is in the admin area, beside **Users**, **API keys**, **Redaction**, and **Audit log**.
 
 A tenant that does not enforce SSO still signs in with Google, Microsoft, or GitHub. See [Sign-in and sessions](sign-in) for every sign-in method.
 

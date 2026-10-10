@@ -66,11 +66,13 @@ The collector accepts a payload from an agent with `202`, queues it, and forward
 | 202 | none | Otherlode accepted the payload. | Counts it as delivered. |
 | 401 | `{"error":"unauthorized"}` | The `Authorization` header is missing or is not a bearer key, or the key is unknown or revoked. | Drops the payload. |
 | 403 | `{"error":"this route needs an ingest key"}` | The key is valid but has the `read` scope. | Drops the payload. |
+| 403 | `{"error":"redaction_required"}` | Your tenant [requires redacted payloads](require-redaction), and the payload carried no fingerprint, or a malformed one. | Drops the payload. |
+| 403 | `{"error":"redaction_secret_mismatch"}` | Your tenant requires redacted payloads, and the payload carried the fingerprint of another secret. | Drops the payload. |
 | 413 | `request body too large` | The request body is over 16 MiB. | Drops the payload. |
 | 429 | `rate limit exceeded`, with `Retry-After` | Your tenant sent more requests than its limit allows. | Retries. |
-| 503 | `{"error":"unavailable"}` or no body | Otherlode could not check the key or store the payload. | Retries. |
+| 503 | `{"error":"unavailable"}`, or no body with `Retry-After: 5` | Otherlode could not check the key or read whether your tenant requires redacted payloads, or, with no body, could not store the payload. | Retries. |
 
-The collector retries 429, 502, 503 and 504, and any request that gets no response. It waits at least the `Retry-After` time, backs off between attempts, and drops the payload after 5 minutes of retries. Any other status is final, so the collector drops the payload at once. A 401 or 403 does not fix itself: create or fix the key, set it on the collector, and restart the collector. The collector does not send a dropped payload again.
+The collector retries 429, 502, 503 and 504, and any request that gets no response. It waits at least the `Retry-After` time, backs off between attempts, and drops the payload after 5 minutes of retries. Any other status is final, so the collector drops the payload at once. A 401 or 403 does not fix itself. For a key problem, create or fix the key, set it on the collector, and restart the collector. For a redaction refusal, see [backend returned 403](troubleshooting#backend-returned-403). The collector does not send a dropped payload again.
 
 Ingest answers 400 for a body that is not valid protobuf or lacks a service name, instance ID or run ID, and 415 for the wrong content type. Your collector rejects such payloads before it forwards them, so you see these only from a sender that is not your collector.
 

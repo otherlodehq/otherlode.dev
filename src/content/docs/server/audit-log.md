@@ -45,7 +45,7 @@ The name of an actor is copied into the event when the event is written. It stil
 
 An operator action on your tenant appears here, including a read of your users or keys. An operator can create the tenant, set its ingest rate limit, remove a service, an environment, or old runs, link or unlink its WorkOS organization, change its single sign-on settings, and add, change, or delete its users and keys. [What the server keeps](data-kept) covers what an operator can do to your data.
 
-Ingest records no event. It happens too often to log, and the runs it writes already show what arrived.
+Ingest records no event. It happens too often to log, and the runs it writes already show what arrived. A payload refused because your tenant requires redacted payloads records none either.
 
 ## What an event is recorded for
 
@@ -115,6 +115,17 @@ Opening an Admin Portal link and turning SSO on or off are admin actions in the 
 | Domain removed | `domain.removed` | The tenant loses a verified domain. | WorkOS or operator | The domain | `event` and WorkOS's `reason` when a WorkOS event reported it. `reason: not_verified_at_workos` when the page found it. `reason: organization_unlinked` after an unlink. |
 
 Turning SSO on records **SSO requirement changed**, then **Session ended** with the reason `sso_enforced` for each session it ends. Turning SSO off also turns just-in-time provisioning off, and that records **Just-in-time provisioning changed** when it was on. An unlink records the changes it causes, in this order: **SSO requirement changed** and **Just-in-time provisioning changed** when they were on, **Session ended** for each SSO session, **Domain removed** for each domain, and last **WorkOS organization unlinked**.
+
+## Changes to the redaction requirement
+
+An admin makes these changes on the **Redaction** page, so each event carries the admin's address. [Require redacted payloads](require-redaction) covers the setting.
+
+| Label | Action | Recorded when | Actor | Target | Details |
+|---|---|---|---|---|---|
+| Redaction requirement changed | `tenant.redaction_changed` | The tenant starts or stops requiring redacted payloads. | Admin | The tenant's name | `from → to`, as `on` or `off`. Turning it on also gives `fingerprint`. |
+| Redaction fingerprint changed | `tenant.redaction_fingerprint_changed` | An admin replaces the fingerprint while the requirement is on. | Admin | The tenant's name | `from → to`, the old and new fingerprints |
+
+A fingerprint names your collector's secret without revealing it, so the event holds no secret. A payload that ingest refuses records no event. The **Redaction** page counts refusals instead.
 
 ## Operator actions
 

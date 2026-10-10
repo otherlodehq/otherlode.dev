@@ -1,14 +1,14 @@
 ---
 title: What the server keeps
-description: What the server stores from each payload, about people and about API keys, how tenants are kept apart, what an operator removes on request, and what the server sweeps on its own.
+description: What the server stores from each payload, about refused payloads, about people and about API keys, how tenants are kept apart, what an operator removes on request, and what the server sweeps on its own.
 order: 130
 ---
 
-The server stores what your collector forwards, what it needs to know about the people who sign in, and a record of changes to your tenant. It deletes runs once they pass your tenant's retention period, and it deletes other reported data only when an operator removes it on your request. It also sweeps three other things on a daily schedule: ended sessions, expired tenant choices and old client addresses in the audit log.
+The server stores what your collector forwards, what it needs to know about the people who sign in, and a record of changes to your tenant. It deletes runs once they pass your tenant's retention period, and it deletes other reported data only when an operator removes it on your request. It also sweeps four other things on a daily schedule: ended sessions, expired tenant choices, old client addresses in the audit log and old counts of refused payloads.
 
 ## What the server stores from a payload
 
-The server stores each payload under the tenant that owns the ingest key it arrived with. [What the agent sends](/docs/agent/data-sent) lists every field of every payload. The server does not redact. A collector with redaction on replaces the text of string literals in branch conditions, and in the case labels of a `when` or `switch` on a string, with `…` before a payload arrives. It replaces every such literal, or only those that match a pattern set on the collector. It keeps every field it knows. It drops only the fields it does not know, and marks a payload that lost one with `fields_stripped`. The server stores what arrives.
+The server stores each payload under the tenant that owns the ingest key it arrived with. [What the agent sends](/docs/agent/data-sent) lists every field of every payload. The server does not redact. A collector with redaction on replaces the text of string literals in branch conditions, and in the case labels of a `when` or `switch` on a string, with `…` before a payload arrives. It replaces every such literal, or only those that match a pattern set on the collector. It keeps every field it knows. It drops only the fields it does not know, and marks a payload that lost one with `fields_stripped`. The server stores what arrives. A tenant can make ingest refuse every payload that did not come through such a collector. See [Require redacted payloads](require-redaction).
 
 | Payload | What the server keeps |
 |---|---|
@@ -18,13 +18,17 @@ The server stores each payload under the tenant that owns the ingest key it arri
 | Probe manifest | What the ids in a delta batch name: class, method and parameter names, source file names and lines, call edges, referenced classes, branch sites with their condition text, endpoint route templates, dependencies with their jar locations, and the skipped, failed and unreported classes with the reasons the agent gave. |
 | Static baseline chunk | The classes the scan declared, with their methods, call edges, branch sites and references, and the classes it could not read. A scan counts as complete when every chunk has arrived. |
 
-A string literal in a condition and a jar path are stored as the agent sent them. A test run is stored too, but it never lists a service. See [Test runs](/docs/agent/test-runs).
+A string literal in a condition and a jar path are stored as they arrive, so a literal is stored as the agent sent it unless a collector with redaction on replaced it. A test run is stored too, but it never lists a service. See [Test runs](/docs/agent/test-runs).
 
 The server stores some code that it never judges: inline, generated, routine and unread-shape code, and every run that carried `fields_stripped`. These are kept and shown, and they never count in a dead-code claim. [How findings are judged](how-it-works) explains why.
 
 ### Dates come from the server's clock
 
 The server dates every first and last hit by the time a payload arrived, not by a time the agent sent. It keeps those dates once per service and environment, not per run. A date moves earlier or later only, never back. Expiry and pruning do not touch them. [Dates](dates) describes each one.
+
+## What the server keeps about refused payloads
+
+While your tenant [requires redacted payloads](require-redaction), ingest refuses a payload that does not carry your collector's fingerprint. It stores nothing from that payload or its request: no service, instance, run, address or key. It keeps only a count for each UTC day and reason, and the time of the last refusal of that day and reason. The reason is `redaction_required` or `redaction_secret_mismatch`. A daily job deletes a day's counts once the day is more than 30 days old. While the requirement is off, ingest ignores the `Otherlode-Redaction` header and keeps nothing about it.
 
 ## How runs are kept apart
 
@@ -43,7 +47,7 @@ For each user, the server stores:
 - The WorkOS user ID, once the person first signs in.
 - When the user was created and when the person last signed in.
 
-The server stores no name and no profile picture, even when the sign-in provider shares them. A person who has users in two tenants has two separate users. For a tenant it also stores the name, whether SSO is enforced, whether just-in-time provisioning is on, the link to its WorkOS organization, and its verified email domains.
+The server stores no name and no profile picture, even when the sign-in provider shares them. A person who has users in two tenants has two separate users. For a tenant it also stores the name, whether SSO is enforced, whether just-in-time provisioning is on, the link to its WorkOS organization, its verified email domains, and the fingerprint it requires on ingest while it requires redacted payloads. The fingerprint names your collector's secret without revealing it.
 
 For each session, the server stores a hash of the cookie's value, never the value. It also stores whether the session was made through SSO, when it was made, and when it was last used. A session stops working when it ends, as [Sign-in and sessions](sign-in) lists. A sign-out and the removal of a user delete the session's row at once. The daily sweep deletes the rows of sessions that ended by idle time or age.
 
@@ -84,13 +88,14 @@ An expiry that removes anything records one **Runs expired** event for the tenan
 
 ### Other sweeps
 
-The server deletes three other things once a day.
+The server deletes four other things once a day.
 
 | What | When it is deleted |
 |---|---|
 | A session | After 7 days without use, or 30 days after sign-in, whichever comes first. |
 | A tenant choice | After it expires, 5 minutes after it starts. |
 | An audit event's client address | When the event is more than a year old. The rest of the event stays. |
+| A day's count of refused payloads | When the day is more than 30 days old. |
 
 Each deletion happens within a day of its cutoff. A session that has ended stops working at once, whether or not the sweep has removed its row.
 

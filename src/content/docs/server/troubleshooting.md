@@ -31,7 +31,25 @@ Create an ingest key on the **API keys** page, then set it as the collector's fo
 
 ### backend returned 403
 
-The server answers `{"error":"this route needs an ingest key"}`. The key is valid but has the `read` scope, and ingest takes only an `ingest` key. A `read` key cannot send reports, and an `ingest` key cannot read anything back. Replace the forward token with an `ingest` key. See [Manage API keys](api-keys).
+The server answers 403 with one of three bodies. The collector logs only the status, so work through them in order. If your tenant does not [require redacted payloads](require-redaction), only the first applies. If it does, the **Refused payloads** table on the **Redaction** page in the admin area counts the other two by reason.
+
+The server answers `{"error":"this route needs an ingest key"}` when the key is valid but has the `read` scope, and ingest takes only an `ingest` key. A `read` key cannot send reports, and an `ingest` key cannot read anything back. Replace the forward token with an `ingest` key. See [Manage API keys](api-keys).
+
+#### redaction_required
+
+The server answers `{"error":"redaction_required"}`. Your tenant requires redacted payloads, and the payload carried no fingerprint in its `Otherlode-Redaction` header, or carried one that is not 16 lowercase hex characters. The sender is one of these:
+
+- A collector with redaction off. Turn redaction on with your tenant's secret. See [Blank out string literals](/docs/collector/redaction).
+- An agent that sends straight to `ingest.otherlode.dev`, such as a test JVM. It sends the payload again at each flush and logs a `WARNING` each time. Point it at a collector with redaction on.
+- A proxy between the collector and the server that drops the header. Let it pass `Otherlode-Redaction` through.
+
+The `service` and `instance` fields of the collector's log line name the agent whose payload was refused.
+
+#### redaction_secret_mismatch
+
+The server answers `{"error":"redaction_secret_mismatch"}`. The payload came through a collector with redaction on, but its secret differs from the one whose fingerprint your tenant requires. Compare the `secret_fingerprint` the collector logs at startup with the fingerprint on the **Redaction** page. Then give the collector the same secret as your other collectors, or, if you changed the secret on purpose, change the fingerprint. See [Change the fingerprint](require-redaction#change-the-fingerprint).
+
+A refused payload is dropped and never stored, and the collector does not send it again.
 
 ### backend returned 404
 
@@ -69,9 +87,9 @@ The collector waits for the `Retry-After` time and sends again, so a 429 that cl
 
 The collector retries all three. The server uses 503 for three cases:
 
-- `{"error":"unavailable"}` or the text `unavailable`. The server could not check the key, or could not read the tenant's request limit. This clears on its own.
-- An empty body. The server could not store a valid payload.
-- An empty body with `Retry-After: 1`. The server was busy decoding other payloads.
+- `{"error":"unavailable"}`. The server could not check the key, or could not read whether your tenant requires redacted payloads. This clears on its own.
+- The text `unavailable`. The request ended while it waited for the server's first read of your tenant's request limit, as when the sender gave up on it. A failed read of the limit gives no 503. The server applies its default limit and reads your tenant's limit again 5 seconds later.
+- An empty body with `Retry-After: 5`. The server could not store a valid payload. The collector waits at least 5 seconds before it sends the payload again.
 
 If the retries run out, the line `dropping payload: retry budget exhausted` follows. A proxy you run can also produce 502 and 504. The collector does not retry a plain 500, and drops that payload at once.
 
@@ -198,7 +216,7 @@ A red line reads `Sign-out failed, so you are still signed in. Try again.` The s
 Only admins can see this page.
 ```
 
-This replaces **Users**, **API keys**, **Single sign-on** and **Audit log** for a viewer. A viewer reads everything in the tenant and changes nothing. Ask an admin to change your role on the **Users** page, then reload the page. See [Manage users and roles](users).
+This replaces **Users**, **API keys**, **Single sign-on**, **Redaction** and **Audit log** for a viewer. A viewer reads everything in the tenant and changes nothing. Ask an admin to change your role on the **Users** page, then reload the page. See [Manage users and roles](users).
 
 ## The API answers 401 or 403
 
