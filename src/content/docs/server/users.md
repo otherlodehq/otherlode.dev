@@ -11,7 +11,7 @@ A user is a person who signs in to the web UI at `https://app.otherlode.dev`. Ev
 A user is an admin or a viewer.
 
 - A viewer reads everything the tenant holds and changes nothing.
-- An admin does the same, and also manages the tenant's users, its API keys, its single sign-on connection, and reads its audit log.
+- An admin does the same, and also manages the tenant's users, its API keys, its single sign-on connection and its [redaction requirement](require-redaction), and reads its audit log.
 
 Only an admin sees the **Admin** link in the top bar. A viewer who opens an admin page sees "Only admins can see this page." The admin routes also refuse every request that does not come from an admin's browser session, so an API key cannot call them.
 

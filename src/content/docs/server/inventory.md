@@ -26,6 +26,8 @@ A service appears once a production run has reached the server. A service that o
 
 When the services come from more than one namespace, the list groups them. Each group has a header row with the namespace and "1 service" or "N services". Named namespaces come first, in alphabetical order. Services with no namespace come last, under the header "not named". When all services share one namespace, the list has no headers. The headers do not appear or disappear while you type in the filter.
 
+For an admin, a banner above the list says when ingest refused payloads in the last 24 hours because your tenant [requires redacted payloads](require-redaction). Its link opens the **Redaction** page. Viewers never see it.
+
 The **Filter** box above the table matches a namespace or a service name. The match is a substring, ignores case and ignores spaces at either end. A filter that matches nothing shows "No service matches the filter." An empty tenant shows "No service has reported yet."
 
 The service switcher in the top bar lists the same services, grouped the same way. When more than one namespace exists, it also shows the current service's namespace before its name.
