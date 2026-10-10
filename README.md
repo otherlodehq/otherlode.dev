@@ -63,7 +63,7 @@ static assets.
 | Production branch | `master` |
 | Build command | `npm run build` |
 | Deploy command | `npx wrangler deploy` |
-| Node version | 22.12 or later (`NODE_VERSION` in the build settings) |
+| Node version | 22.19 or later (`NODE_VERSION` in the build settings) |
 
 `html_handling` serves `privacy.html` at `/privacy`, and
 `not_found_handling` serves `404.html` with status 404. The
