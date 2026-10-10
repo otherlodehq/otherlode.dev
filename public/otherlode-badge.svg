@@ -1,22 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -10 760 720" width="760" height="720">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="133 104 494 512" width="494" height="512">
   <defs>
-    <clipPath id="scene"><circle cx="380" cy="370" r="335"/></clipPath>
     <clipPath id="inner"><circle cx="300" cy="300" r="250"/></clipPath>
     <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
       <stop offset="0" stop-color="#fff6b8" stop-opacity="0.95"/>
       <stop offset="1" stop-color="#ffd24d" stop-opacity="0"/>
     </radialGradient>
   </defs>
-
-  <!-- lofi mountain range -->
-  <g stroke="none" clip-path="url(#scene)">
-    <circle cx="380" cy="370" r="335" fill="#f3f0ea"/>
-    <circle cx="560" cy="170" r="70" fill="#e7dcc8"/>
-    <path d="M-20 710 L-20 330 L65 213 L169 326 L266 194 L335 301 L404 188 L475 325 L565 155 L639 317 L741 144 L840 307 L840 710 Z" fill="#d8d2c8" stroke="#d8d2c8" stroke-width="10" stroke-linejoin="round"/>
-    <path d="M-20 710 L-20 430 L83 344 L180 417 L243 340 L314 393 L378 308 L465 413 L547 343 L606 421 L695 319 L766 404 L844 327 L844 710 Z" fill="#b8b0a4" stroke="#b8b0a4" stroke-width="10" stroke-linejoin="round"/>
-    <path d="M-20 710 L-20 520 L62 416 L122 499 L193 407 L272 510 L362 448 L429 493 L484 428 L535 496 L616 423 L702 509 L780 422 L780 710 Z" fill="#958c80" stroke="#958c80" stroke-width="10" stroke-linejoin="round"/>
-    <path d="M-20 710 L-20 610 L43 550 L115 587 L174 542 L218 593 L284 530 L355 603 L411 542 L454 599 L502 562 L546 592 L593 557 L649 589 L694 550 L756 589 L827 535 L827 710 Z" fill="#70685e" stroke="#70685e" stroke-width="10" stroke-linejoin="round"/>
-  </g>
 
   <!-- crossed sticks of dynamite behind him -->
   <g transform="translate(380 400) rotate(40)">
