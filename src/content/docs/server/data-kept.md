@@ -8,7 +8,7 @@ The server stores what your collector forwards, what it needs to know about the 
 
 ## What the server stores from a payload
 
-The server stores each payload under the tenant that owns the ingest key it arrived with. [What the agent sends](/docs/agent/data-sent) lists every field of every payload. The server does not redact. A collector with redaction on removes fields before they arrive, and the server stores what is left.
+The server stores each payload under the tenant that owns the ingest key it arrived with. [What the agent sends](/docs/agent/data-sent) lists every field of every payload. The server does not redact. A collector with redaction on replaces the text of string literals in branch conditions, and in the case labels of a `when` or `switch` on a string, with `…` before a payload arrives. It replaces every such literal, or only those that match a pattern set on the collector. It keeps every field it knows. It drops only the fields it does not know, and marks a payload that lost one with `fields_stripped`. The server stores what arrives.
 
 | Payload | What the server keeps |
 |---|---|
