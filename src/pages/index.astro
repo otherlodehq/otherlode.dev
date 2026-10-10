@@ -99,20 +99,20 @@ const after: CodeLine[] = [
 
 const security = [
   {
-    title: 'Open source where it runs',
+    title: 'Open source in your network',
     body: 'The agent and collector are Apache 2.0.',
   },
   {
-    title: 'String literals stay home',
+    title: 'Blank out string literals',
     body: 'The collector can blank them out before reports leave your network.',
   },
   {
     title: 'Data in London',
-    body: "Database and backups in Google Cloud's London region.",
+    body: "The database and its backups are in Google Cloud's London region.",
   },
   {
-    title: 'Your sign-in',
-    body: 'Google, Microsoft, GitHub, or your own SAML or OIDC.',
+    title: 'Sign-in',
+    body: 'Use Google, Microsoft, GitHub, or your own SAML or OIDC provider.',
   },
 ];
 ---
@@ -195,7 +195,7 @@ const security = [
   <section aria-labelledby="cut-title" class="border-t-2 border-ink">
     <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
       <h2 id="cut-title" class="display text-[clamp(2rem,4vw,3rem)]">Delete it in one go.</h2>
-      <p class="mt-4 max-w-[34rem] text-muted-foreground">Everything behind a branch that never runs, grouped together.</p>
+      <p class="mt-4 max-w-[34rem] text-muted-foreground">Otherlode groups everything behind a branch that never runs.</p>
 
       <div class="mt-8 grid grid-cols-1 items-start gap-7 lg:grid-cols-2">
         <div class="box min-w-0">
@@ -226,7 +226,7 @@ const security = [
           <div class="box">
             <div class="box-bar"><span class="tag">Agent</span><span class="box-meta">In your JVM</span></div>
             <p class="px-4 pt-4 pb-5 text-[0.9375rem] sm:px-5">
-              Counts what runs. Attach it with <code class="whitespace-nowrap text-[0.9em]">-javaagent</code>.
+              It counts what runs. Attach it with <code class="whitespace-nowrap text-[0.9em]">-javaagent</code>.
             </p>
           </div>
         </div>
@@ -240,7 +240,7 @@ const security = [
         <div class="flow-node col-start-3">
           <div class="box">
             <div class="box-bar"><span class="tag">Collector</span></div>
-            <p class="px-4 pt-4 pb-5 text-[0.9375rem] sm:px-5">Gathers counts from every agent. Can blank out string literals.</p>
+            <p class="px-4 pt-4 pb-5 text-[0.9375rem] sm:px-5">It gathers counts from every agent and can blank out string literals.</p>
           </div>
         </div>
         <div class="flow-wire col-start-4">
@@ -253,14 +253,14 @@ const security = [
         <div class="flow-node col-start-5">
           <div class="box">
             <div class="box-bar"><span class="tag">Otherlode</span><span class="box-meta">Hosted</span></div>
-            <p class="px-4 pt-4 pb-5 text-[0.9375rem] sm:px-5">Merges every replica and shows what never ran.</p>
+            <p class="px-4 pt-4 pb-5 text-[0.9375rem] sm:px-5">It merges the counts from every replica and shows what never ran.</p>
           </div>
         </div>
       </div>
 
       <div class="mt-16 grid grid-cols-1 items-center gap-10 lg:grid-cols-[1fr_1.4fr]">
         <p>
-          No release yet, so build the jar from the <a href={agentRepo} class="underline">agent's repo</a> with{' '}
+          The agent has no release yet, so build the jar from the <a href={agentRepo} class="underline">agent's repo</a> with{' '}
           <code class="whitespace-nowrap text-[0.9em]">./gradlew build</code>.
         </p>
         <figure class="terminal min-w-0">
