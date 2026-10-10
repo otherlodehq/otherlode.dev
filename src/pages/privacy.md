@@ -175,9 +175,14 @@ names or request contents. A few fields can still hold personal data:
   writes the running user's home folder as `~`, as in `~/.m2/...`, but a
   path under another user's home folder still shows their user name.
 - Text written into the code, such as a fixed string in an `if`
-  condition, is reported as it appears. The collector can replace these
-  strings with a placeholder before they leave the customer's network.
-  That setting is off unless the customer turns it on.
+  condition or a `switch` case, is reported as it appears. The collector
+  can replace these strings with a placeholder before they leave the
+  customer's network. It can replace all of them, or only those that
+  match a pattern. It does not change the names listed above. Replacing
+  is off unless the customer turns it on. When it is on, the collector
+  also changes the keys the agent builds from these strings, so the keys
+  do not give the text away. A customer can ask us to refuse any report
+  that did not come through a collector with replacing turned on.
 - A customer can choose an instance ID that names a machine or a
   person.
 
