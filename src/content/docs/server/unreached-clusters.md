@@ -6,7 +6,7 @@ order: 100
 
 An unreached cluster groups never-hit methods under the one root whose deletion removes them all. The agent sends the call edges and the server builds the clusters across your runs. The agent's [call graph page](/docs/agent/call-graph) defines a call edge, how a cluster forms and the kinds of root. This page covers how the server shows them: the **Unreached clusters** page in the Findings group, and the code path graph on the service overview and on each class page.
 
-The server computes clusters on every request, over the runs in the [scope](scope) you have selected. Changing the environment, the version or the seen-within part of the scope can change a cluster's root and members.
+The server computes clusters over the runs in the [scope](scope) you have selected. Changing the environment, the version or the seen-within part of the scope can change a cluster's root and members. For the scopes people open most, the server computes them in the background with the report, and the page and the graph read the stored result, with the page's **As of** saying when it was computed. **Known for at least (days)** changes the clusters themselves, so with it set the page computes them when you open it. Any other scope is computed when you open it too. The code path graph draws the stored clusters and class findings together with endpoints, probes and calls read when you open it, so for up to about 20 minutes after new data arrives a node's hits can be newer than its cluster. See [the snapshots](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots).
 
 ## What a row on the Unreached clusters page shows
 
