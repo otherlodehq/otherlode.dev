@@ -8,11 +8,13 @@ Findings about unused code depend on dates, such as how long code has been known
 
 ## Dates come from the server's clock
 
-Every date the server shows comes from its own clock, at the moment a payload reaches it. It never shows a date from your agent's clock. Agent clocks differ from host to host, and dates taken from many of them could not be put in order. With one clock, the service-wide dates of an item always order as first known, then first hit, then last hit.
+Every date about your code comes from the server's own clock, at the moment a payload reaches it. It never shows a date from your agent's clock. Agent clocks differ from host to host, and dates taken from many of them could not be put in order. With one clock, the service-wide dates of an item always order as first known, then first hit, then last hit.
 
 A date therefore trails the event. The agent sends counts at its flush interval, and a collector that buffers or retries delivers them later still. Treat a date as accurate to a flush interval or more. The dates can tell you how long code has gone unused. They are not an audit record.
 
 The API writes every date as a UTC time in ISO 8601 form with a `Z` suffix, such as `2026-09-22T23:19:31Z`.
+
+Two times are not arrival times. `as_of`, shown on the overview and on the finding pages read from a snapshot as **As of**, is the time the server computed the result: the time its stored snapshot was computed, or the time of a live read. `last_failed_at`, shown while a snapshot is being prepared, is the time the server last failed to compute it. A day filter on a page read from a snapshot, such as **Stale after (days)**, counts back from `as_of`. See [the snapshots](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots).
 
 ## Service-wide dates
 

@@ -21,6 +21,8 @@ Code that is stored but not judged still shows where it is useful. The overview 
 
 ### Counts in the sidebar
 
+The counts beside **Never hit**, **Never called**, **Never supplied**, **Never loaded**, **Failed to load**, **Never initialised**, **Never instantiated**, **Unreached clusters**, **Unused dependencies**, **Dependencies failed to load**, **Instances**, **Dependencies** and **Absent references** come from the report. For most scopes the report is read from a snapshot, which can trail the data by up to about 20 minutes. **Never hit**, **Never initialised**, **Never instantiated** and **Unreached clusters** are read from the same snapshot, so their counts match their pages. The other pages are worked out when you open them, so one of their counts can differ from the total on its page. While the report is being prepared, those counts are left out. The count beside **Stale** is read with the page's scope and days, the way its page is: from the snapshot when the scope has one, and worked out when you read when it has none. The counts beside **Classes**, **Endpoints** and **Unclassified** are read with each page's scope and are never from a snapshot. See [the report's snapshot](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots).
+
 A count above zero shows in heavier type. **Failed to load** and **Dependencies failed to load** appear only while their count is above zero. The dependency counts show a trailing `~` while the dependency listing is incomplete, which means the count may change. See [Unused dependencies](#unused-dependencies).
 
 ### Filters that several pages share

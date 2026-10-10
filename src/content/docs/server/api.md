@@ -99,12 +99,36 @@ A route ignores a parameter it does not read.
 
 ### Fields every response uses
 
-- **Timestamps** are RFC 3339 in UTC, such as `2026-09-24T21:40:10Z`. Every date is the time the server received the data. See [Dates](dates).
+- **Timestamps** are RFC 3339 in UTC, such as `2026-09-24T21:40:10Z`. Every date is the time the server received the data, except `as_of` and `last_failed_at`, which are times the server computed or tried to compute a result. See [Dates](dates).
 - **Absent values** are `null`. A list with nothing in it is `[]`, never `null`.
 - **`watched_since`** is the time the service first reported in the scoped environment. With no `environment`, it is the earliest across the environments. It is `null` when nothing matches. A finding's age means something only against it. The routes that carry it say so.
 - **`first_known_at`, `first_hit_at`, `last_hit_at`** and their endpoint names (`first_called_at`, `last_called_at`), optional-parameter names (`first_omitted_at`, `last_omitted_at`) and dependency names (`first_loaded_at`, `last_loaded_at`) are the dates the server keeps for each location. Each last date can trail the true one by up to an hour, since the server moves it only when the stored date is more than an hour old. See [Dates](dates).
 - **`dates_capped`** is `true` when the row has no service-wide dates, so its dates come from the runs in scope. A capped first date can be later than the true one, and a capped last date earlier.
 - **`instances_known`** is the number of distinct instances with an in-scope run that knows the location.
+
+### Routes read from a snapshot
+
+`/report`, `/never-hit`, `/stale-hit`, `/never-initialized`, `/never-instantiated` and `/unreached-clusters` read a stored snapshot for these scopes, when the request has no `active_within_days`:
+
+- no `environment` and no `version`;
+- an `environment` and no `version`;
+- an `environment` and one of the 3 newest versions in it. A version is newer when its newest production run in that environment started later.
+
+A snapshot holds the scope's report and every row of the other five routes. The route applies the request's other parameters to those rows when the request arrives, as a live read applies them: `class_prefix`, `kind`, `routine`, `order`, `limit` and `offset`, `days` on `/stale-hit`, and `known_for_days` on `/never-initialized` and `/never-instantiated`. A day parameter counts back from the snapshot's `as_of`, not from the time of the request. `known_for_days` on `/never-hit` and `/unreached-clusters` changes which code folds into another row or cluster, so a request to either route with it is computed live.
+
+The server refreshes a snapshot when data has arrived since it was computed, at most once every 15 minutes, and at least once every 6 hours without new data. A snapshot can trail the data by up to about 20 minutes, and more while the refresh has a backlog. The six routes trail together, so a count in the report matches the `total` of a route read from the same snapshot, and can differ from a route computed live by what arrived in that time. Every other request is computed live when it arrives: a `version` outside the 3 newest, a `version` with no `environment`, any `active_within_days`, `known_for_days` on `/never-hit` or `/unreached-clusters`, and a service or environment that only test runs have reached. Every route not named above is computed live. See [How findings are judged](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots).
+
+Every `200` of the six routes carries `as_of`, the time the server read the data. For a snapshot it is the time the snapshot was computed, and for a live read the time the read started.
+
+A snapshot scope with no snapshot yet answers `202` with no rows or counts and a `Retry-After: 60` header:
+
+```json
+{"status": "computing", "last_failed_at": null}
+```
+
+A new service, environment or version has none until the next refresh computes it, and neither has any scope after a server release that changes how findings are judged. The refresh runs every 5 minutes. It computes missing snapshots first, and among them every scope with no `version` before any scope with one. The `202` is not an error. Repeat the request a minute or two later. A route never computes a snapshot scope live in its place.
+
+`last_failed_at` is the time the last refresh of the scope failed, or `null` when none has failed since its last snapshot. The refresh leaves a failed scope for an hour and then tries it again. The `202` never says why a refresh failed.
 
 ## `GET /me`
 
@@ -186,11 +210,14 @@ The response is `{"instances": [...]}`. `run_id`, `version` and `environment` co
 
 The counts behind the overview page. It has no paging. Every count covers the in-scope runs, except `instances.listed`, which also counts runs that match the scope but came through a collector older than their agent. The meaning of each finding is in [Findings](findings), [Inventory](inventory) and [Unreached clusters](unreached-clusters).
 
+The route is [read from a snapshot](#routes-read-from-a-snapshot) for most scopes, and answers `202` while the snapshot is computing. It reads no parameter other than the three scope parameters.
+
 | Field | Type | Meaning |
 |---|---|---|
 | `namespace`, `service` | string or null, string | The service. |
 | `version` | string or null | The `version` filter, `null` when unset. |
 | `active_within_days` | integer or null | The `active_within_days` filter, `null` when unset. |
+| `as_of` | timestamp | When the server read the data. See [routes read from a snapshot](#routes-read-from-a-snapshot). |
 | `instances` | object | `total`, `listed`, `with_complete_baseline`, `ended_cleanly`, `silent_without_final_flush` and `unsettled`. Each counts distinct instances. `unsettled` counts the instances with an in-scope run that has received no delta batch or whose counts are behind. `total` counts the instances with a run a finding can judge. `listed` counts every instance the `/instances` route lists, so it also counts an instance whose every run that matches the scope came through a collector older than its agent. It is never below `total`. `ended_cleanly` and `silent_without_final_flush` judge an instance by its latest run. `unsettled` counts an instance once when any of its in-scope runs is unsettled, so the instance list shows the same instance with a badge for its latest run or with `earlier_run_unsettled`. A run is silent when it has not ended cleanly and was not seen for over an hour. |
 | `methods` | object | `known` is the sum of `hit`, `never_hit`, `in_class_findings`, `in_never_hit_code`, `unjudged_constructors` and `counts_behind`. It counts judgeable methods and leaves out static initialisers. A method the service has recorded a hit of counts in `hit` when the request names no `version` and no `active_within_days`, even when no run in scope holds a hit. `counts_behind` counts the methods with no hits that a run not yet settled knows. They make no zero-count claim. |
 | `branch_sites` | object | `known`, `all_outcomes_hit`, `with_never_hit_outcome`, `in_never_hit_code`, `routine`, `counts_behind` and `withheld`. A site that folds into code a finding already lists counts in `in_never_hit_code`. `routine` counts sites whose only never-hit outcomes are routine. `counts_behind` counts sites whose judgeable outcomes with no hits are all in locations a run not yet settled knows. `withheld` counts the other sites with an outcome with no hits and no branch key, in an environment that has lost a production run. They make no claim. The first three leave the other four out. |
@@ -207,7 +234,7 @@ The counts behind the overview page. It has no paging. Every count covers the in
 
 ### `GET /services/{service}/never-hit`
 
-The never-hit finding as `rows`. A row is a method row or a site row. See [Site rows](#site-rows) for the second kind.
+The never-hit finding as `rows`. A row is a method row or a site row. See [Site rows](#site-rows) for the second kind. The route is [read from a snapshot](#routes-read-from-a-snapshot) for most scopes when the request has no `known_for_days`, and answers `202` while the snapshot is computing. A request with `known_for_days` is computed live.
 
 | Parameter | Value | Effect |
 |---|---|---|
@@ -230,11 +257,11 @@ A method row has these fields, plus the [method naming fields](#method-naming-fi
 | `inlined_from_class_name` | string or null | The class an inlined copy came from. |
 | `routes` | array | The endpoints this method handles, as `{"verb", "route_template"}`, sorted by verb and then template. `verb` is `*` when the framework takes any method. |
 
-The response is `{"rows", "total", "capped_hidden", "watched_since"}`. `capped_hidden` counts the capped outcomes that `known_for_days` left out, and the outcomes with no branch key that an environment of the read lost a run for. Without `known_for_days` it counts only the second kind. See [Dates](dates).
+The response is `{"rows", "total", "capped_hidden", "watched_since", "as_of"}`. `capped_hidden` counts the capped outcomes that `known_for_days` left out, and the outcomes with no branch key that an environment of the read lost a run for. Without `known_for_days` it counts only the second kind. See [Dates](dates).
 
 ### `GET /services/{service}/stale-hit`
 
-The stale-hit finding: code that some run hit, but not within the last `days` days. When the request names no `version` and no `active_within_days`, code that the service has recorded a hit of counts as hit by some run, so a row can have `hits_total` `0`. It returns the same two row kinds as `/never-hit`.
+The stale-hit finding: code that some run hit, but not within the last `days` days. When the request names no `version` and no `active_within_days`, code that the service has recorded a hit of counts as hit by some run, so a row can have `hits_total` `0`. It returns the same two row kinds as `/never-hit`. The route is [read from a snapshot](#routes-read-from-a-snapshot) for most scopes, with every parameter applied to the snapshot, and answers `202` while the snapshot is computing. `days` then counts back from `as_of`.
 
 | Parameter | Value | Effect |
 |---|---|---|
@@ -242,7 +269,7 @@ The stale-hit finding: code that some run hit, but not within the last `days` da
 | `kind` | `method` or `branch` | As on `/never-hit`. |
 | `order` | `last_hit` or `class` | `last_hit`, the default, puts the stalest row first. `class` keeps the rows of one class together, in the order of `/never-hit`. Another value gets `400` with `order must be "last_hit" or "class"`. |
 
-The route also takes `class_prefix`. A method row has the fields of a `/never-hit` method row, with these differences: it adds `first_hit_at` (timestamp or null), `hits_total` (integer) and `last_hit_at` (timestamp, never `null`), and it has no `known_for_days` filter. The response carries the same four fields as `/never-hit`.
+The route also takes `class_prefix`. A method row has the fields of a `/never-hit` method row, with these differences: it adds `first_hit_at` (timestamp or null), `hits_total` (integer) and `last_hit_at` (timestamp, never `null`), and it has no `known_for_days` filter. The response carries the same five fields as `/never-hit`.
 
 ### Site rows
 
@@ -342,7 +369,7 @@ Four routes list classes by one finding each. All four take `class_prefix`, and 
 | `/never-instantiated` | Loaded classes with a constructor and an instance method, where no constructor ran. | `known_for_days` |
 | `/failed-to-load` | Classes the agent wove that the JVM never defined. Each is a deployment problem and never dead code. | None |
 
-`/never-initialized` and `/never-instantiated` also return `watched_since`. Their `known_for_days` keeps a class only when its `first_known_at` is at least that many days old. See [Findings](findings).
+`/never-initialized` and `/never-instantiated` also return `watched_since` and `as_of`. Their `known_for_days` keeps a class only when its `first_known_at` is at least that many days old. Both are [read from a snapshot](#routes-read-from-a-snapshot) for most scopes, with every parameter applied to the snapshot, and answer `202` while the snapshot is computing. `known_for_days` then counts back from `as_of`. See [Findings](findings).
 
 `/never-loaded`, `/never-initialized` and `/never-instantiated` rows have the [class naming fields](#class-naming-fields) and these fields:
 
@@ -432,7 +459,7 @@ Optional-parameter probes merged across the in-scope runs, with the [method nami
 
 ### `GET /services/{service}/unreached-clusters`
 
-Unreached clusters, largest first and then by root. The route takes `class_prefix` and `known_for_days`, and a page counts clusters. The response is `{"clusters", "total"}`. See [Unreached clusters](unreached-clusters) for what a cluster is.
+Unreached clusters, largest first and then by root. The route takes `class_prefix` and `known_for_days`, and a page counts clusters. The response is `{"clusters", "total", "as_of"}`. See [Unreached clusters](unreached-clusters) for what a cluster is. The route is [read from a snapshot](#routes-read-from-a-snapshot) for most scopes when the request has no `known_for_days`, and answers `202` while the snapshot is computing. A request with `known_for_days` is computed live.
 
 | Field | Type | Meaning |
 |---|---|---|
