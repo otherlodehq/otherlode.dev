@@ -4,9 +4,9 @@
 
 /*
   Stone and cinnabar. The neutrals are warm rock greys, and cinnabar
-  marks what Otherlode finds. "Ink"
-  draws the borders and shadows of the boxes. "Ground" is the dark band
-  under the ridge.
+  marks what Otherlode finds. "Ink" draws the borders and shadows of the
+  boxes. "Ground" is the dark band under the ridge. "Wordmark band" is
+  the grey behind the wordmark's letters.
 */
 :root {
   --background: #ECEAE6;
@@ -25,6 +25,7 @@
   --terminal: #24201D;
   --terminal-foreground: #EDE8E2;
   --terminal-muted: #B9AFA6;
+  --wordmark-band: #DDD7CE;
 
   --ridge-far: #C9C3BB;
   --ridge-mid: #A79F96;
@@ -55,6 +56,7 @@
     --terminal: #0D0C0B;
     --terminal-foreground: #ECE7E1;
     --terminal-muted: #A69C93;
+    --wordmark-band: #2E2925;
 
     --ridge-far: #2A2623;
     --ridge-mid: #211E1B;
@@ -401,8 +403,12 @@
     }
   }
 
-  /* Code that never ran is hatched in the signal colour, like OTHER in
-     the wordmark. */
+  /* The grey band behind the wordmark's letters. */
+  .wordmark-band {
+    fill: var(--wordmark-band);
+  }
+
+  /* Code that never ran is hatched in the signal colour. */
   .never-ran {
     background-image: repeating-linear-gradient(
       -45deg,

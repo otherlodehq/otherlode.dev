@@ -8,5 +8,3 @@ dist/
 .env*
 .wrangler/
 
-# Python environment for scripts/wordmark
-.venv-wordmark/
