@@ -42,6 +42,14 @@ The standalone file has fixed colours, since it cannot follow the page's
 theme. `--lockup` with `--badge` also writes the badge beside the wordmark,
 spaced as in the site header.
 
-Copies of both, for light and dark backgrounds, with PNG renders, live in
-`brand/` in the `otherlode-server` repo. Its `brand/README.md` has the
-commands that make them.
+The server's web UI draws the wordmark in its top bar from its own copy of
+the module, `web/src/lib/wordmark.ts` in the `otherlode-server` repo. Write
+that copy with `--ts`, with that repo checked out beside this one:
+
+```sh
+python3 scripts/wordmark/wordmark.py --ts ../otherlode-server/web/src/lib/wordmark.ts
+```
+
+Copies of the standalone SVG and the lockup, for light and dark backgrounds,
+with PNG renders, live in `brand/` in the `otherlode-server` repo. Its
+`brand/README.md` has the commands that make them.
