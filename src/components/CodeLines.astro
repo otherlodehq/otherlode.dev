@@ -31,7 +31,7 @@ const { lines } = Astro.props;
   <div class="code-lines-inner">
     {
       lines.map((line) => (
-        <div class:list={['code-line', { 'never-ran': line.dead }]}>
+        <div class:list={['code-line', { 'code-line-dead': line.dead }]}>
           <span class="code-line-number">{line.n}</span>
           <code class:list={{ 'text-muted-foreground': line.muted }}>{line.code}</code>
           {/* One line, since a code line keeps its whitespace. */}

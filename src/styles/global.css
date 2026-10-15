@@ -523,7 +523,8 @@
   }
 
   /* Code that never ran is hatched in the signal colour. */
-  .never-ran {
+  .never-ran,
+  .code-lines-inner {
     background-image: repeating-linear-gradient(
       -45deg,
       color-mix(in oklab, var(--signal-text) 20%, transparent) 0 2px,
@@ -571,8 +572,15 @@
     display: grid;
     grid-template-columns: 1.625rem minmax(max-content, 1fr) auto;
     column-gap: 0.875rem;
+    background-color: var(--card);
     padding-inline: 0.875rem;
     white-space: pre;
+  }
+
+  /* The excerpt's hatch shows through, so its stripes run on unbroken
+     from one dead line to the next. */
+  .code-line-dead {
+    background-color: transparent;
   }
 
   .code-line-number {
