@@ -1,38 +1,80 @@
 ---
 /**
- * The badge's mountain range drawn wide, as a band between the hero and
- * the dark ground below it. Its last layer is the ground colour, so the
- * section after it reads as the inside of the mountain. It is decoration
- * only and hidden from assistive technology.
+ * The badge's mountain range drawn wide in square pixels, as a band between
+ * the hero and the dark ground below it. Its last layer is the ground
+ * colour, so the section after it reads as the inside of the mountain. It
+ * is decoration only and hidden from assistive technology.
+ *
+ * The range is 320 pixels wide, then repeats mirrored so wide screens see no
+ * seam until 1920 CSS pixels. The band is 18 pixels tall and draws each
+ * pixel at 3 CSS pixels on a phone and 6 above that, cropping at the right
+ * rather than stretching.
  */
 interface Props {
   class?: string;
 }
 
 const { class: className = '' } = Astro.props;
+
+const rangeWidth = 320;
+const width = rangeWidth * 2;
+const height = 18;
+
+const layers = [
+  {
+    class: 'ridge-far',
+    points: 'L-10 120 L90 60 L170 110 L265 30 L345 95 L410 55 L500 118 L590 22 L670 96 L760 48 L835 104 L930 34 L1010 90 L1085 52 L1170 112 L1260 28 L1345 92 L1420 58 L1510 100 L1610 44',
+  },
+  {
+    class: 'ridge-mid',
+    points: 'L-10 165 L70 128 L150 170 L230 120 L300 150 L380 108 L470 168 L545 132 L615 172 L700 116 L790 160 L860 126 L950 174 L1030 120 L1120 158 L1195 112 L1290 170 L1370 130 L1460 166 L1540 118 L1610 140',
+  },
+  {
+    class: 'ridge-near',
+    points: 'L-10 205 L55 172 L120 208 L190 168 L260 214 L345 184 L410 210 L470 176 L540 206 L620 170 L705 212 L780 178 L850 204 L930 174 L1005 210 L1085 180 L1160 212 L1240 172 L1320 206 L1400 182 L1480 214 L1560 176 L1610 196',
+  },
+  {
+    class: 'ridge-ground',
+    points: 'L-10 242 L60 222 L130 246 L190 226 L250 248 L330 220 L400 244 L460 230 L530 248 L600 224 L680 246 L750 228 L820 250 L900 222 L970 244 L1040 230 L1110 248 L1190 224 L1260 246 L1330 228 L1410 250 L1480 226 L1550 244 L1610 232',
+  },
+];
+
+function steppedPath(points: string): string {
+  const line = points
+    .split('L')
+    .filter((point) => point.trim())
+    .map((point) => point.trim().split(/\s+/).map(Number) as [number, number]);
+
+  const rowAt = (x: number): number => {
+    let i = 0;
+    while (i < line.length - 2 && line[i + 1][0] < x) i++;
+    const [x0, y0] = line[i];
+    const [x1, y1] = line[i + 1];
+    const t = Math.min(1, Math.max(0, (x - x0) / (x1 - x0)));
+    return Math.round(((y0 + t * (y1 - y0)) / 280) * height);
+  };
+
+  let d = `M0 ${height}`;
+  let row = -1;
+  for (let column = 0; column < width; column++) {
+    const inRange = column < rangeWidth ? column + 0.5 : width - column - 0.5;
+    const next = rowAt((inRange / rangeWidth) * 1600);
+    if (next !== row) {
+      d += `H${column}V${next}`;
+      row = next;
+    }
+  }
+  return `${d}H${width}V${height}Z`;
+}
 ---
 
 <svg
-  class:list={['ridge block w-full', className]}
-  viewBox="0 0 1600 280"
-  preserveAspectRatio="none"
+  class:list={['ridge block h-[54px] w-full sm:h-[108px]', className]}
+  viewBox={`0 0 ${width} ${height}`}
+  preserveAspectRatio="xMinYMax slice"
+  shape-rendering="crispEdges"
   aria-hidden="true"
   focusable="false"
 >
-  <path
-    class="ridge-far"
-    d="M-10 290 L-10 120 L90 60 L170 110 L265 30 L345 95 L410 55 L500 118 L590 22 L670 96 L760 48 L835 104 L930 34 L1010 90 L1085 52 L1170 112 L1260 28 L1345 92 L1420 58 L1510 100 L1610 44 L1610 290 Z"
-  />
-  <path
-    class="ridge-mid"
-    d="M-10 290 L-10 165 L70 128 L150 170 L230 120 L300 150 L380 108 L470 168 L545 132 L615 172 L700 116 L790 160 L860 126 L950 174 L1030 120 L1120 158 L1195 112 L1290 170 L1370 130 L1460 166 L1540 118 L1610 140 L1610 290 Z"
-  />
-  <path
-    class="ridge-near"
-    d="M-10 290 L-10 205 L55 172 L120 208 L190 168 L260 214 L345 184 L410 210 L470 176 L540 206 L620 170 L705 212 L780 178 L850 204 L930 174 L1005 210 L1085 180 L1160 212 L1240 172 L1320 206 L1400 182 L1480 214 L1560 176 L1610 196 L1610 290 Z"
-  />
-  <path
-    class="ridge-ground"
-    d="M-10 290 L-10 242 L60 222 L130 246 L190 226 L250 248 L330 220 L400 244 L460 230 L530 248 L600 224 L680 246 L750 228 L820 250 L900 222 L970 244 L1040 230 L1110 248 L1190 224 L1260 246 L1330 228 L1410 250 L1480 226 L1550 244 L1610 232 L1610 290 Z"
-  />
+  {layers.map((layer) => <path class={layer.class} d={steppedPath(layer.points)} />)}
 </svg>
