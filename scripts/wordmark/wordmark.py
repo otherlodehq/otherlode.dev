@@ -97,8 +97,9 @@ def svg(letters, width, height, colour, band):
 
 
 # The lockup spaces the badge and the wordmark as the site header does on a
-# wide screen: a 40 pixel badge, a 10 pixel gap and the wordmark 27 pixels
-# high. One grid pixel of the wordmark is 3 screen pixels.
+# wide screen: the badge at one screen pixel to each of its pixels, a 10
+# pixel gap and the wordmark 27 pixels high. One grid pixel of the
+# wordmark is 3 screen pixels.
 PX = 1 / 3
 
 
@@ -106,12 +107,13 @@ def lockup(letters, width, height, colour, band, badge_svg):
     """The badge and the wordmark side by side, in one SVG."""
     view_box = re.search(r'<svg[^>]*viewBox="([^"]+)"', badge_svg).group(1)
     inner = re.sub(r'^.*?<svg[^>]*>|</svg>\s*$', '', badge_svg, flags=re.S)
-    badge, gap = 40 * PX, 10 * PX
-    total_w, total_h = badge + gap + width, badge
+    badge_w, badge_h = (float(v) * PX for v in view_box.split()[2:])
+    gap = 10 * PX
+    total_w, total_h = badge_w + gap + width, max(badge_h, height)
     return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {total_w:.3f} {total_h:.3f}" role="img" aria-label="Otherlode">
   <title>Otherlode</title>
-  <svg x="0" y="0" width="{badge:.3f}" height="{badge:.3f}" viewBox="{view_box}">{inner}</svg>
-  <g transform="translate({badge + gap:.3f} {(total_h - height) / 2:.3f})">
+  <svg x="0" y="{(total_h - badge_h) / 2:.3f}" width="{badge_w:.3f}" height="{badge_h:.3f}" viewBox="{view_box}" shape-rendering="crispEdges">{inner}</svg>
+  <g transform="translate({badge_w + gap:.3f} {(total_h - height) / 2:.3f})">
   {wordmark_body(letters, width, height, colour, band)}
   </g>
 </svg>
