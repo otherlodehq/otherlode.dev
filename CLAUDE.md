@@ -6,6 +6,12 @@ Run the `unslop` skill over any site copy, comment or doc comment
 before treating it as finished. That means no em dashes and no stock AI
 phrasing, such as "seamless," "robust," "leverage" or "crucial."
 
+Avoid code comments. Do not write comments that restate what the code
+does, and do not write comments that explain why a choice was made or
+why one construct was picked over another (e.g. "use X, not Y"). Write
+one only for a hard constraint or surprising consequence that the code
+and its tests cannot convey, and keep it short.
+
 ## Claims
 
 Every claim on the site must be true of the shipped product today. Don't
