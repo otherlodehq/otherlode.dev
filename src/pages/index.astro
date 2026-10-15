@@ -4,6 +4,7 @@ import CodeLines, { type CodeLine } from '../components/CodeLines.astro';
 import CodePathsFigure from '../components/CodePathsFigure.astro';
 import ReplicasFigure from '../components/ReplicasFigure.astro';
 import Ridge from '../components/Ridge.astro';
+import StartCursor from '../components/StartCursor.astro';
 import { agentRepo, contactEmail, earlyAccessHref, earlyAccessMailto } from '../lib/site';
 
 /** One row of a short list, such as an endpoint and its call count. A row with a verdict never ran. */
@@ -130,7 +131,7 @@ const security = [
           Java, Kotlin and Scala services.
         </p>
         <div class="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-5">
-          <a href={earlyAccessHref} class="button">Ask for early access</a>
+          <a href={earlyAccessHref} class="button"><StartCursor />Ask for early access</a>
           <p class="text-[0.9375rem] text-muted-foreground">
             Or email <a href={earlyAccessMailto} class="underline">{contactEmail}</a>.
           </p>
@@ -303,7 +304,7 @@ const security = [
         <div class="box-bar" aria-hidden="true"></div>
         <div class="flex flex-col items-start justify-between gap-6 p-6 sm:p-7 md:flex-row md:items-center">
           <h2 id="access-title" class="display text-[clamp(1.75rem,3.4vw,2.5rem)]">We're in early access.</h2>
-          <a href={earlyAccessHref} class="button shrink-0">Ask for early access</a>
+          <a href={earlyAccessHref} class="button shrink-0"><StartCursor />Ask for early access</a>
         </div>
       </div>
     </div>
