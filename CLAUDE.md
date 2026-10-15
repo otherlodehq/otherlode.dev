@@ -46,6 +46,11 @@ release's code; the sync never replaces a release already on master. Put
 the same fix in the source repo's `docs/site/` when it still applies, or
 the next release copies the mistake again.
 
+## Commits
+
+A commit message never carries a `Claude-Session` line, a session link
+or a session id.
+
 ## Decisions
 
 Each decision's reasoning, rejected options and consequences live in its
