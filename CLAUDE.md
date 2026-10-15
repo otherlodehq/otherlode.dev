@@ -2,7 +2,7 @@
 
 ## Copy and comments
 
-Run the `humanizer` skill over any site copy, comment or doc comment
+Run the `unslop` skill over any site copy, comment or doc comment
 before treating it as finished. That means no em dashes and no stock AI
 phrasing, such as "seamless," "robust," "leverage" or "crucial."
 
