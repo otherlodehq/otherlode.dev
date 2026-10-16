@@ -24,7 +24,7 @@ Check the line on each collector. Two collectors with the same secret log the sa
 
 ## Turn the requirement on
 
-1. Sign in at `https://app.otherlode.dev` and click **Admin** in the top bar.
+1. Sign in at `https://app.otherlode.dev` and open the tenant menu in the top bar, then click **Admin**.
 2. Open **Redaction**.
 3. Paste the fingerprint into **Fingerprint**. The page trims spaces around it.
 4. Click **Require redacted payloads**, then confirm in the sheet.
@@ -56,7 +56,7 @@ The **Refused payloads** table on the **Redaction** page has one row for each re
 
 **Last 7 days** counts the payloads refused on the last 7 UTC dates, today included. **Last refused** shows how long ago the last one was, with the exact UTC time in the tooltip. The counts can trail ingest by about 10 seconds.
 
-When ingest refused anything in the last 24 hours, the **Services** page shows admins a banner that links to the **Redaction** page.
+When ingest refused anything in the last 24 hours, the **Services** page shows admins a banner, and the strip above a service's overview graph shows the same fact. Each links to the **Redaction** page and to this page.
 
 The server keeps only these counts. It keeps nothing from a refused payload or its request: no service, instance, address or key. So the table cannot name the sender. To find it, read the logs on your side, as the next section describes. [What the server keeps](data-kept#what-the-server-keeps-about-refused-payloads) says how long the counts stay.
 

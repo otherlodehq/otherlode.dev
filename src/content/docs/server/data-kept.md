@@ -12,15 +12,20 @@ The server stores each payload under the tenant that owns the ingest key it arri
 
 | Payload | What the server keeps |
 |---|---|
-| Any payload | The service namespace and name, the instance ID, the run ID, the service version, the environment, the test-run flag and the agent version. A payload from a run whose `fields_stripped` flag is set marks the run as stripped for good. |
+| Any payload | The service namespace and name, the instance ID, the run ID, the service version, the environment, the test-run flag, the agent version and the flush interval. A payload from a run whose `fields_stripped` flag is set marks the run as stripped for good. |
 | Delta batch | The cumulative count for each probe, endpoint and dependency, for its run. The server merges a count with `max()` within a run, so a repeated or late batch changes nothing. A final flush marks the run as ended cleanly. |
 | Any delta batch or manifest | The run's delivery state. The run keeps whether a delta batch has arrived, which only a delta batch sets and which never reverts, and the highest `payload_sequence` it has sent. A delta batch or manifest with a higher sequence sets whether the run's counts are pending. A delta batch moves the state only after the server stored all of its counts. The run is marked as behind from the time the server received the first payload that said some counts are pending, until a payload with a higher sequence says none are. A payload with a lower or equal sequence changes nothing. |
 | Probe manifest | What the ids in a delta batch name: class, method and parameter names, source file names and lines, call edges, referenced classes, branch sites with their condition text, endpoint route templates, dependencies with their jar locations, and the skipped, failed and unreported classes with the reasons the agent gave. |
-| Static baseline chunk | The classes the scan declared, with their methods, call edges, branch sites and references, and the classes it could not read. A scan counts as complete when every chunk has arrived. |
+| Static baseline chunk | The classes the scan declared, with their methods, call edges, branch sites and references, and the classes it could not read, and the include and exclude rules the scan applied. A scan counts as complete when every chunk has arrived. |
+| Class listing chunk | The names of the classes the run's build holds, and the include and exclude rules the agent applied. A listing counts as complete when every chunk has arrived. A chunk with other rules than the first chunk to arrive is not stored. |
 
 A string literal in a condition and a jar path are stored as they arrive, so a literal is stored as the agent sent it unless a collector with redaction on replaced it. A test run is stored too, but it never lists a service. See [Test runs](/docs/agent/test-runs).
 
 The server stores some code that it never judges: inline, generated, routine and unread-shape code, and every run that carried `fields_stripped`. These are kept and shown, and they never count in a dead-code claim. [How findings are judged](how-it-works) explains why.
+
+### Removed code is not stored
+
+The server stores no list of removed code and no removal date. It works removal out from the retained runs when you read, and when it computes a snapshot. The only stored result is a snapshot, which holds the findings with removed code left out, the report's counts of it and the rows of the Removed list, and the server replaces a snapshot whole. The date a [Removed](inventory#removed) row shows is the last time a run that held the thing was seen, so a row leaves the list when those runs expire. See [How findings are judged](how-it-works#removed-code-is-kept-out-of-the-findings).
 
 ### Dates come from the server's clock
 
@@ -36,7 +41,7 @@ Each process has its own run ID, and the server keeps every run's rows apart. A 
 
 A run takes its environment and its test-run flag from its first payload. It takes its version from the first payload that carries one, and an empty version never replaces a known one. See [Scope and environments](scope).
 
-A run keeps which classes it loaded and its own counts. What it reported about each class is stored once per service and shared by every run that reported the same content, so a restart of a build the service has already reported adds little. A class record that no run names is deleted when an expiry, a prune or an environment deletion removes the last run that named it.
+A run keeps which classes it loaded and its own counts. What it reported about each class is stored once per service and shared by every run that reported the same content, so a restart of a build the service has already reported adds little. A class record that no run names is deleted when an expiry, a prune or an environment deletion removes the last run that named it. A class listing is kept the same way: what a chunk said is stored once per service and deleted when no run names it.
 
 ## What the server stores about people
 

@@ -10,7 +10,7 @@ Your agents report to your collector. The collector forwards what they send to O
 
 Only an admin of your tenant can create a key.
 
-1. Sign in at `https://app.otherlode.dev` and click **Admin** in the top bar.
+1. Sign in at `https://app.otherlode.dev` and open the menu under your tenant's name at the right of the top bar, then click **Admin**.
 2. Open **API keys** and click **Create key**.
 3. Enter a name, choose the scope **Ingest**, and create the key.
 4. Copy the key. The page shows it once, with the note "Copy this key now. You will not see it again."
@@ -28,7 +28,7 @@ OTHERLODE_COLLECTOR_FORWARD_AUTH_TOKEN=<your ingest key>
 
 The collector sends the token as `Authorization: Bearer <key>` on every request. To keep the key out of the environment, put it in a file and set `OTHERLODE_COLLECTOR_FORWARD_AUTH_TOKEN_FILE` to the file's path. Set one of the two variables, not both.
 
-Use the host name `ingest.otherlode.dev` and no path. The collector adds the paths `/v1/otherlode/deltas`, `/v1/otherlode/manifest` and `/v1/otherlode/static-baseline` itself. `ingest.otherlode.dev` answers only those paths, and `app.otherlode.dev` never answers them. A request for any other path on the ingest host gets a 404.
+Use the host name `ingest.otherlode.dev` and no path. The collector adds the paths `/v1/otherlode/deltas`, `/v1/otherlode/manifest`, `/v1/otherlode/static-baseline` and `/v1/otherlode/class-listing` itself. `ingest.otherlode.dev` answers only those paths, and `app.otherlode.dev` never answers them. A request for any other path on the ingest host gets a 404.
 
 Restart the collector after you change its variables.
 

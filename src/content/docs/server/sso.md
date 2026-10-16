@@ -82,7 +82,7 @@ To keep them, verify a domain that covers their emails first. You can also delet
 
 ### What happens to existing sessions
 
-Click **Enforce SSO**, then confirm in the sheet. Every session not made through SSO ends at once. Your own session stays, because it was made through SSO. Everyone else signs in again through your SSO connection. If someone tries another method, the login page shows "Your organization requires single sign-on. Sign in again through your company's single sign-on. If you do not see it, ask your admin."
+Click **Enforce SSO**, then confirm in the sheet. Every session not made through SSO ends at once. Your own session stays, because it was made through SSO. Everyone else signs in again through your SSO connection. If someone tries another method, the page **Sign-in did not complete** shows "Your organization requires single sign-on. Sign in again through your company's single sign-on. If you do not see it, ask your admin."
 
 If the connection later becomes inactive, or the last verified domain stops verifying, the page shows a warning. While SSO is enforced and the organization has no active connection, nobody can sign in. Fix the connection in the Admin Portal, or stop enforcing SSO.
 

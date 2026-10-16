@@ -1,12 +1,12 @@
 ---
 title: Inventory
-description: The service list and the six Inventory pages of a service, with what each lists, its columns and filters, and how the UI reads class, handler and namespace names.
+description: The service list and the seven Inventory pages of a service, with what each lists, its columns and filters, and how the UI reads class, handler and namespace names.
 order: 110
 ---
 
 The Inventory pages list what the server holds for a service, in the [scope](scope) you picked. They make no claim about dead code. Each finding has its own page in the Findings group, described in [findings](findings), and the pages here are the data those findings read.
 
-The service list is the first page of `https://app.otherlode.dev` after sign-in. A service opens on its Overview, and the sidebar on every service page lists the Inventory pages.
+The service list is the first page of `https://app.otherlode.dev` after sign-in. A service opens on its Overview, and the panel on every service page lists the Inventory pages.
 
 ## The service list
 
@@ -16,7 +16,7 @@ A service appears once a production run has reached the server. A service that o
 
 | Column | What it shows |
 |---|---|
-| **Service** | The service name, as a link to its Overview. The link opens the environment you last picked for this service in this browser, if the service still has it. Otherwise it opens every environment. |
+| **Service** | The service name, as a link to its Overview. A click anywhere on the row opens the same page. The link and the row open the environment you last picked for this service in this browser, if the service still has it. Otherwise it opens every environment. |
 | **Environments** | The environments a production run reached, in name order. The environment `none` reads "not named". A service with no environment shows a dash. |
 | **Instances** | The number of distinct instances with a production run, in any environment. |
 | **Last seen** | How long ago any production run of the service last reported, such as "3 days ago". The tooltip holds the exact UTC time. A service with no runs left reads "never". |
@@ -40,7 +40,7 @@ A service whose name starts with `unknown_service` shows a **name not set** badg
 
 ## The Inventory group
 
-The sidebar's Inventory group has six items, each with a count beside it.
+The panel's Inventory group has seven items, each with a count beside it.
 
 | Item | Count | Page |
 |---|---|---|
@@ -50,14 +50,17 @@ The sidebar's Inventory group has six items, each with a count beside it.
 | **Dependencies** | Every dependency known in scope | [Dependencies](#dependencies) |
 | **Absent references** | Absent references in scope | [Absent references](#absent-references) |
 | **Unclassified** | Classes in the list | [Unclassified classes](#unclassified-classes) |
+| **Removed** | Rows in the list | [Removed](#removed) |
 
-Every sidebar link carries the page's scope. While a service's dependency listing is incomplete, the **Dependencies** and **Absent references** counts end in a tilde, and their tooltip says "The dependency listing is incomplete, so this count may change."
+Every panel link carries the page's scope. While a service's dependency listing is incomplete, the **Dependencies** and **Absent references** counts end in a tilde, and their tooltip says "The dependency listing is incomplete, so this count may change."
 
 ### Lists, paging and the class prefix filter
 
-Classes, Endpoints, Dependencies, Absent references and Unclassified classes show 100 rows a page. A footer below the table reads `1-100 of 250` and has **Previous** and **Next** buttons. Instances has no paging, since it lists every instance at once.
+Beside each page's title, an info icon opens the page's section of these docs.
 
-Classes, Endpoints and Unclassified classes have a **Class prefix** box. It keeps the rows whose class name starts with the text, matching the JVM name such as `com.acme.shop.` and not the label the UI shows. The box applies a moment after you stop typing. On Endpoints the prefix is matched against the handler's class, so an endpoint with no known handler never matches a prefix.
+Classes, Endpoints, Dependencies, Absent references, Unclassified classes and Removed show 100 rows a page. A footer below the table reads `1-100 of 250` and has **Previous** and **Next** buttons. Instances has no paging, since it lists every instance at once.
+
+Classes, Endpoints, Unclassified classes and Removed have a **Class prefix** box. It keeps the rows whose class name starts with the text, matching the JVM name such as `com.acme.shop.` and not the label the UI shows. The box applies a moment after you stop typing. On Endpoints the prefix is matched against the handler's class, so an endpoint with no known handler never matches a prefix. On Removed it matches the class of a class row or a method row, so a prefix hides every endpoint and dependency row.
 
 ## Instances
 
@@ -87,41 +90,50 @@ The Classes page lists each class that has probes in scope, sorted by class name
 | Column | What it shows |
 |---|---|
 | **Class** | The class label, as a link to the [class page](#the-class-page). See [how names read](#how-names-read). |
-| **Methods** | The methods the Overview counts for the class. Inline methods, generated methods, methods of an unread shape and static initialisers are left out, so a class made only of those shows 0. |
+| **Methods** | The methods the report counts for the class. Inline methods, generated methods, methods of an unread shape and static initialisers are left out, so a class made only of those shows 0. |
 | **Never ran** | The methods that never ran and that [Never hit](findings) lists. A method covered by the class's own finding is not counted here. |
-| **Conditions** | The conditions the Overview counts for the class, one per site. |
+| **Conditions** | The conditions the report counts for the class, one per site. |
 | **With a path that never ran** | The conditions with at least one outcome that never ran. |
 | **Routed** | `yes` when any method of the class is the handler of an endpoint in scope, `no` otherwise. |
 | **Finding** | `never initialised` or `never instantiated`, or a dash when the class has neither. |
 
-The **Routed** filter has three options, **All classes**, **Routed only** and **Unrouted only**. Summed over every class, the rows equal the Overview's counts, since both use the same rules. The filters change which classes are listed and never a class's counts or finding.
+The **Routed** filter has three options, **All classes**, **Routed only** and **Unrouted only**. Summed over every class, the rows equal the report's counts, since both use the same rules. The filters change which classes are listed and never a class's counts or finding.
+
+For most scopes the list is read from the same [stored snapshot](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots) as the report, so its rows add up to the report's counts when both come from it. **As of**, at the end of the title's row, says when the snapshot was computed. While the snapshot is being prepared, the page says "This list is being prepared. The page shows it when it is ready." in place of the table.
 
 ### The class page
 
-A class label links to `/services/{service}/classes/{class}`, or the same path under a namespace prefix. The path holds the JVM class name. The **Classes** sidebar item stays selected on this page.
+A class label links to `/services/{service}/classes/{class}`, or the same path under a namespace prefix. The path holds the JVM class name. The **Classes** panel item stays selected on this page.
 
-The heading is the class label, with the full class name as a tooltip. A badge beside it names the class's finding. Under the heading, a muted line shows the package. A class that reads as a file adds its class name after the package, because the heading shows the file. A count line follows, such as "3 methods, 0 never ran, 3 in its class finding · 2 conditions, 1 with a path that never ran". The numbers are the class's row from the list.
+The heading is the class label, with the full class name as a tooltip. A badge beside it names the class's finding. A class that never loaded has no row in the list, and its badge reads **never loaded**. Under the heading, a muted line shows the package. A class that reads as a file adds its class name after the package, because the heading shows the file. A count line follows, such as "3 methods, 0 never ran, 3 in its class finding · 2 conditions, 1 with a path that never ran". The numbers are the class's row from the list, and **As of** under them says when that row was read.
 
 Below the count line is the class's code path graph. [Unreached clusters and the code path graph](unreached-clusters) describes it. A class with no probes in scope shows "No probes in scope for this class."
 
 ## Endpoints
 
-The Endpoints page lists every endpoint the agent found, with its calls in scope. The agent's [endpoints page](/docs/agent/endpoints) says what it counts and how it names an endpoint. The server merges the endpoint across every in-scope instance and run. Two rows never share a verb and route template. The page sorts rows by verb, then route template.
-
-Under the title, a line reads "Watched for 12 days, since 22 Sep 2026" for the scoped environment, or for every environment when none is scoped. See [dates](dates).
+The Endpoints page lists every endpoint the agent found, with its status and its calls in scope. The agent's [endpoints page](/docs/agent/endpoints) says what it counts and how it names an endpoint. The server merges the endpoint across every in-scope instance and run. Two rows never share a verb and route template. The page sorts rows by status, with never called first. The **Status** header reverses the order. Within a status, never called rows run from the earliest first known, stale rows from the oldest last call, and live rows from the newest last call. In both orders the statuses that claim nothing come last: **Module disabled**, then **Counts behind**, then **Not judged**. Rows with the same status and date, and the statuses that claim nothing, sort by verb and then route template.
 
 | Column | What it shows |
 |---|---|
-| **Verb** | The HTTP method, such as `GET`. An endpoint that takes every method reads `ANY`. |
-| **Route template** | The template in the agent's normal form, such as `/orders/{id}`. |
-| **Framework** | The endpoint module that found it, such as `spring-webmvc`. The badge **module disabled** appears when every in-scope run that reported the endpoint had that module switch itself off. Its tooltip says "This module switched itself off, so its endpoints stopped being counted." The badge **counts behind** appears on an endpoint with no calls when a run that reported it is not settled. Its tooltip says "A run of this endpoint has counts that have not all arrived, so it is never named never called or stale." |
-| **Discovery source** | `registration` when a framework registered the endpoint. `dispatch` when the agent found the endpoint only because a request matched it. |
+| **Status** | One of the six statuses below, with a button that shows the row's details. |
+| **Endpoint** | The HTTP method, such as `GET`, and the route template in the agent's normal form, such as `/orders/{id}`. An endpoint that takes every method reads `ANY`. |
 | **Handler** | The handler's class and method, as [names](#how-names-read) read. A dash means no instance could name the handler. |
-| **Instances known** | The number of in-scope instances that reported the endpoint. |
-| **First known** | When the server first learned of the endpoint. A star after the date means the date is capped to the instances in scope. |
-| **First called** | When the server first saw a call, or "never". |
-| **Calls total** | The calls summed over every in-scope run. |
+| **Calls** | The calls summed over every in-scope run. |
 | **Last called** | When the server last saw a call, or "never". |
+| **Instances** | The number of in-scope instances that reported the endpoint. |
+
+Each endpoint has one status.
+
+| Status | Meaning |
+|---|---|
+| **Module disabled** | The framework module switched itself off in every in-scope run that knows the endpoint, so its calls were not counted. The tooltip says "This module switched itself off, so its endpoints stopped being counted." |
+| **Live** | The endpoint was called, and its last call is within **Stale after (days)**. |
+| **Counts behind** | A run that knows the endpoint has counts that have not all arrived, and the endpoint is not live. The tooltip says "A run of this endpoint has counts that have not all arrived, so it is never named never called or stale." |
+| **Never called** | Some run registered the endpoint, and it has no calls and no call on record. |
+| **Stale** | The endpoint was called, and its last call is older than **Stale after (days)**. |
+| **Not judged** | The data cannot say. An endpoint found only by dispatch whose count was lost reads this way, and so does a called endpoint with no last-called date or with a capped last date older than the cutoff. |
+
+Select a row to show its framework, discovery source, first known and first called. A star after the first known date means the date is capped to the instances in scope. First called reads "never" when the server saw no call.
 
 Framework, discovery source and handler come from the in-scope instance that reported the endpoint most recently.
 
@@ -131,8 +143,8 @@ The page has three filters besides **Class prefix**.
 
 | Filter | Values |
 |---|---|
-| **Status** | **All endpoints**, **Never called** and **Stale**. |
-| **Stale after (days)** | Appears only with **Stale**. |
+| **Status** | **All endpoints**, **Never called**, **Stale**, **Live**, **Module disabled**, **Counts behind** and **Not judged**. |
+| **Stale after (days)** | The number of days after which a called endpoint reads **Stale** and not **Live**. It is always available and defaults to 30. |
 | **Framework** | The framework name, matched exactly. |
 
 **Never called** and **Stale** show findings. [Findings](findings) describes what each claims and leaves out, and the **Never called** item in the Findings group opens this page with that status. The **Endpoints** item in the Inventory group is not selected while that status is on.
@@ -180,6 +192,22 @@ The Unclassified page, titled **Unclassified classes**, lists classes a static s
 | **Reason** | The agent's own text for why the scan put the class in that bucket. |
 
 The page sorts rows by class name, then bucket, and has the **Class prefix** filter.
+
+## Removed
+
+The Removed page lists code that every live run of the environment proves absent: classes, methods, endpoints and dependencies. A deploy that deletes code leaves it here, and the findings leave it out. See [Removed code](findings#removed-code) for what a live run is and what proves a thing absent.
+
+The page lists only what a full read finds. For most scopes it is read from the same snapshot as the report and the findings, so it agrees with them, and its title row says "As of" the snapshot's time. A read that names a version or a seen-within window answers for the runs it selects, which held the code, so the page is empty for it. The Overview's removed counts and the panel's count follow the same rule. See [Scope and environments](scope#a-version-or-seen-within-read-keeps-removed-code).
+
+| Column | What it shows |
+|---|---|
+| **Kind** | `Class`, `Method`, `Constructor` for a constructor, `Endpoint` or `Dependency`. |
+| **Name** | A class reads as in [How names read](#how-names-read), with its package below. A method reads as its class does, with its signature below, as the Never hit page shows it, and a lambda body reads as in [Handlers](#handlers), such as "`Runnable` lambda in `main` at line 59". The class is not a link. An endpoint reads as its verb and route template, with `ANY` for a route that takes every verb. A dependency reads one line per identity, as `group:artifact` with its versions in muted text, and a jar with no group shows the artifact alone. |
+| **Stopped** | How long ago the last run that held the thing was last seen, such as "3 days ago". The tooltip holds the exact UTC time. |
+
+The page sorts rows by kind, in the order of the table above, and then by the identifiers the server stores, byte by byte: the class name for a class; the class name, method name and descriptor for a method; the stored verb and then the route template for an endpoint; and the identity key for a dependency. So endpoints that take every verb, stored as `*`, come before the others, and dependencies follow their identity key, not the names shown. See [the removed route](api#get-servicesserviceremoved). A method of a removed class has no row of its own, because its class stands for it. A removed class counts once, whatever its methods. The count beside **Removed** in the panel is the number of rows. While any kind has a count above zero, the strip above the Overview's graph reads `Removed:` and lists the count of each kind that has one, such as `Removed: 3 classes, 1 method`. It links to this page. The counts come from the report, so they follow its snapshot. See [the report](api#get-servicesservicereport).
+
+A row leaves the list when the runs that held it expire, since the server keeps no record of a removal. See [How long data is kept](data-kept). Code that comes back in a later run leaves the list at once. It keeps the dates it had, so restored code that was never hit reads as never hit since the service first knew it.
 
 ## How names read
 

@@ -4,7 +4,7 @@ description: Create an ingest or read key, copy its plaintext before the sheet c
 order: 40
 ---
 
-An API key identifies your tenant to the server. Only an admin can create or revoke a key. Open the web UI at `https://app.otherlode.dev`, choose **Admin** in the top bar, then **API keys**. A viewer who opens the page sees "Only admins can see this page."
+An API key identifies your tenant to the server. Only an admin can create or revoke a key. Open the web UI at `https://app.otherlode.dev`, open the tenant menu in the top bar, choose **Admin**, then **API keys**. A viewer who opens the page sees "Only admins can see this page."
 
 ## Pick a scope
 

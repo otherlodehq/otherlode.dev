@@ -13,13 +13,13 @@ A user is an admin or a viewer.
 - A viewer reads everything the tenant holds and changes nothing.
 - An admin does the same, and also manages the tenant's users, its API keys, its single sign-on connection and its [redaction requirement](require-redaction), and reads its audit log.
 
-Only an admin sees the **Admin** link in the top bar. A viewer who opens an admin page sees "Only admins can see this page." The admin routes also refuse every request that does not come from an admin's browser session, so an API key cannot call them.
+Only an admin sees **Admin** in the tenant menu in the top bar. A viewer who opens an admin page sees "Only admins can see this page." The admin routes also refuse every request that does not come from an admin's browser session, so an API key cannot call them.
 
 An email names at most one user in a tenant. The same person in two tenants is two users, each with its own role. Adding someone to your tenant never changes their access to another tenant.
 
 ## Open the Users page
 
-Click **Admin** in the top bar. The **Users** page opens first. It lists the tenant's users by email, with these columns:
+Open the tenant menu in the top bar and click **Admin**. The **Users** page opens first. It lists the tenant's users by email, with these columns:
 
 | Column | Shows |
 |---|---|
@@ -56,7 +56,7 @@ Click **Delete** on the user's row, then **Delete user** in the confirmation she
 
 The user's sessions end when you confirm, so the person is signed out of every browser. Their next request is refused.
 
-If you delete your own user, the sheet says you are signed out at once and cannot sign in again unless an admin adds you back. After you confirm, the UI sends you to the login page.
+If you delete your own user, the sheet says you are signed out at once and cannot sign in again unless an admin adds you back. After you confirm, the UI sends you to AuthKit's sign-in page.
 
 ## Keep at least one admin
 

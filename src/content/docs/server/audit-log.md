@@ -8,7 +8,7 @@ The audit log records who signed in to your tenant and who changed who can reach
 
 ## Who can read it
 
-Only an admin reads the log. Open **Admin** in the top bar, then **Audit log**. A viewer who opens the page sees "Only admins can see this page." An API key cannot read it. [Manage users and roles](users) covers the roles.
+Only an admin reads the log. Open the tenant menu in the top bar, choose **Admin**, then **Audit log**. A viewer who opens the page sees "Only admins can see this page." An API key cannot read it. [Manage users and roles](users) covers the roles.
 
 Every event belongs to one tenant. An admin sees the events of their own tenant and no other.
 
@@ -136,7 +136,7 @@ An operator's action on your tenant records an event with the actor kind operato
 | Tenant created | `tenant.created` | An operator creates the tenant. | The tenant's name | None |
 | Ingest limit set | `tenant.limit_set` | An operator changes the tenant's ingest rate limit. | The tenant's name | `ingest_rps` and `ingest_burst`, or "default" for each when the operator clears the limit |
 | Retention period set | `tenant.retention_set` | An operator changes the tenant's retention period. Setting the period it already has records nothing. | The tenant's name | `from` and `to`, in days |
-| Runs expired | `runs.expired` | The daily expiry removes runs, test runs, instances or stored classes of the tenant. A day it removes nothing records nothing. | "runs not seen in N days, or replaced test runs" | `retention_days`, `runs` (not seen within the period), `replaced_test_runs`, `instances`, `class_records`, `declared_class_records` |
+| Runs expired | `runs.expired` | The daily expiry removes runs, test runs, instances or stored classes of the tenant. A day it removes nothing records nothing. | "runs not seen in N days, or replaced test runs" | `retention_days`, `runs` (not seen within the period), `replaced_test_runs`, `instances`, `class_records`, `declared_class_records`, `class_listing_records` |
 | Instances pruned | `instances.pruned` | An operator removes runs not seen for some days, and instances left with no run. One event for each tenant that lost any. | "runs not seen in N days" | `older_than_days`, `runs`, `instances` |
 | Service deleted | `service.deleted` | An operator deletes one of your services on request. | The service, as `name` or `namespace/name` | None |
 | Environment deleted | `environment.deleted` | An operator deletes one of a service's environments on request. | The service followed by "environment" and the environment | `runs`, `instances` |

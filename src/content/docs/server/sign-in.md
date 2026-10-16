@@ -8,7 +8,7 @@ People sign in to the web UI at `https://app.otherlode.dev`. An API key never si
 
 ## Sign-in methods
 
-The sign-in page shows one button, **Sign in**. It sends the browser to WorkOS AuthKit, which proves who you are and sends you back. The server accepts four ways to sign in:
+When you open the web UI signed out, it sends you straight to the sign-in page of WorkOS AuthKit. AuthKit proves who you are and sends you back. The server accepts four ways to sign in:
 
 | Method | Works for |
 |---|---|
@@ -75,21 +75,21 @@ These events end a session before its limits:
 - The tenant's SSO organization is unlinked. Every session made through SSO ends, because the old identity provider made it.
 - An operator deletes the tenant. Every session of the tenant ends.
 
-When a session ends, the next request from the browser is refused, and the web UI sends you to the sign-in page with no message. Sign in again. A changed role takes effect on the existing session without a new sign-in.
+When a session ends, the next request from the browser is refused, and the web UI sends you to AuthKit's sign-in page with no message. Sign in again. A changed role takes effect on the existing session without a new sign-in.
 
 The server deletes ended sessions and expired tenant choices within a day of their end. [What the server keeps](data-kept) lists what is stored.
 
 ## Sign out
 
-Your email, tenant, and role show in the top bar, next to **Sign out**. The button ends the session in this browser and returns you to the sign-in page. Sessions on other browsers or devices stay open. It does not sign you out of Google, Microsoft, GitHub, or your company's identity provider.
+The top bar shows your tenant's name at the right. Click it to open a menu that holds your email, your role, **Admin** for an admin, and **Sign out**. **Sign out** ends the session in this browser and sends you to AuthKit's sign-in page. Sessions on other browsers or devices stay open. It does not sign you out of Google, Microsoft, GitHub, or your company's identity provider.
 
 If the request fails, the page stays where it is and shows "Sign-out failed, so you are still signed in. Try again."
 
 Sign-ins, failed sign-ins, and sign-outs appear in the tenant's audit log. See [Audit log](audit-log).
 
-## Messages on the sign-in page
+## Messages after a failed sign-in
 
-A failed sign-in returns you to the sign-in page with a message in red above the **Sign in** button. The address carries the message's code, such as `/login?error=expired`.
+After a failed sign-in, Otherlode shows its own page. The page is titled **Sign-in did not complete**. It shows a message in red above a **Try again** button, which starts a new sign-in. The address carries the message's code, such as `/login?error=expired`.
 
 | Code | Message | Cause |
 |---|---|---|
@@ -104,6 +104,8 @@ A failed sign-in returns you to the sign-in page with a message in red above the
 | `organization_choice` | "Your sign-in needed one of your organizations picked, and it could not be finished here. Ask your admin for help." | AuthKit required you to pick an organization and the server could not finish the sign-in, or an SSO sign-in needed that pick. |
 
 Any other code shows "Sign-in failed."
+
+If the sign-in page cannot reach the server, or the browser is offline, Otherlode does not send you to AuthKit. It shows a page titled **Sign in to Otherlode** with "Otherlode could not be reached. Try again in a moment." and a **Sign in** button.
 
 ### Causes of the no_account message
 

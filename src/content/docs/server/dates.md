@@ -14,7 +14,7 @@ A date therefore trails the event. The agent sends counts at its flush interval,
 
 The API writes every date as a UTC time in ISO 8601 form with a `Z` suffix, such as `2026-09-22T23:19:31Z`.
 
-Two times are not arrival times. `as_of`, shown on the overview and on the finding pages read from a snapshot as **As of**, is the time the server computed the result: the time its stored snapshot was computed, or the time of a live read. `last_failed_at`, shown while a snapshot is being prepared, is the time the server last failed to compute it. A day filter on a page read from a snapshot, such as **Stale after (days)**, counts back from `as_of`. See [the snapshots](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots).
+Two times are not arrival times. `as_of`, shown as **As of** in the top bar's evidence list on every service page and on the pages read from a snapshot, is the time the server computed the result: the time its stored snapshot was computed, or the time of a live read. `last_failed_at`, shown while a snapshot is being prepared, is the time the server last failed to compute it. A day filter on a page read from a snapshot, such as **Stale after (days)**, counts back from `as_of`. See [the snapshots](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots).
 
 ## Service-wide dates
 
@@ -106,10 +106,10 @@ Without `known_for_days`, `never-hit` lists capped rows like any other, except t
 | Filter | Where | Keeps |
 |---|---|---|
 | `known_for_days` | `never-hit`, `never-initialized`, `never-instantiated`, `unreached-clusters` | Items whose first known date is at least that many days ago. |
-| `days` | `stale-hit` | Items whose last hit is older than that many days. Required, 1 or more. |
-| `status=stale` with `days` | `endpoints` | Endpoints that were called before, and whose last called date is older than that many days. |
+| `days` | `stale-hit` | Items whose last hit is older than that many days. The default is 30. |
+| `days` | `endpoints` | The cutoff between the `live` and `stale` statuses: `live` endpoints were last called within that many days, and `stale` ones before that. The default is 30. |
 
-Each value is a whole number of 1 or more. On the web pages the fields are **Known for at least (days)** and **Stale after (days)**. **Stale after (days)** starts at 30.
+Each value is a whole number from 1 to 36500. On the web pages the fields are **Known for at least (days)** and **Stale after (days)**. **Stale after (days)** starts at 30.
 
 Only `never-hit` and `stale-hit` list capped rows. The other filters in this table read methods, classes and endpoints, which always have service-wide dates.
 
@@ -121,10 +121,9 @@ The API gives it as `watched_since` on each service and each of its environments
 
 Read a finding's age against watched since. No date can be older than it, and code can only look unused for as long as the service has been watched. A method that was last hit 90 days ago means one thing in a service watched for three years and another in one watched for 90 days. Code that runs weekly or monthly reads as never hit until it runs.
 
-The web UI shows it in three places:
+The web UI shows it in two places:
 
-- Under the title of the **Never hit**, **Stale hit**, **Never initialised**, **Never instantiated**, **Endpoints**, **Optional parameters** and **Dependencies** pages, as "Watched for 3 days, since 22 Sep 2026".
-- On the overview, under **What this is based on**, as **Watched for** and a value such as "3 days, since 22 Sep 2026". When the service has been watched for under 30 days, the overview adds a notice: "This service has been watched for 3 days. Code that runs weekly or monthly reads as never hit until it runs."
+- In the top bar of a service, as "watched 3 days". The duration is bold and amber while the service has been watched for under 30 days. Click it to open the evidence list, where **Watched for** reads "3 days, since 22 Sep 2026".
 - In the service list, in the **Watched for** column, as a length of time alone.
 
 ## How the UI shows a date
