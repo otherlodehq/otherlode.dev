@@ -4,7 +4,7 @@ status: accepted
 
 # The docs are written beside the code and published here
 
-Decided on 2026-10-06 with Luke.
+Decided on 2026-10-06.
 
 Each part's customer docs live in the repo that ships that part, in `docs/site/`, so a pull request that changes behaviour changes its page too. The site serves them at `/docs`. The overview and quickstart cover every part, so they live here in `src/content/docs/start/`. Operator material, such as the GCP deploy, database roles and the admin CLI, stays in each repo's README.
 
