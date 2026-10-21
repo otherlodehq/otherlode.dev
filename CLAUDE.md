@@ -6,7 +6,7 @@ Run the `unslop` skill over any site copy, comment or doc comment
 before treating it as finished. That means no em dashes and no stock AI
 phrasing, such as "seamless," "robust," "leverage" or "crucial." Site and
 marketing copy follows the `copy-style` skill's `marketing.md`, and docs
-under `src/content/docs/start/` follow its `docs.md`.
+under `src/content/docs/` follow its `docs.md`.
 
 Avoid code comments. Do not write comments that restate what the code
 does, and do not write comments that explain why a choice was made or
