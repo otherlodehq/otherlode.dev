@@ -74,8 +74,8 @@ The rule covers changes made on this page. Directory sync is not stopped by it. 
 
 If your tenant uses directory sync, your identity provider tells the server when a person leaves, is suspended, or changes email. The server applies each change to the user with that email. A scheduled job reads these events once a day, so a change takes effect at the next run and not at the moment you make it in your directory. [Set up single sign-on](sso) covers turning directory sync on.
 
-- **A person is deleted or suspended.** The server deletes the user, even when it is the tenant's last admin, and their sessions end. The match uses any email the directory holds for that person, and ignores case.
-- **A person changes email.** The user keeps its role and takes the new email. If another user of the tenant already has the new email, nothing changes.
+- **A person is deleted or suspended.** The server deletes the user, even when it is the tenant's last admin, and their sessions end. The match uses any email the directory holds for that person, and ignores case. An email that holds a NUL character is skipped.
+- **A person changes email.** The user keeps its role and takes the new email. If another user of the tenant already has the new email, or the new email is not one you could add on the **Users** page, nothing changes.
 - **A removal event is older than the user.** If you added the person back more than a minute after the event, the server skips the removal. Inside that minute the deletion goes ahead.
 
 Without directory sync, removing a person at your identity provider does nothing here until their session ends. Delete their user on the **Users** page to end it at once.

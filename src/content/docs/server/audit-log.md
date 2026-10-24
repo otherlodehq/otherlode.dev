@@ -70,6 +70,7 @@ The `reason` of a **Session ended** event is one of these:
 - `user_deleted`, when a user is deleted. The same actor then records **User deleted**.
 - `sso_enforced`, when SSO is turned on and ends every session not made through SSO.
 - `organization_unlinked`, when the tenant's WorkOS organization is unlinked and every session made through SSO ends.
+- `signed_in_again`, when someone signs in again in the same browser and the new session replaces it. The actor is the replaced session's user.
 
 `created_at` and `last_seen_at` are the times the session began and was last used, in UTC.
 
@@ -110,7 +111,7 @@ Opening an Admin Portal link and turning SSO on or off are admin actions in the 
 | Admin Portal opened | `sso.portal_opened` | An admin asks for an Admin Portal link. | Admin | The tenant's name | `intent` (`sso`, `domain_verification`, or `dsync`) |
 | SSO requirement changed | `tenant.sso_changed` | The tenant starts or stops enforcing SSO. | Admin, operator, or WorkOS | The tenant's name | `from → to`, as `on` or `off`. After an unlink, also `reason: organization_unlinked`. |
 | Just-in-time provisioning changed | `tenant.jit_changed` | Just-in-time provisioning turns on or off. | Admin, operator, or WorkOS | The tenant's name | `from → to`. When it turns off by itself, also `reason` (`sso_off` or `organization_unlinked`). |
-| SSO connection changed | `sso.connection_changed` | WorkOS reports a change to an SSO connection. One event for each WorkOS event. | WorkOS | The connection's name | `event`, `connection_type`, `state` |
+| SSO connection changed | `sso.connection_changed` | WorkOS reports a change to an SSO connection. One event for each WorkOS event. | WorkOS | The connection's name, with any control characters removed | `event`, `connection_type`, `state`, and `cleaned: true` when control characters were removed from the name, type or state |
 | Domain verified | `domain.verified` | The tenant gains a verified domain. | WorkOS | The domain | `event` when a WorkOS event reported it. None when the **Single sign-on** page found it. |
 | Domain removed | `domain.removed` | The tenant loses a verified domain. | WorkOS or operator | The domain | `event` and WorkOS's `reason` when a WorkOS event reported it. `reason: not_verified_at_workos` when the page found it. `reason: organization_unlinked` after an unlink. |
 
@@ -136,6 +137,7 @@ An operator's action on your tenant records an event with the actor kind operato
 | Tenant created | `tenant.created` | An operator creates the tenant. | The tenant's name | None |
 | Ingest limit set | `tenant.limit_set` | An operator changes the tenant's ingest rate limit. | The tenant's name | `ingest_rps` and `ingest_burst`, or "default" for each when the operator clears the limit |
 | Retention period set | `tenant.retention_set` | An operator changes the tenant's retention period. Setting the period it already has records nothing. | The tenant's name | `from` and `to`, in days |
+| Environment cap set | `tenant.environment_cap_set` | An operator changes how many environments each of your services watches. Setting the cap it already has records nothing. | The tenant's name | `from` and `to`, in environments |
 | Runs expired | `runs.expired` | The daily expiry removes runs, test runs, instances or stored classes of the tenant. A day it removes nothing records nothing. | "runs not seen in N days, or replaced test runs" | `retention_days`, `runs` (not seen within the period), `replaced_test_runs`, `instances`, `class_records`, `declared_class_records`, `class_listing_records` |
 | Instances pruned | `instances.pruned` | An operator removes runs not seen for some days, and instances left with no run. One event for each tenant that lost any. | "runs not seen in N days" | `older_than_days`, `runs`, `instances` |
 | Service deleted | `service.deleted` | An operator deletes one of your services on request. | The service, as `name` or `namespace/name` | None |

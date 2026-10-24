@@ -69,6 +69,7 @@ The first limit reached ends the session. The server records a use at most once 
 These events end a session before its limits:
 
 - You sign out. See [Sign out](#sign-out).
+- You sign in again in the same browser, as the same user or another one. The new session replaces the old one.
 - An admin deletes your user. It ends every session of that user at once.
 - Directory sync removes or suspends you at your identity provider. The server deletes your user at its next daily sync run, which ends your sessions. Without directory sync, removing you at the provider ends nothing here, and your session lasts until one of its limits. An admin must delete the user. See [Manage users and roles](users).
 - An admin enforces SSO for the tenant. Every session not made through SSO ends at that moment. An admin can enforce SSO only from a session made through SSO, so that admin stays signed in.
@@ -96,12 +97,12 @@ After a failed sign-in, Otherlode shows its own page. The page is titled **Sign-
 | `expired` | "The sign-in attempt expired. Try again." | The browser sent no record of a sign-in in progress. Cookies are blocked, the sign-in finished in a different browser than it started in, or more than 10 minutes passed. The picker also gives this code when its choice expired, was used already, or did not hold the tenant. |
 | `state` | "The sign-in response did not match this browser. Try again." | The response from AuthKit did not match the sign-in that this browser started. |
 | `denied` | "Sign-in was cancelled." | AuthKit or the provider returned an error, for example because you declined at the provider. |
-| `unavailable` | "Sign-in could not be completed. Try again in a moment." | WorkOS did not complete the sign-in, or the server failed to look up your user or start the session. |
+| `unavailable` | "Sign-in could not be completed. Try again in a moment." | WorkOS did not complete the sign-in, or the server failed to look up your user or start the session. It also appears when too many sign-ins came from your network address in a short time, or from all addresses together. |
 | `no_account` | "That account is not set up here. An admin or an operator must add your email before you can sign in. If you could sign in here before, ask an admin to delete your user and add it again." | No tenant has a user for you. See the causes below. |
 | `sso_required` | "Your organization requires single sign-on. Sign in again through your company's single sign-on. If you do not see it, ask your admin." | Your email matches a user only in tenants that enforce SSO, and you did not sign in through SSO. |
 | `impersonated` | "Impersonated sign-ins are not accepted here." | WorkOS marked the sign-in as made on someone else's behalf. |
 | `method_not_allowed` | "That way of signing in is not accepted here. Sign in with Google, Microsoft, GitHub or your company's single sign-on." | The sign-in used a method other than the four above. |
-| `organization_choice` | "Your sign-in needed one of your organizations picked, and it could not be finished here. Ask your admin for help." | AuthKit required you to pick an organization and the server could not finish the sign-in, or an SSO sign-in needed that pick. |
+| `organization_choice` | "Your sign-in needed one of your organizations picked, and it could not be finished here. Ask your admin for help." | AuthKit required you to pick an organization and the server could not finish the sign-in, an SSO sign-in needed that pick, or WorkOS returned an SSO sign-in with no organization. |
 
 Any other code shows "Sign-in failed."
 

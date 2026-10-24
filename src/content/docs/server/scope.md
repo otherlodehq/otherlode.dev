@@ -92,9 +92,19 @@ A run whose first payload names no environment belongs to the environment `none`
 
 The environment `none` is an environment of its own. It never matches a named environment, and a filter for `prod` leaves it out.
 
+## A service watches at most 10 environments
+
+The server watches the first 10 environments a service's production runs report in. A production run in another environment after that is stored, but the server does not watch its environment. The UI and the read API call such an environment not tracked:
+
+- No dead-code claim counts the run. A read of every environment leaves it out, and a read that names the environment finds nothing. The service list still counts its instance, the report's `stripped_runs` counts it when it is stripped, and a class it loaded counts as production code, so a method called only from that class does not read as called only by tests.
+- The server computes no stored snapshot for the environment.
+- The **Services** page counts the service's environments that are not tracked, and the read API lists them in `not_tracked_environments`. Nothing reaches the agent or the collector, so their logs say nothing.
+
+An environment that is already watched stays watched. An agent whose environment name changes on every start, such as one built from a pod name, fills the 10 slots and then reports into environments that are not tracked. Give the agent a fixed environment name, then email [support@otherlode.dev](mailto:support@otherlode.dev) to have the extra environments deleted. Deleting a watched environment frees its slot, and the next production run in an environment that is not tracked starts watching it. An operator can also raise the cap for your tenant. A test run never takes a slot.
+
 ## An environment the service does not know
 
-The picker lists the environments that a production run of the service has reported in. If the address names another, the picker adds it at the end of the list with "(unknown)" after the name. For example, `staging (unknown)`. No run matches it, so every list and count on the page is empty. A misspelled environment, or one that was deleted at your request, looks like this.
+The picker lists the environments the service watches. If the address names another, the picker adds it at the end of the list with "(unknown)" after the name. For example, `staging (unknown)`. When the service has the environment but does not track it, the note reads "(not tracked)" instead. No run matches either, so every list and count on the page is empty. A misspelled environment, or one that was deleted at your request, looks like this.
 
 The read API answers such a filter with empty results. It does not return an error.
 

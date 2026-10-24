@@ -17,7 +17,7 @@ A service appears once a production run has reached the server. A service that o
 | Column | What it shows |
 |---|---|
 | **Service** | The service name, as a link to its Overview. A click anywhere on the row opens the same page. The link and the row open the environment you last picked for this service in this browser, if the service still has it. Otherwise it opens every environment. |
-| **Environments** | The environments a production run reached, in name order. The environment `none` reads "not named". A service with no environment shows a dash. |
+| **Environments** | The service's watched environments, in name order. The environment `none` reads "not named". A service with no environment shows a dash. When the service has environments past its [environment cap](scope#a-service-watches-at-most-10-environments), a muted count such as "2 not tracked" follows, and its tooltip names them. |
 | **Instances** | The number of distinct instances with a production run, in any environment. |
 | **Last seen** | How long ago any production run of the service last reported, such as "3 days ago". The tooltip holds the exact UTC time. A service with no runs left reads "never". |
 | **Watched for** | How long since the service first reported, counted from its earliest environment, such as "12 days". See [dates](dates) for how the server sets that date. |
@@ -95,7 +95,7 @@ The Classes page lists each class that has probes in scope, sorted by class name
 | **Conditions** | The conditions the report counts for the class, one per site. |
 | **With a path that never ran** | The conditions with at least one outcome that never ran. |
 | **Routed** | `yes` when any method of the class is the handler of an endpoint in scope, `no` otherwise. |
-| **Finding** | `never initialised` or `never instantiated`, or a dash when the class has neither. |
+| **Finding** | `never initialised` or `never instantiated`, `Failed to initialise` for a class on the [Failed to initialise](findings#failed-to-initialise) list, or a dash when the class has none of them. |
 
 The **Routed** filter has three options, **All classes**, **Routed only** and **Unrouted only**. Summed over every class, the rows equal the report's counts, since both use the same rules. The filters change which classes are listed and never a class's counts or finding.
 
@@ -105,18 +105,18 @@ For most scopes the list is read from the same [stored snapshot](how-it-works#th
 
 A class label links to `/services/{service}/classes/{class}`, or the same path under a namespace prefix. The path holds the JVM class name. The **Classes** panel item stays selected on this page.
 
-The heading is the class label, with the full class name as a tooltip. A badge beside it names the class's finding. A class that never loaded has no row in the list, and its badge reads **never loaded**. Under the heading, a muted line shows the package. A class that reads as a file adds its class name after the package, because the heading shows the file. A count line follows, such as "3 methods, 0 never ran, 3 in its class finding · 2 conditions, 1 with a path that never ran". The numbers are the class's row from the list, and **As of** under them says when that row was read.
+The heading is the class label, with the full class name as a tooltip. A badge beside it names the class's finding, or reads **Failed to initialise** for a class that failed to initialise. A class that never loaded has no row in the list, and its badge reads **never loaded**. Under the heading, a muted line shows the package. A class that reads as a file adds its class name after the package, because the heading shows the file. A count line follows, such as "3 methods, 0 never ran, 3 in its class finding · 2 conditions, 1 with a path that never ran". The numbers are the class's row from the list, and **As of** under them says when that row was read.
 
 Below the count line is the class's code path graph. [Unreached clusters and the code path graph](unreached-clusters) describes it. A class with no probes in scope shows "No probes in scope for this class."
 
 ## Endpoints
 
-The Endpoints page lists every endpoint the agent found, with its status and its calls in scope. The agent's [endpoints page](/docs/agent/endpoints) says what it counts and how it names an endpoint. The server merges the endpoint across every in-scope instance and run. Two rows never share a verb and route template. The page sorts rows by status, with never called first. The **Status** header reverses the order. Within a status, never called rows run from the earliest first known, stale rows from the oldest last call, and live rows from the newest last call. In both orders the statuses that claim nothing come last: **Module disabled**, then **Counts behind**, then **Not judged**. Rows with the same status and date, and the statuses that claim nothing, sort by verb and then route template.
+The Endpoints page lists every endpoint the agent found, with its status and its calls in scope. The agent's [endpoints page](/docs/agent/endpoints) says what it counts and how it names an endpoint. The server merges the endpoint across every in-scope instance and run. Two rows never share a verb, route template and template kind. A route template the agent marks as a regular expression or a servlet pattern is a different endpoint from a path that reads the same. The page sorts rows by status, with never called first. The **Status** header reverses the order. Within a status, never called rows run from the earliest first known, stale rows from the oldest last call, and live rows from the newest last call. In both orders the statuses that claim nothing come last: **Module disabled**, then **Counts behind**, then **Not judged**. Rows with the same status and date, and the statuses that claim nothing, sort by verb, then route template, then template kind.
 
 | Column | What it shows |
 |---|---|
-| **Status** | One of the six statuses below, with a button that shows the row's details. |
-| **Endpoint** | The HTTP method, such as `GET`, and the route template in the agent's normal form, such as `/orders/{id}`. An endpoint that takes every method reads `ANY`. |
+| **Status** | One of the seven statuses below, with a button that shows the row's details. |
+| **Endpoint** | The HTTP method, such as `GET`, and the route template in the agent's normal form, such as `/orders/{id}`. An endpoint that takes every method reads `ANY`. A template that is a regular expression shows as the framework wrote it, followed by the label **Regular expression**. A servlet extension mapping such as `*.do`, or the default mapping `/`, shows as written with the label **Servlet pattern**. Each is judged like any other endpoint. |
 | **Handler** | The handler's class and method, as [names](#how-names-read) read. A dash means no instance could name the handler. |
 | **Calls** | The calls summed over every in-scope run. |
 | **Last called** | When the server last saw a call, or "never". |
@@ -129,7 +129,8 @@ Each endpoint has one status.
 | **Module disabled** | The framework module switched itself off in every in-scope run that knows the endpoint, so its calls were not counted. The tooltip says "This module switched itself off, so its endpoints stopped being counted." |
 | **Live** | The endpoint was called, and its last call is within **Stale after (days)**. |
 | **Counts behind** | A run that knows the endpoint has counts that have not all arrived, and the endpoint is not live. The tooltip says "A run of this endpoint has counts that have not all arrived, so it is never named never called or stale." |
-| **Never called** | Some run registered the endpoint, and it has no calls and no call on record. |
+| **Without evidence** | The endpoint would read **Never called**, but no run that reports it is [evidence](findings#without-evidence) about it. The tooltip says "No run that reports this endpoint is evidence for a zero count." |
+| **Never called** | Some run registered the endpoint, and it has no calls and no call on record, and some run that reports it is evidence about it. |
 | **Stale** | The endpoint was called, and its last call is older than **Stale after (days)**. |
 | **Not judged** | The data cannot say. An endpoint found only by dispatch whose count was lost reads this way, and so does a called endpoint with no last-called date or with a capped last date older than the cutoff. |
 
@@ -137,17 +138,41 @@ Select a row to show its framework, discovery source, first known and first call
 
 Framework, discovery source and handler come from the in-scope instance that reported the endpoint most recently.
 
-When any in-scope run switched an endpoint module off, a notice above the table lists each module with the kind of failure and the agent's reason. A module whose hook matched no method reads, for example, "spring-webmvc: A hook matched no method on the framework class it hooks. hook HandleMatchAdvice (name(equals(handleMatch)) and hasParameters(...)) matches no method ByteBuddy can weave on org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping". A module that hit a framework release it was not built for reads "The framework release differs from the one the module was built for" and the error, such as `java.lang.NoSuchMethodError: ...`. The kind and reason come from the newest in-scope run that disabled the module. Without a kind, the notice reads "The agent did not say why"; for a kind this server does not name, it says a newer agent sent it.
+When any in-scope run switched an endpoint module off, a notice above the table lists each module with its kind and the agent's reason. A module whose hook matched no method reads, for example, "spring-webmvc: A hook matched no method on the framework class it hooks. hook HandleMatchAdvice (name(equals(handleMatch)) and hasParameters(...)) matches no method ByteBuddy can weave on org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping". A module that hit a framework release it was not built for reads "The framework release differs from the one the module was built for" and the error, such as `java.lang.NoSuchMethodError: ...`. The kind and reason come from the newest in-scope run that disabled the module. A module the agent's configuration kept off reads "The agent's configuration kept the module off". That is the adopter's setting, not a failure. A Micronaut module on a runtime it cannot count requests on reads "The runtime has no dispatch point the module counts requests at" and declares no endpoint. Without a kind, the notice reads "The agent did not say why"; for a kind this server does not name, it says a newer agent sent it.
+
+When any in-scope run reported a framework marker, a notice titled "Routes not counted" lists each marker by the server's label and says the endpoint list leaves those routes out. See [Routing whose routes are not counted](#routing-whose-routes-are-not-counted).
 
 The page has three filters besides **Class prefix**.
 
 | Filter | Values |
 |---|---|
-| **Status** | **All endpoints**, **Never called**, **Stale**, **Live**, **Module disabled**, **Counts behind** and **Not judged**. |
+| **Status** | **All endpoints**, **Never called**, **Stale**, **Live**, **Module disabled**, **Counts behind**, **Without evidence** and **Not judged**. |
 | **Stale after (days)** | The number of days after which a called endpoint reads **Stale** and not **Live**. It is always available and defaults to 30. |
 | **Framework** | The framework name, matched exactly. |
 
 **Never called** and **Stale** show findings. [Findings](findings) describes what each claims and leaves out, and the **Never called** item in the Findings group opens this page with that status. The **Endpoints** item in the Inventory group is not selected while that status is on.
+
+### Routing whose routes are not counted
+
+A framework the agent has no module for reports no endpoint, which reads the same as a service that serves none. The agent's [endpoints page](/docs/agent/endpoints#frameworks-with-no-module) describes the markers it reports for this. A marker is an observation: the agent saw one framework's routing set up. The server decides whether an agent version counts that routing's routes. It lists a marker only when no module of the run's agent version counts them.
+
+The notice words each marker as the claim the agent observed and no wider. The labels are:
+
+| Label | What the agent saw |
+|---|---|
+| A grpc-java server started | A grpc-java server started, an in-process server included. |
+| An Armeria server started | An Armeria server started. |
+| Undertow's own RoutingHandler configured | Undertow's own `RoutingHandler` configured, whether or not the server started. |
+| Javalin 5's own Jetty server started | Javalin 5's own Jetty server started. |
+| A Spring WebFlux router turned into a handler without a DispatcherHandler | A Spring WebFlux router turned into a handler by `RouterFunctions.toHttpHandler` or `toWebHandler`, not through a `DispatcherHandler`, whether or not it was served. |
+| A Play server started | A Play server started. |
+| A Helidon 4 web server serving its HttpRouting started | A Helidon 4 `WebServer` started, which serves Helidon's own `HttpRouting`. Helidon MP starts the same server for its JAX-RS resources. |
+| Struts 2's dispatcher started | Struts 2's dispatcher started. |
+| Grails' dispatcher servlet configured to serve | Grails created the dispatcher servlet that serves its URL-mapped controllers, in a servlet web server context or a WAR deployment, whether or not requests are accepted. |
+
+A marker id this server does not name reads "A newer agent reported marker" and the id. The marker is kept per run and goes when the run does. The report's [`framework_markers`](api#get-servicesservicereport) field serves the same list.
+
+For a service with no known endpoint or entry method, the graph area lists the same labels with its fact. See [the code path graph](unreached-clusters#the-code-path-graph).
 
 ## Dependencies
 
@@ -164,14 +189,14 @@ Under the title, the same "Watched for" line as on Endpoints appears. Notes foll
 | **Known since** | When the server first learned of the dependency. A star means the date is capped to the instances in scope. |
 | **First loaded** | When the server first saw a class load from it, or "never". |
 | **Last loaded** | When a batch last raised a loaded-class total for it, or "never". The server writes it at most once an hour. |
-| **Sites** | The number of places in your code that reference the dependency, for the statuses **Unreached**, **No live reference** and **Failed to load**. A dash for any other status. |
+| **Sites** | The number of places in your code that reference the dependency, for the statuses **Unreached**, **No live reference**, **Failed to load** and **Failed to initialise**. A dash for any other status. |
 
-The **Status** filter lists each option with its count. The options are **All dependencies**, **Unused**, **Unloaded**, **Unreferenced**, **Unreached**, **No live reference**, **Failed to load**, **Counts behind**, **Stale**, **Used**, **Loaded** and **Resources only**. **Unused** is the four statuses **Unloaded**, **Unreferenced**, **Unreached** and **No live reference** together. **Used** means some run that judged the dependency holds a live reference, from a method with hits or a loaded class. **Loaded** means no run that lists the dependency records references, so the server says nothing more. **Counts behind** means the status the dependency would take rests on counts that a run not yet settled has not delivered. It claims nothing. **Stale** means the jar was listed from the startup classpath, no run in scope loaded a class from it, and the service has recorded a load before. It claims nothing about removal. **Resources only** means every in-scope listing counted no class in the jar, and no run loaded a class from it, as with a native library or web assets. It claims nothing. [Findings](findings) describes the other statuses, and the **Unused dependencies** and **Dependencies failed to load** items in the Findings group open this page with that status. The **Dependencies** item in the Inventory group is not selected while either status is on.
+The **Status** filter lists each option with its count. The options are **All dependencies**, **Unused**, **Unloaded**, **Unreferenced**, **Unreached**, **No live reference**, **Failed to load**, **Failed to initialise**, **Counts behind**, **Without evidence**, **Stale**, **Used**, **Loaded** and **Resources only**. **Unused** is the four statuses **Unloaded**, **Unreferenced**, **Unreached** and **No live reference** together. **Used** means some run that judged the dependency holds a live reference, from a method with hits or a loaded class. **Loaded** means no run that lists the dependency records references, so the server says nothing more. **Failed to initialise** means a class that failed to initialise holds the only references, as [Findings](findings#dependencies-failed-to-initialise) describes. **Counts behind** means the status the dependency would take rests on counts that a run not yet settled has not delivered. **Without evidence** means it rests on zero counts that no settled run is [evidence](findings#without-evidence) for. Both claim nothing. **Stale** means the jar was listed from the startup classpath, no run in scope loaded a class from it, and the service has recorded a load before. It claims nothing about removal. **Resources only** means every in-scope listing counted no class in the jar, and no run loaded a class from it, as with a native library or web assets. It claims nothing. [Findings](findings) describes the other statuses, and the **Unused dependencies** and **Dependencies failed to load** items in the Findings group open this page with that status. The **Dependencies** item in the Inventory group is not selected while either status is on.
 
 A row with sites expands when you select it. The expanded table has two columns, **Site** and **Class**.
 
 - **Site** names the class, and the method when the reference sits in one. A reference that sits in no single method reads "(class level)". A loaded class links to its class page.
-- **Class** reads "loaded", "never loaded", or "failed to load since 1 Jun 2026". A class that never loaded has no probes, so its name is not a link. A class that failed to load links to the failed-to-load list, filtered to that class.
+- **Class** reads "loaded", "never loaded", "failed to initialise", or "failed to load since 1 Jun 2026". A class that never loaded has no probes, so its name is not a link. A class that failed to load links to the failed-to-load list, filtered to that class, and a class that failed to initialise links to the failed-to-initialise list, filtered the same way.
 
 A table shows at most 50 sites for one dependency, and a line reads "Showing 50 of 120 sites." when more exist.
 
@@ -202,10 +227,10 @@ The page lists only what a full read finds. For most scopes it is read from the 
 | Column | What it shows |
 |---|---|
 | **Kind** | `Class`, `Method`, `Constructor` for a constructor, `Endpoint` or `Dependency`. |
-| **Name** | A class reads as in [How names read](#how-names-read), with its package below. A method reads as its class does, with its signature below, as the Never hit page shows it, and a lambda body reads as in [Handlers](#handlers), such as "`Runnable` lambda in `main` at line 59". The class is not a link. An endpoint reads as its verb and route template, with `ANY` for a route that takes every verb. A dependency reads one line per identity, as `group:artifact` with its versions in muted text, and a jar with no group shows the artifact alone. |
+| **Name** | A class reads as in [How names read](#how-names-read), with its package below. A method reads as its class does, with its signature below, as the Never hit page shows it, and a lambda body reads as in [Handlers](#handlers), such as "`Runnable` lambda in `main` at line 59". The class is not a link. An endpoint reads as its verb and route template, with `ANY` for a route that takes every verb, and a regular expression template is followed by **Regular expression** in brackets, a servlet pattern template by **Servlet pattern**. A dependency reads one line per identity, as `group:artifact` with its versions in muted text, and a jar with no group shows the artifact alone. |
 | **Stopped** | How long ago the last run that held the thing was last seen, such as "3 days ago". The tooltip holds the exact UTC time. |
 
-The page sorts rows by kind, in the order of the table above, and then by the identifiers the server stores, byte by byte: the class name for a class; the class name, method name and descriptor for a method; the stored verb and then the route template for an endpoint; and the identity key for a dependency. So endpoints that take every verb, stored as `*`, come before the others, and dependencies follow their identity key, not the names shown. See [the removed route](api#get-servicesserviceremoved). A method of a removed class has no row of its own, because its class stands for it. A removed class counts once, whatever its methods. The count beside **Removed** in the panel is the number of rows. While any kind has a count above zero, the strip above the Overview's graph reads `Removed:` and lists the count of each kind that has one, such as `Removed: 3 classes, 1 method`. It links to this page. The counts come from the report, so they follow its snapshot. See [the report](api#get-servicesservicereport).
+The page sorts rows by kind, in the order of the table above, and then by the identifiers the server stores, byte by byte: the class name for a class; the class name, method name and descriptor for a method; the stored verb, then the route template, then the template kind for an endpoint; and the identity key for a dependency. So endpoints that take every verb, stored as `*`, come before the others, and dependencies follow their identity key, not the names shown. See [the removed route](api#get-servicesserviceremoved). A method of a removed class has no row of its own, because its class stands for it. A removed class counts once, whatever its methods. The count beside **Removed** in the panel is the number of rows. While any kind has a count above zero, the strip above the Overview's graph reads `Removed:` and lists the count of each kind that has one, such as `Removed: 3 classes, 1 method`. It links to this page. The counts come from the report, so they follow its snapshot. See [the report](api#get-servicesservicereport).
 
 A row leaves the list when the runs that held it expire, since the server keeps no record of a removal. See [How long data is kept](data-kept). Code that comes back in a later run leaves the list at once. It keeps the dates it had, so restored code that was never hit reads as never hit since the service first knew it.
 
