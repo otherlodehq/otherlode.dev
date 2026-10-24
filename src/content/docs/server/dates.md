@@ -49,18 +49,18 @@ The [Instances](inventory) page shows **First seen** and **Last seen** for each 
 
 ### Failure dates
 
-A class that failed to load has its own pair of dates, kept for each environment. See [Classes](/docs/agent/classes#failed-to-load) for how the agent decides a class failed.
+A class that failed to load has its own pair of dates, kept for each environment. See [Classes](/docs/agent/classes#failed-to-load) for how the agent decides a class failed. A class that failed to initialise has a pair of its own, kept the same way. See [Classes](/docs/agent/classes#failed-to-initialise).
 
 | Date | API field | UI |
 |---|---|---|
-| The arrival of the first manifest that named the class as failed | `first_failed_at` | **Failing since** on the **Failed to load** page, shown as a date and a day count, such as "1 Jun 2026 (122 days)" |
+| The arrival of the first manifest that named the class as failed | `first_failed_at` | **Failing since** on the **Failed to load** and **Failed to initialise** pages, shown as a date and a day count, such as "1 Jun 2026 (122 days)" |
 | The arrival of the latest manifest that named it | `last_failed_at` | **Last failed** |
 
 `failing_for_days` is the number of whole days from `first_failed_at` to the time of the read. All three are `null` when no environment in scope has a failure date for the class.
 
-The failure dates are history. A class reads as failed to load only while no in-scope run loaded it, whatever its dates say. A test run or a stripped run writes no failure date.
+The failure dates are history. A class reads as failed to load only while no in-scope run loaded it, and as failed to initialise only while no in-scope run initialised it, whatever its dates say. A test run or a stripped run writes no failure date. A class that fails to initialise has no date when no manifest from the scoped environments has named the class itself, and its fields on `/failed-to-initialize` are then `null`.
 
-A dependency that only a failed class references has the status `failed-to-load`. Its sites carry `failed_since`, the failing class's `first_failed_at`, and the UI labels each such site "failed to load since" and the date.
+A dependency that only a failed class references has the status `failed-to-load`. Its sites carry `failed_since`, the failing class's `first_failed_at`, and the UI labels each such site "failed to load since" and the date. A dependency that only a class that failed to initialise references has the status `failed-to-initialize`, and its sites carry no date.
 
 ### Rules that move a date
 
@@ -75,7 +75,7 @@ A dependency that only a failed class references has the status `failed-to-load`
 
 Each environment of a service has its own dates. A smoke test in staging that calls a method once a day keeps its staging dates fresh and leaves its production dates alone. Name an environment in the scope, and every date on the page comes from that environment's rows. Names ignore case and surrounding spaces. Runs that name no environment share the environment `none`, which the UI shows as "not named".
 
-With no environment filter, a read combines every environment. It shows the earliest first date and the latest last date across them. In that view, a call in staging moves the last called date of an endpoint that production never calls. The environment picker in the top bar chooses between one environment and **All environments**.
+With no environment filter, a read combines every environment the service watches. It shows the earliest first date and the latest last date across them. In that view, a call in staging moves the last called date of an endpoint that production never calls. A service watches at most 10 environments, and an environment past them has no dates in any read. See [Scope and environments](scope#a-service-watches-at-most-10-environments). The environment picker in the top bar chooses between one environment and **All environments**.
 
 An environment that the service has never reported has no dates, and its `watched_since` is `null`.
 

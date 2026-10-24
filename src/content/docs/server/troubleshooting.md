@@ -73,7 +73,9 @@ Something other than an agent is posting to the collector, or something changed 
 
 ### backend returned 413
 
-The server answers `request body too large`. It accepts a request body of at most 16 MiB. A proxy or gateway that you run between the collector and `ingest.otherlode.dev` can also answer 413 with a smaller limit of its own. Raise that limit. If no proxy sits in between, the payload itself is over the limit. See [What the agent sends](/docs/agent/data-sent).
+The server accepts a request body of at most 16 MiB. It also refuses a payload with more entries than the limit for its kind, whatever its size. The collector logs only the status, not which of the two it was. [Read what ingest answers](connect#read-what-ingest-answers) lists the limits. A proxy or gateway that you run between the collector and `ingest.otherlode.dev` can also answer 413 with a smaller limit of its own. Raise that limit. If no proxy sits in between, the payload itself is over the limit. See [What the agent sends](/docs/agent/data-sent).
+
+For `payload has too many elements`, the agent splits its payloads far below the limits, except that it never splits a class. So a refusal means one class with more entries than the limit, or a sender that isn't an agent. Email [support@otherlode.dev](mailto:support@otherlode.dev) with the time of the collector's warning. An operator can find the refusal, which the server counts and logs with your tenant. A class that large cannot be sent.
 
 While the collector refuses a run's delta batches, the agent keeps the hits and offers them again. The run's instance shows **Counts behind since** and a date on the **Instances** page, and the top bar's evidence list adds a **Counts behind** fact, until the collector accepts the counts. An instance that never delivered a delta batch shows **No counts received yet**.
 
@@ -85,11 +87,12 @@ The collector waits for the `Retry-After` time and sends again, so a 429 that cl
 
 ### backend returned 502, 503 or 504
 
-The collector retries all three. The server uses 503 for three cases:
+The collector retries all three. The server uses 503 for four cases:
 
 - `{"error":"unavailable"}`. The server could not check the key, or could not read whether your tenant requires redacted payloads. This clears on its own.
 - The text `unavailable`. The request ended while it waited for the server's first read of your tenant's request limit, as when the sender gave up on it. A failed read of the limit gives no 503. The server applies its default limit and reads your tenant's limit again 5 seconds later.
 - An empty body with `Retry-After: 5`. The server could not store a valid payload. The collector waits at least 5 seconds before it sends the payload again.
+- An empty body with `Retry-After: 1`. The server was busy with other payloads. The collector waits at least a second before it sends the payload again.
 
 If the retries run out, the line `dropping payload: retry budget exhausted` follows. A proxy you run can also produce 502 and 504. The collector does not retry a plain 500, and drops that payload at once.
 
@@ -126,11 +129,15 @@ The agent sends its first batch at a random point within the first `flushInterva
 
 ## A finding page is empty or lacks a row you expect
 
-An empty table shows `0 of 0` under it. Some pages add a sentence: `No instances in this scope.` and `No class failed to load in this scope.` A finding is a lead made over the runs in scope, and only for code the server can judge. A row is missing for one of the reasons below. [Findings](findings) says what each finding needs, and [Scope and environments](scope) says what narrows the runs.
+An empty table shows `0 of 0` under it. Some pages add a sentence: `No instances in this scope.`, `No class failed to load in this scope.` and `No class failed to initialise in this scope.` A finding is a lead made over the runs in scope, and only for code the server can judge. A row is missing for one of the reasons below. [Findings](findings) says what each finding needs, and [Scope and environments](scope) says what narrows the runs.
 
 ### The overview shows no graph
 
-With no run in scope, the graph area reads `No run in scope`. No run matches the scope you picked, and the **Instances** fact in the top bar's evidence list reads `0`. It reads `Nothing judged` when every run that matches the scope is a stripped run, described [below](#an-instance-is-kept-out-of-every-finding). The **Instances** fact then reads like `2, all kept out of every finding`. It reads `No known endpoints or entry methods` when a run is in scope and none of them knows an endpoint or an entry method, which includes a service whose code holds nothing the server judges, such as only inline or generated methods. See [How findings are judged](how-it-works) and [the code path graph](unreached-clusters#the-code-path-graph).
+With no run in scope, the graph area reads `No run in scope`. No run matches the scope you picked, and the **Instances** fact in the top bar's evidence list reads `0`. It reads `Nothing judged` when every run that matches the scope is a stripped run, described [below](#an-instance-is-kept-out-of-every-finding). The **Instances** fact then reads like `2, all kept out of every finding`. It reads `No known endpoints or entry methods` when a run is in scope and none of them knows an endpoint or an entry method, which includes a service whose code holds nothing the server judges, such as only inline or generated methods. When a run reported a framework marker, the server's label for it follows, such as `A grpc-java server started`: routing the agent does not count was set up in that run. See [Routing whose routes are not counted](inventory#routing-whose-routes-are-not-counted), [How findings are judged](how-it-works) and [the code path graph](unreached-clusters#the-code-path-graph).
+
+### The report stays old or its refresh keeps failing
+
+The server stops computing a scope's call graph when it resolves to more than 200,000 calls, or takes more work than one graph may use. A service with many calls through an interface that has hundreds of implementations can pass that limit. Each refresh of the scope then fails, an hour apart. A scope that already has a report keeps it, and its **As of** time grows older. A scope with no report says `Last refresh failed`. A read API route that computes the graph when you call it, such as `/call-edges`, answers 500 for that scope. Email [support@otherlode.dev](mailto:support@otherlode.dev) with the service's namespace, name and environment.
 
 ### The page is empty after you change the scope
 
@@ -143,6 +150,14 @@ Every finding covers only the runs in scope: the environment you pick, an option
 ### A class is under Failed to load and not under Never loaded
 
 A class that a run named as failed to load is left out of **Never loaded** and of every class finding. It is a deployment problem and never evidence of unused code. The strip above the overview's graph states `N classes failed to load`, linked to the list. The **Failed to load** item shows only while its count is above zero. See [Failed to load](/docs/agent/classes#failed-to-load).
+
+### A class is under Failed to initialise and not under Never initialised
+
+A class that some run in scope named as failed to initialise, or whose supertype it names, is left out of **Never initialised**, **Never instantiated**, **Never hit** and the clusters when no run in scope initialised it. The JVM defined the class and it can never run, so it is a deployment problem and never evidence of unused code. Its hits still stand. The strip above the overview's graph states `N classes failed to initialise`, linked to the list, and the **Failed to initialise** item shows only while its count is above zero. The **Reasons** column says whether its static initialiser threw or the verifier rejected it, and **Carried from** names the supertype a subclass fails with. See [Failed to initialise](/docs/agent/classes#failed-to-initialise).
+
+### A method or endpoint reads without evidence
+
+A method or condition with no hits that is not under **Never hit**, and an endpoint that reads **Without evidence** instead of **Never called**, have no run that is evidence for the zero count. The strip above the overview's graph states `N methods, conditions and endpoints without evidence`, and `N instances with the verifier unwatched` or `N instances with an unplaced verification failure` for the runs behind them. An unwatched run is one whose agent could not install its hook on the JVM's `VerifyError`. The agent logs one `WARNING` for it. A run with an unplaced verification failure reported a `VerifyError` message that the agent could not read, or had no room to keep. Neither kind of run makes a zero-count claim. The claim returns when a run that is evidence reports the same code, for example after the instance restarts. See [Without evidence](findings#without-evidence) and, for the agent's side, [Rejected by the verifier](/docs/agent/classes#rejected-by-the-verifier).
 
 ### A method or condition is not under Never hit
 
@@ -177,7 +192,7 @@ The top bar shows `watched 12 days` in bold amber. It does so for 30 days after 
 
 ## A count shows a tilde or says it may change
 
-Four counts in the panel come from the dependency listing: **Unused dependencies**, **Dependencies failed to load**, **Dependencies** and **Absent references**. Each count has a `~` after it while some in-scope instance has not sent its whole listing, and its tooltip reads `The dependency listing is incomplete, so this count may change.` Every dependency the page shows is right. The list can lack some. The count settles when each in-scope run has sent its listing. The **Instances** page shows `incomplete` in the **Dependencies** column for each instance still waiting.
+Five counts in the panel come from the dependency listing: **Unused dependencies**, **Dependencies failed to load**, **Dependencies failed to initialise**, **Dependencies** and **Absent references**. Each count has a `~` after it while some in-scope instance has not sent its whole listing, and its tooltip reads `The dependency listing is incomplete, so this count may change.` Every dependency the page shows is right. The list can lack some. The count settles when each in-scope run has sent its listing. The **Instances** page shows `incomplete` in the **Dependencies** column for each instance still waiting.
 
 ## Sign-in fails
 
@@ -193,7 +208,7 @@ After a failed sign-in, the page **Sign-in did not complete** shows one message 
 | `Your organization requires single sign-on. Sign in again through your company's single sign-on. If you do not see it, ask your admin.` | The tenant enforces single sign-on, and you signed in another way. Use your company's single sign-on. See [Set up single sign-on](sso). |
 | `Impersonated sign-ins are not accepted here.` | The sign-in came from an impersonation session. The server refuses these. Sign in as yourself. |
 | `That way of signing in is not accepted here. Sign in with Google, Microsoft, GitHub or your company's single sign-on.` | The sign-in used a method such as a password or a magic link. Use one of the four named. |
-| `Your sign-in needed one of your organizations picked, and it could not be finished here. Ask your admin for help.` | The identity service asked for one of your organizations to be picked, and the server could not finish the sign-in. Ask an admin to check your single sign-on connection. |
+| `Your sign-in needed one of your organizations picked, and it could not be finished here. Ask your admin for help.` | The identity service asked for one of your organizations to be picked and the server could not finish the sign-in, or it returned a single sign-on sign-in with no organization. Ask an admin to check your single sign-on connection. |
 | `Sign-in failed.` | The server sent a code the page does not know. Try again, and ask an admin if it repeats. |
 
 If you can reach more than one tenant, a page titled **Choose a tenant** follows a successful sign-in. It shows `This choice expired. Sign in again.` with a **Back to sign in** link when you wait too long, and `The tenants could not be loaded. Try again in a moment.` when the list fails.

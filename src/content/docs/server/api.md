@@ -61,7 +61,7 @@ A service that only [test runs](/docs/agent/test-runs) reached is missing from `
 
 ## Identifiers are the agent's
 
-The API names things the way the agent does and never returns a database row id. A class is its dotted binary name, such as `com.acme.OrderService` or `com.acme.Outer$Inner`. A method is its class, its name and its JVM descriptor, such as `(Ljava/lang/String;I)V`. An endpoint is its `verb` and `route_template`. A dependency is its `identity_key`, the sorted `group:artifact` pairs of its identities joined with commas. An instance is its `instance_id`, and a run is its `run_id`. See the agent's [classes](/docs/agent/classes), [endpoints](/docs/agent/endpoints) and [dependencies](/docs/agent/dependencies) pages for how each name is formed.
+The API names things the way the agent does and never returns a database row id. A class is its dotted binary name, such as `com.acme.OrderService` or `com.acme.Outer$Inner`. A method is its class, its name and its JVM descriptor, such as `(Ljava/lang/String;I)V`. An endpoint is its `verb`, its `route_template` and its `template_kind`. A dependency is its `identity_key`, the sorted `group:artifact` pairs of its identities joined with commas. An instance is its `instance_id`, and a run is its `run_id`. See the agent's [classes](/docs/agent/classes), [endpoints](/docs/agent/endpoints) and [dependencies](/docs/agent/dependencies) pages for how each name is formed.
 
 ## Read the shared parameters and fields
 
@@ -117,7 +117,7 @@ A route ignores a parameter it does not read.
 
 A snapshot holds the scope's report and every row of the other eight routes. The route applies the request's other parameters to those rows when the request arrives, as a live read applies them: `class_prefix`, `class`, `kind`, `routed`, `routine`, `order`, `include_generated`, `include_unread`, `limit` and `offset`, `days` on `/stale-hit`, and `known_for_days` on `/never-initialized` and `/never-instantiated`. A day parameter counts back from the snapshot's `as_of`, not from the time of the request. `known_for_days` on `/never-hit` and `/unreached-clusters` changes which code folds into another row or cluster, so a request to either route with it is computed live.
 
-The server refreshes a snapshot when data has arrived since it was computed, at most once every 15 minutes, and at least once every 6 hours without new data. When a run's counts fall behind, the server refreshes the service's snapshots without the 15-minute wait. A snapshot can trail the data by up to about 20 minutes, and more while the refresh has a backlog. The nine routes trail together, so a count in the report matches the `total` of a route read from the same snapshot, and can differ from a route computed live by what arrived in that time. Every other request is computed live when it arrives: a `version` outside the 3 newest, a `version` with no `environment`, any `active_within_days`, `known_for_days` on `/never-hit` or `/unreached-clusters`, and a service or environment that only test runs have reached. Every route not named above is computed live. See [How findings are judged](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots).
+The server refreshes a snapshot when something its findings read has changed in the runs it covers, at most once every 15 minutes, and at least once every 2 hours with nothing changed. A batch that only raises counts on code hit within the last day changes nothing, unless they are counts of an optional parameter or the method it belongs to, which the report's `optional_parameters` counts read. A version's snapshot covers that version's runs. It counts test runs and runs from a collector older than their agent only while one of the version's other runs is still reporting. When a run's counts fall behind, the server refreshes the service's snapshots without the 15-minute wait. A snapshot's findings can trail the data by up to about 20 minutes, the interval plus the 5-minute period of the refresh job, and more while the refresh has a backlog. Counts and dates on it, such as `hits_total` and last-hit times, can trail by up to about 2 hours. The nine routes trail together, so a count in the report matches the `total` of a route read from the same snapshot, and can differ from a route computed live by what arrived in that time. Every other request is computed live when it arrives: a `version` outside the 3 newest, a `version` with no `environment`, any `active_within_days`, `known_for_days` on `/never-hit` or `/unreached-clusters`, a service or environment that only test runs have reached, and an environment the service does not track. Every route not named above is computed live. See [How findings are judged](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots).
 
 Every `200` of the nine routes carries `as_of`, the time the server read the data, and `from_snapshot`. For a snapshot, `from_snapshot` is `true` and `as_of` is the time the snapshot was computed. For a live read, `from_snapshot` is `false` and `as_of` is the time the read started.
 
@@ -129,9 +129,9 @@ A snapshot scope with no snapshot yet answers `202` with no rows or counts and a
 {"status": "computing", "last_failed_at": null}
 ```
 
-A new service, environment or version has none until the next refresh computes it, and neither has any scope after a server release that changes how findings are judged. The refresh runs every 5 minutes. It computes missing snapshots first, and among them every scope with no `version` before any scope with one. The `202` is not an error. Repeat the request a minute or two later. A route never computes a snapshot scope live in its place.
+A new service, environment or version has none until the next refresh computes it, and neither has any scope after a server release that changes how findings are judged. The refresh runs every 5 minutes. It computes your missing snapshots before your other snapshots, and among them every scope with no `version` before any scope with one. The `202` is not an error. Repeat the request a minute or two later. A route never computes a snapshot scope live in its place.
 
-`last_failed_at` is the time the last refresh of the scope failed, or `null` when none has failed since its last snapshot. A refresh that stopped without a result, such as one that ran out of memory, counts as failed at the time it started, once it is more than 6 minutes old. The refresh leaves a failed scope for an hour and then tries it again. The `202` never says why a refresh failed.
+`last_failed_at` is the time the last refresh of the scope failed, or `null` when none has failed since its last snapshot. A refresh that stopped without a result, such as one that ran out of memory, counts as failed at the time it started, once it is more than 6 minutes old. A failed refresh holds back every scope of its service for an hour, so a scope can wait with `last_failed_at` `null` while another scope of its service failed. The refresh then tries the other scopes first and the failed one after them. The `202` never says why a refresh failed.
 
 ## `GET /me`
 
@@ -164,7 +164,8 @@ Lists every service that a production run has reported, ordered by namespace and
       "environments": [
         {"name": "prod", "watched_since": "2026-08-19T08:30:12Z"},
         {"name": "staging", "watched_since": "2026-09-02T11:47:30Z"}
-      ]
+      ],
+      "not_tracked_environments": []
     }
   ]
 }
@@ -177,7 +178,8 @@ Lists every service that a production run has reported, ordered by namespace and
 | `instances` | integer | Distinct instances with a production run. It counts instances, not runs. |
 | `last_seen_at` | timestamp or null | The latest time any production run was seen. `null` when no instance is left. |
 | `watched_since` | timestamp or null | The earliest `watched_since` of the environments. |
-| `environments` | array | Each environment a production run reported in, ordered by name. Each is `{"name", "watched_since"}`. |
+| `environments` | array | Each watched environment, ordered by name. Each is `{"name", "watched_since"}`. |
+| `not_tracked_environments` | array | The names of the environments a production run reported in after the service reached its environment cap, ordered by name. No dead-code claim counts their runs. `instances` and `last_seen_at` do. See [Scope and environments](scope#a-service-watches-at-most-10-environments). |
 
 A test run counts toward none of these figures. See [Inventory](inventory) for the same list in the UI.
 
@@ -222,16 +224,17 @@ The route is [read from a snapshot](#routes-read-from-a-snapshot) for most scope
 | `active_within_days` | integer or null | The `active_within_days` filter, `null` when unset. |
 | `as_of` | timestamp | When the server read the data. See [routes read from a snapshot](#routes-read-from-a-snapshot). |
 | `from_snapshot` | boolean | `true` when a stored snapshot gave the report, `false` for a live read. |
-| `instances` | object | `total`, `listed`, `with_complete_baseline`, `ended_cleanly`, `silent_without_final_flush` and `unsettled`. Each counts distinct instances. `unsettled` counts the instances with an in-scope run that has received no delta batch or whose counts are behind. `total` counts the instances with a run a finding can judge. `listed` counts every instance the `/instances` route lists, so it also counts an instance whose every run that matches the scope came through a collector older than its agent. It is never below `total`. `ended_cleanly` and `silent_without_final_flush` judge an instance by its latest run. `unsettled` counts an instance once when any of its in-scope runs is unsettled, so the instance list shows the same instance with a badge for its latest run or with `earlier_run_unsettled`. A run is silent when it has not ended cleanly and was not seen for over an hour. |
-| `methods` | object | `known` is the sum of `hit`, `never_hit`, `in_class_findings`, `in_never_hit_code`, `unjudged_constructors` and `counts_behind`. It counts judgeable methods and leaves out static initialisers. A method the service has recorded a hit of counts in `hit` when the request names no `version` and no `active_within_days`, even when no run in scope holds a hit. `counts_behind` counts the methods with no hits that a run not yet settled knows. They make no zero-count claim. |
-| `branch_sites` | object | `known`, `all_outcomes_hit`, `with_never_hit_outcome`, `in_never_hit_code`, `routine`, `counts_behind` and `withheld`. A site that folds into code a finding already lists counts in `in_never_hit_code`. `routine` counts sites whose only never-hit outcomes are routine. `counts_behind` counts sites whose judgeable outcomes with no hits are all in locations a run not yet settled knows. `withheld` counts the other sites with an outcome with no hits and no branch key, in an environment that has lost a production run. They make no claim. The first three leave the other four out. |
+| `instances` | object | `total`, `listed`, `with_complete_baseline`, `ended_cleanly`, `silent_without_final_flush`, `unsettled`, `verifier_unwatched` and `unplaced_verification`. Each counts distinct instances. `unsettled` counts the instances with an in-scope run that has received no delta batch or whose counts are behind. `total` counts the instances with a run a finding can judge. `listed` counts every instance the `/instances` route lists, so it also counts an instance whose every run that matches the scope came through a collector older than its agent. It is never below `total`. `ended_cleanly` and `silent_without_final_flush` judge an instance by its latest run. `unsettled` counts an instance once when any of its in-scope runs is unsettled, so the instance list shows the same instance with a badge for its latest run or with `earlier_run_unsettled`. A run is silent when it has not ended cleanly and was not seen for over an hour. `verifier_unwatched` counts the instances with an in-scope run whose agent could not see the verifier's rejections. `unplaced_verification` counts the instances with an in-scope run that reported a verification failure it could not place in a class. Neither kind of run supports a zero-count claim. See [Findings](findings#without-evidence). |
+| `methods` | object | `known` is the sum of `hit`, `never_hit`, `in_class_findings`, `in_never_hit_code`, `unjudged_constructors`, `counts_behind` and `without_evidence`. It counts judgeable methods and leaves out static initialisers. A method the service has recorded a hit of counts in `hit` when the request names no `version` and no `active_within_days`, even when no run in scope holds a hit. `counts_behind` counts the methods with no hits that a run not yet settled knows. They make no zero-count claim. `without_evidence` counts the other methods with no hits that no run is [evidence](findings#without-evidence) about. They make no zero-count claim either. |
+| `branch_sites` | object | `known`, `all_outcomes_hit`, `with_never_hit_outcome`, `in_never_hit_code`, `routine`, `counts_behind`, `withheld` and `without_evidence`. A site that folds into code a finding already lists counts in `in_never_hit_code`. `routine` counts sites whose only never-hit outcomes are routine. `counts_behind` counts sites whose judgeable outcomes with no hits are all in locations a run not yet settled knows. `withheld` counts the other sites with an outcome with no hits and no branch key, in an environment that has lost a production run. `without_evidence` counts the other sites with a never-hit outcome that no run is evidence about. They make no claim. The first three leave the other five out. |
 | `probes` | object | `inline` and `generated` count the probes the counts above leave out. `no_debug_info` counts judgeable probes in classes that carry no line numbers. |
-| `classes` | object | `declared`, `loaded`, `never_loaded`, `never_initialized`, `never_instantiated`, `all_inline_or_generated`, `unreported` and `failed_to_load`. `unreported` counts classes a sweep found loaded that the agent reported nowhere else. They count as loaded. A class that failed to load is in none of `declared`, `loaded` or `never_loaded`. |
-| `endpoints` | object | `known`, `called`, `never_called`, `module_disabled` and `counts_behind`. An endpoint whose module switched itself off counts only in `module_disabled`. An endpoint with no calls that a run not yet settled knows counts only in `counts_behind`. `never_called` counts the endpoints whose `status` is `never-called`. `known` is not `called` plus `never_called`: the difference is the endpoints found only by dispatch that show no call, which read `not-judged`. |
+| `classes` | object | `declared`, `loaded`, `never_loaded`, `never_initialized`, `never_instantiated`, `all_inline_or_generated`, `unreported`, `failed_to_load` and `failed_to_initialize`. `unreported` counts classes a sweep found loaded that the agent reported nowhere else. They count as loaded. A class that failed to load is in none of `declared`, `loaded` or `never_loaded`. `failed_to_initialize` counts the classes that [failed to initialise](findings#failed-to-initialise). The JVM defined them, so they stay in `declared` and `loaded`, and they are in no class finding. |
+| `endpoints` | object | `known`, `called`, `never_called`, `module_disabled`, `counts_behind` and `without_evidence`. An endpoint whose module switched itself off counts only in `module_disabled`. An endpoint with no calls that a run not yet settled knows counts only in `counts_behind`. `without_evidence` counts the endpoints that would be `never-called` but have no run that is [evidence](findings#without-evidence) about them. `never_called` counts the endpoints whose `status` is `never-called`. `known` is not `called` plus `never_called`: the difference is the endpoints found only by dispatch that show no call, which read `not-judged`, and the `without_evidence` endpoints. |
 | `optional_parameters` | object | `known`, `never_supplied` and `always_supplied`. |
-| `disabled_endpoint_modules` | array | `{"module", "kind", "kind_label", "reason", "instances"}` for each endpoint module that switched itself off. The `kind` and `reason` are the ones the newest in-scope run gave. `kind` is `linkage_error` (the framework release differs from the one the module was built for), `advice_failed` (the module's advice threw), `transform_failed` (the module's transform threw, or a framework class it hooks failed to weave), `route_walk_failed` (walking the framework's route objects threw), `hook_unmatched` (a hook matched no method on the framework class it hooks), `unspecified` when the agent gave none, or `unknown` for a kind this server does not name, which a newer agent sent. `kind_label` is the server's text for the kind. |
+| `disabled_endpoint_modules` | array | `{"module", "kind", "kind_label", "reason", "instances"}` for each endpoint module that switched itself off or that the agent's configuration kept off. The `kind` and `reason` are the ones the newest in-scope run gave. `kind` is `linkage_error` (the framework release differs from the one the module was built for), `advice_failed` (the module's advice threw), `transform_failed` (the module's transform threw, or a framework class it hooks failed to weave), `route_walk_failed` (walking the framework's route objects threw), `hook_unmatched` (a hook matched no method on the framework class it hooks), `configured_off` (the agent's configuration kept the module off), `routes_not_counted` (the runtime has no dispatch point the module counts requests at, so it declared no route), `unspecified` when the agent gave none, or `unknown` for a kind this server does not name, which a newer agent sent. `kind_label` is the server's text for the kind. |
+| `framework_markers` | array | `{"id", "kind", "label", "classes", "instances"}` for each framework marker some in-scope run reported and the server does not judge covered for that run's agent version, ordered by `id`. A marker is the agent's observation that one framework's routing was set up, so the endpoint list leaves its routes out. `kind` is `started` or `configured`, the claim the agent observed, or `unknown` for an id this server does not name. `label` is the server's text for the claim. For an unknown id it says a newer agent reported the marker. `classes` are the class names that proved it, from the newest in-scope run that reported it and is not judged covered. `instances` counts the instances with such a run. |
 | `unreached_clusters` | object | `count`, `methods_attributed`, `called_only_by_tests`, `test_only_unconfirmed`, `called_from_outside_scope`, and `largest`. `largest` is `{"root", "members_total"}` for the biggest cluster, or `null`. `root` has the shape of a [cluster root](#get-servicesserviceunreached-clusters). |
-| `dependencies` | object | `known`, one count for each status (`unloaded`, `unreferenced`, `unreached`, `no_live_reference`, `failed_to_load`, `counts_behind`, `stale`, `used`, `loaded`, `resources_only`), `absent_references`, and four more fields. `counts_behind` counts the dependencies whose status would rest on counts that a run not yet settled has not delivered. It claims nothing, and no other count includes those dependencies. `stale` counts the startup dependencies that no run in scope loaded a class from, though the service has recorded a load. It claims no removal, and the read must name no `version` and no `active_within_days`. `references_recorded` is `true` when some run records references. `split_available` is `true` when some dependency was judged on its references and every such dependency was judged only by runs with a complete baseline. `listing_complete` and `instances_awaiting_listing` say whether every dependency listing arrived. A zero in `unreferenced` or `unreached` means none only when `split_available` and `listing_complete` are both `true`. |
+| `dependencies` | object | `known`, one count for each status (`unloaded`, `unreferenced`, `unreached`, `no_live_reference`, `failed_to_load`, `failed_to_initialize`, `counts_behind`, `without_evidence`, `stale`, `used`, `loaded`, `resources_only`), `absent_references`, and four more fields. `failed_to_initialize` counts the loaded dependencies with no live reference that only a class that failed to initialise references, and claims no removal. `without_evidence` counts the dependencies whose `unreached` or `no-live-reference` status would rest on zero counts that no settled run is evidence for. It claims nothing, and no other count includes those dependencies. `counts_behind` counts the dependencies whose status would rest on counts that a run not yet settled has not delivered. It claims nothing, and no other count includes those dependencies. `stale` counts the startup dependencies that no run in scope loaded a class from, though the service has recorded a load. It claims no removal, and the read must name no `version` and no `active_within_days`. `references_recorded` is `true` when some run records references. `split_available` is `true` when some dependency was judged on its references and every such dependency was judged only by runs with a complete baseline. `listing_complete` and `instances_awaiting_listing` say whether every dependency listing arrived. A zero in `unreferenced` or `unreached` means none only when `split_available` and `listing_complete` are both `true`. |
 | `removed` | object | `classes`, `methods`, `endpoints` and `dependencies`, the count of each kind on the [`/removed`](#get-servicesserviceremoved) list. A method of a removed class is not counted. No other count in the report includes removed code. Each count is `0` for a read that names a `version` or an `active_within_days`. |
 | `test_runs` | object | `count` and `last_seen_at` of the service's test runs in every environment and version. No other figure counts them. |
 | `stripped_runs` | integer | The service's stripped production runs in every environment and version. |
@@ -260,7 +263,7 @@ A method row has these fields, plus the [method naming fields](#method-naming-fi
 | `generated_by` | string | The method's generated mark. See [generated methods](/docs/agent/methods-and-branches#generated-methods). |
 | `unread_shape` | string | Always `none`, since the finding lists no unread method. |
 | `inlined_from_class_name` | string or null | The class an inlined copy came from. |
-| `routes` | array | The endpoints this method handles, as `{"verb", "route_template"}`, sorted by verb and then template. `verb` is `*` when the framework takes any method. |
+| `routes` | array | The endpoints this method handles, as `{"verb", "route_template", "template_kind", "template_kind_label"}`, sorted by verb, then template, then kind. `verb` is `*` when the framework takes any method. See `template_kind` under [the endpoints route](#get-servicesserviceendpoints). |
 
 The response is `{"rows", "total", "capped_hidden", "watched_since", "as_of", "from_snapshot"}`. `capped_hidden` counts the capped outcomes that `known_for_days` left out, and the outcomes with no branch key that an environment of the read lost a run for. Without `known_for_days` it counts only the second kind. See [Dates](dates).
 
@@ -329,6 +332,7 @@ The response is `{"probes", "total", "watched_since", "as_of", "from_snapshot"}`
 | `instances_known`, `first_known_at`, `first_hit_at`, `last_hit_at`, `dates_capped` | | See [shared fields](#fields-every-response-uses). |
 | `hits_total` | integer | Hits across the in-scope runs. For an optional-argument probe, the calls that left the parameter out. |
 | `counts_behind` | boolean | `true` when an in-scope run that knows the location is not settled. With `hits_total` `0` no finding claims the location never ran. The hits of that run still count. |
+| `without_evidence` | boolean | `true` when every run that knows the location is settled and none is [evidence](findings#without-evidence) about it. With `hits_total` `0` no finding claims the location never ran, as with `counts_behind`. It is `false` where `counts_behind` is `true`. |
 | `recorded_hit` | boolean | `true` when the request names no `version` and no `active_within_days`, the service has recorded a hit of the location, and the location's dates are not capped. `hits_total` stays the in-scope count, so a location with `recorded_hit` can show `0` hits. Such a location counts as hit. A client that draws a hit status reads `hits_total` above `0` or `recorded_hit`. |
 | `claim_withheld` | boolean | `true` on a branch row with no `branch_key` when an environment of the read has lost a production run. With `hits_total` `0` the outcome is neither hit nor never hit, since a removed run may have hit it. `false` on every other row. A client must not draw such an outcome as never hit. |
 | `inline` | boolean | `true` for a probe inside a Kotlin inline function. |
@@ -360,6 +364,7 @@ The response is `{"classes", "total", "as_of", "from_snapshot"}`, ordered by cla
 | `branch_sites` | object | The report's `branch_sites` counts for this class. |
 | `routed` | boolean | `true` when any method of the class handles an in-scope endpoint. |
 | `finding` | string or null | `never_initialized`, `never_instantiated` or `null`. |
+| `failed_to_initialize` | boolean | `true` when the class is on [`/failed-to-initialize`](#class-finding-routes). Such a class has `finding` `null`. |
 
 No filter changes a row's counts.
 
@@ -373,6 +378,7 @@ Four routes list classes by one finding each. All four take `class_prefix`, and 
 | `/never-initialized` | Loaded classes whose static initialiser never ran. | `known_for_days` |
 | `/never-instantiated` | Loaded classes with a constructor and an instance method, where no constructor ran. | `known_for_days` |
 | `/failed-to-load` | Classes the agent wove that the JVM never defined. Each is a deployment problem and never dead code. | None |
+| `/failed-to-initialize` | Classes the JVM defined whose verification or static initialiser failed, and the subtypes that fail with them. Each is a deployment problem and never dead code. | None |
 
 `/never-initialized` and `/never-instantiated` also return `watched_since`, `as_of` and `from_snapshot`. Their `known_for_days` keeps a class only when its `first_known_at` is at least that many days old. Both are [read from a snapshot](#routes-read-from-a-snapshot) for most scopes, with every parameter applied to the snapshot, and answer `202` while the snapshot is computing. `known_for_days` then counts back from `as_of`. See [Findings](findings).
 
@@ -411,6 +417,43 @@ A `/failed-to-load` row has no probes, so it has no naming fields:
 | `first_failed_at`, `last_failed_at` | timestamp or null | When the first and the latest manifest named the class. With no `environment`, they are the earliest first and the latest last across environments. `null` when no environment in scope has a row. |
 | `failing_for_days` | integer or null | Whole days from `first_failed_at` to the read. |
 
+`/failed-to-initialize` is worked out when the request arrives and never read from a snapshot. Its rows carry no naming fields:
+
+```json
+{
+  "classes": [
+    {
+      "class_name": "com.acme.pay.Gateway",
+      "reasons": ["static-initializer-threw"],
+      "carried_from": [],
+      "instances_naming": 2,
+      "first_failed_at": "2026-09-30T06:13:02Z",
+      "last_failed_at": "2026-10-06T14:02:51Z",
+      "failing_for_days": 6
+    },
+    {
+      "class_name": "com.acme.pay.GatewayClient",
+      "reasons": [],
+      "carried_from": ["com.acme.pay.Gateway"],
+      "instances_naming": 2,
+      "first_failed_at": null,
+      "last_failed_at": null,
+      "failing_for_days": null
+    }
+  ],
+  "total": 2
+}
+```
+
+| Field | Type | Meaning |
+|---|---|---|
+| `class_name` | string | The class. |
+| `reasons` | array of strings | The reasons in-scope runs named the class with, sorted: `static-initializer-threw`, `verifier-rejected`, or `unknown` for a reason a newer agent sent. Empty for a class that fails only because a supertype does. |
+| `carried_from` | array of strings | The supertypes that some in-scope run named and that the class's failure carries from, sorted. Empty when no named supertype carries the failure to the class. |
+| `instances_naming` | integer | Instances with an in-scope run that failed the class, named or carried. |
+| `first_failed_at`, `last_failed_at` | timestamp or null | As on `/failed-to-load`, from the manifests that named the class itself. `null` when no manifest from the scoped environments has named the class itself. |
+| `failing_for_days` | integer or null | Whole days from `first_failed_at` to the read. |
+
 ### `GET /services/{service}/unclassified`
 
 Classes a scan found but could not read or probe. It takes `class_prefix`, and the response is `{"classes", "total"}`, ordered by class name and then bucket. Each row has `class_name`, `bucket` (`unreadable` or `unprobed`) and `reason` (string). See [Inventory](inventory).
@@ -419,7 +462,7 @@ Classes a scan found but could not read or probe. It takes `class_prefix`, and t
 
 Classes, methods, endpoints and dependencies that every live run of the environment proves absent. See [Removed](inventory#removed) for what proves it. The route takes `class_prefix`, and the response is `{"rows", "total", "as_of", "from_snapshot"}`. The route is [read from a snapshot](#routes-read-from-a-snapshot) for most scopes, and answers `202` while the snapshot is computing. So without a `class_prefix` its `total` equals the sum of the report's `removed` counts, and a class on this list is in none of the findings that the same snapshot holds. A request that names a `version` or an `active_within_days` lists no rows, and its `total` is 0.
 
-Rows come in this order: by kind (`class`, `method`, `endpoint`, `dependency`), and then within a kind by the identifiers as the server stores them, compared byte by byte. A class row goes by `class_name`. A method row goes by `class_name`, `method_name` and `method_descriptor`. An endpoint row goes by `verb` and then `route_template`, so the stored verb `*`, which stands for any verb, comes before every named verb. A dependency row goes by `identity_key`, which is its `group:artifact` pairs sorted and joined with commas, so a dependency whose first identity has no group comes before one that has a group, and the order is not that of the names a page shows.
+Rows come in this order: by kind (`class`, `method`, `endpoint`, `dependency`), and then within a kind by the identifiers as the server stores them, compared byte by byte. A class row goes by `class_name`. A method row goes by `class_name`, `method_name` and `method_descriptor`. An endpoint row goes by `verb`, then `route_template`, then `template_kind`, so the stored verb `*`, which stands for any verb, comes before every named verb. A dependency row goes by `identity_key`, which is its `group:artifact` pairs sorted and joined with commas, so a dependency whose first identity has no group comes before one that has a group, and the order is not that of the names a page shows.
 
 A row has the fields of its kind and no others:
 
@@ -429,7 +472,7 @@ A row has the fields of its kind and no others:
 | `class_name` | `class`, `method` | The class, as the agent names it. |
 | `method_name`, `method_descriptor` | `method` | The method, as the agent names it. |
 | `line` | `method` | A lambda body's own line, which its label reads. `0` for any other method, or when no line is known. |
-| `verb`, `route_template` | `endpoint` | The endpoint. The verb `*` stands for any verb. |
+| `verb`, `route_template`, `template_kind`, `template_kind_label` | `endpoint` | The endpoint, as an `/endpoints` row carries it. The verb `*` stands for any verb. |
 | `identity_key` | `dependency` | The dependency's cross-run name. |
 | `identities` | `dependency` | `{"group_id", "artifact_id", "versions"}` for each identity, as `/dependencies` shows them. |
 | `stopped_at` | every row | The latest time the server received a payload from a run that held the thing. |
@@ -438,13 +481,13 @@ A class row also carries the [class naming fields](#class-naming-fields), and a 
 
 ### `GET /services/{service}/endpoints`
 
-Endpoints merged across the in-scope runs and identified by `verb` and `route_template`. The response is `{"endpoints", "total", "days", "watched_since"}`. `days` is the value the request used. The rows follow `order`.
+Endpoints merged across the in-scope runs and identified by `verb`, `route_template` and `template_kind`. A regular expression, a servlet pattern and a path with the same text are two endpoints. The response is `{"endpoints", "total", "days", "watched_since"}`. `days` is the value the request used. The rows follow `order`.
 
 | Parameter | Value | Effect |
 |---|---|---|
-| `status` | `all` or a row `status` | `all` is the default. Any other value keeps the endpoints with that status. Another value gets `400` with `status must be "all", "module-disabled", "live", "counts-behind", "never-called", "stale", or "not-judged"`. |
+| `status` | `all` or a row `status` | `all` is the default. Any other value keeps the endpoints with that status. Another value gets `400` with `status must be "all", "module-disabled", "live", "counts-behind", "without-evidence", "never-called", "stale", or "not-judged"`. |
 | `days` | A whole number, 1 to 36500 | The cutoff between `live` and `stale`. The default is 30. Every status accepts it, and `module-disabled` and `never-called` ignore it. Another value gets `400` with "days must be a whole number from 1 to 36500". |
-| `order` | `route`, `never_called_first` or `live_first` | `route`, the default, sorts by verb and then route template. A client that pages with `offset` should keep it, since a status order moves rows between pages as calls arrive. `never_called_first` sorts `never-called`, then `stale`, then `live`. `live_first` sorts `live`, then `stale`, then `never-called`. Within a status the strongest case comes first: the earliest `first_known_at` for `never-called`, the oldest `last_called_at` for `stale` and the newest for `live`. Then come `module-disabled`, `counts-behind` and `not-judged`, each by verb and route template. The order applies to the rows `status` keeps. Another value gets `400` with `order must be "route", "never_called_first", or "live_first"`. |
+| `order` | `route`, `never_called_first` or `live_first` | `route`, the default, sorts by verb, then route template, then template kind. A client that pages with `offset` should keep it, since a status order moves rows between pages as calls arrive. `never_called_first` sorts `never-called`, then `stale`, then `live`. `live_first` sorts `live`, then `stale`, then `never-called`. Within a status the strongest case comes first: the earliest `first_known_at` for `never-called`, the oldest `last_called_at` for `stale` and the newest for `live`. Then come `module-disabled`, then `counts-behind` and `without-evidence` together, then `not-judged`, each by verb, route template and template kind. The order applies to the rows `status` keeps. Another value gets `400` with `order must be "route", "never_called_first", or "live_first"`. |
 | `framework` | A module name | Keeps endpoints from that framework module, matched exactly. |
 
 `class_prefix` matches the handler class. A row has these fields:
@@ -452,14 +495,16 @@ Endpoints merged across the in-scope runs and identified by `verb` and `route_te
 | Field | Type | Meaning |
 |---|---|---|
 | `verb` | string | The HTTP method, upper case. `*` when the framework takes any method. |
-| `route_template` | string | The agent's normalised template. |
+| `route_template` | string | The agent's normalised template. For a `regex` template it is the framework's regular expression as written. For a `servlet_pattern` template it is the servlet mapping as written, such as `*.do` or `/`. |
+| `template_kind` | string | `path` for a path template, `regex` for a regular expression, `servlet_pattern` for a servlet extension mapping or default mapping, or `unknown` for a kind this server does not name. An agent that predates the field reads as `path`. A `regex` or `servlet_pattern` template is never a path: no filter or label reads it as one. |
+| `template_kind_label` | string | The text the server writes for the kind: `Path`, `Regular expression`, `Servlet pattern`, or for `unknown` a label saying a newer agent sent it. |
 | `verbatim_template` | string | The framework's own spelling of the template. |
 | `framework` | string | The endpoint module that reported it. |
 | `discovery_source` | string | `registration` when a framework hook declared it, `dispatch` when the first request found it. |
 | `handler_class`, `handler_method`, `handler_descriptor` | string or null | The handler, when the agent could join the endpoint to one. |
 | `instances_known`, `first_known_at`, `first_called_at`, `last_called_at`, `dates_capped` | | See [shared fields](#fields-every-response-uses). |
 | `calls_total` | integer | Calls across the in-scope runs. It never includes a call that only the service's record holds, so on a request that names no `version` and no `active_within_days` a stale endpoint can show `0`. |
-| `status` | string | The one status of the endpoint. `module-disabled`: every in-scope run that knows it had its module switched off. `live`: it was called and its last call is on or after the cutoff. `counts-behind`: a run that knows it is not settled, and it is not live. `never-called`: it was registered, has no calls and no call on record, and no run that knows it is unsettled. `stale`: it was called, its last call is before the cutoff, and its dates are not capped. `not-judged`: none of these, for example an endpoint found only by dispatch whose count was lost, or a called endpoint whose capped last call is before the cutoff. The checks run in this order and the first match wins. |
+| `status` | string | The one status of the endpoint. `module-disabled`: every in-scope run that knows it had its module switched off. `live`: it was called and its last call is on or after the cutoff. `counts-behind`: a run that knows it is not settled, and it is not live. `never-called`: it was registered, has no calls and no call on record, no run that knows it is unsettled, and some settled run that reports it is [evidence](findings#without-evidence) about it. `without-evidence`: it would be `never-called`, but no run that reports it is evidence about it. `stale`: it was called, its last call is before the cutoff, and its dates are not capped. `not-judged`: none of these, for example an endpoint found only by dispatch whose count was lost, or a called endpoint whose capped last call is before the cutoff. The checks run in this order and the first match wins. |
 | `module_disabled` | boolean | `true` when every in-scope run that knows the endpoint had its module switched off. Its counts stopped where the module stopped. |
 | `call_recorded` | boolean | `true` when the request names no `version` and no `active_within_days`, the service has recorded a call of the endpoint, and its dates are not capped. `calls_total` stays the in-scope count. An endpoint with `call_recorded` counts as called. |
 | `counts_behind` | boolean | `true` when the endpoint has no calls, an in-scope run that knows it is not settled, and the module is not switched off. On a request that names no `version` and no `active_within_days`, an endpoint with a call the service has recorded is called, so it is never `true`. The calls that run has not delivered could make the endpoint called. The `counts-behind` status is wider: it also holds a called endpoint that such a run knows, when that endpoint is not `live`. |
@@ -502,7 +547,7 @@ Unreached clusters, largest first and then by root. The route takes `class_prefi
 
 `members` and `test_callers` each hold at most 200 entries. The totals are always true counts.
 
-A graph node has `class_name`, `method_name`, `method_descriptor`, `line`, `hits_total`, `never_loaded`, `generated_by`, `unread_shape`, `counts_behind`, `recorded_hit` and the [method naming fields](#method-naming-fields). `never_loaded` is `true` for a method only a complete baseline knows, and its `line` is `0`. `counts_behind` is `true` when a run that knows the method is not settled and, on a request that names no `version` and no `active_within_days`, the service has recorded no hit of it. With `hits_total` `0` the method may have run, and the cluster rules treat it as neither hit nor never hit. `recorded_hit` is `true` when the service has recorded a hit of the method, on a request that names no `version` and no `active_within_days`. `hits_total` stays the in-scope count, and the method counts as hit. Both fields are `false` for a method only a baseline knows and on a `class_finding` root. A graph node is never generated or unread, so both marks read `none`.
+A graph node has `class_name`, `method_name`, `method_descriptor`, `line`, `hits_total`, `never_loaded`, `generated_by`, `unread_shape`, `counts_behind`, `without_evidence`, `recorded_hit` and the [method naming fields](#method-naming-fields). `never_loaded` is `true` for a method only a complete baseline knows, and its `line` is `0`. `counts_behind` is `true` when a run that knows the method is not settled and, on a request that names no `version` and no `active_within_days`, the service has recorded no hit of it. With `hits_total` `0` the method may have run, and the cluster rules treat it as neither hit nor never hit. `without_evidence` is `true` when every run that knows the method is settled and none is [evidence](findings#without-evidence) about its class. The cluster rules treat it as `counts_behind`, and it is `false` where `counts_behind` is `true`. `recorded_hit` is `true` when the service has recorded a hit of the method, on a request that names no `version` and no `active_within_days`. `hits_total` stays the in-scope count, and the method counts as hit. Both fields are `false` for a method only a baseline knows and on a `class_finding` root. A graph node is never generated or unread, so both marks read `none`.
 
 The root is a graph node with these extra fields:
 
@@ -534,11 +579,11 @@ One pair of methods can have several rows, for example a call and a creation.
 
 ### `GET /services/{service}/dependencies`
 
-Every dependency some in-scope run listed, merged across runs by `identity_key`. Rows come in status order (`unloaded`, `unreferenced`, `unreached`, `no-live-reference`, `failed-to-load`, `counts-behind`, `stale`, `used`, `loaded`, `resources-only`) and then by `identity_key`. The route does not take `class_prefix`.
+Every dependency some in-scope run listed, merged across runs by `identity_key`. Rows come in status order (`unloaded`, `unreferenced`, `unreached`, `no-live-reference`, `failed-to-load`, `failed-to-initialize`, `counts-behind`, `without-evidence`, `stale`, `used`, `loaded`, `resources-only`) and then by `identity_key`. The route does not take `class_prefix`.
 
 | Parameter | Value | Effect |
 |---|---|---|
-| `status` | `all`, `unused`, or one status name | `all` is the default. `unused` keeps `unloaded`, `unreferenced`, `unreached` and `no-live-reference`. `failed-to-load`, `counts-behind`, `stale` and `resources-only` claim no removal, so `unused` leaves them out. Another value gets `400` that lists every accepted value. |
+| `status` | `all`, `unused`, or one status name | `all` is the default. `unused` keeps `unloaded`, `unreferenced`, `unreached` and `no-live-reference`. `failed-to-load`, `failed-to-initialize`, `counts-behind`, `without-evidence`, `stale` and `resources-only` claim no removal, so `unused` leaves them out. Another value gets `400` that lists every accepted value. |
 
 The response is `{"dependencies", "total", "watched_since", "listing_complete", "instances_awaiting_listing"}`. When `listing_complete` is `false`, every row shown is right, but the list can be missing dependencies. See [Inventory](inventory) for what each status means.
 
@@ -546,15 +591,15 @@ The response is `{"dependencies", "total", "watched_since", "listing_complete", 
 |---|---|---|
 | `identity_key` | string | The dependency's identity. |
 | `identities` | array | Each `{"group_id", "artifact_id", "versions"}`. `versions` lists every version seen. A shaded jar carries several identities. |
-| `status` | string | One of the ten statuses above. `stale` means the dependency was listed from the startup classpath, no run in scope loaded a class from it, and the service has recorded a load, dated by `last_loaded_at`. A request with `version` or `active_within_days` never gets `stale`, and answers `unloaded` instead. `counts-behind` means the status the dependency would take (`stale`, `unloaded`, `unreached` or `no-live-reference`) rests on counts that a run not yet settled has not delivered, and it claims nothing. `resources-only` means every in-scope listing counted no class in the jar and no run loaded a class from it. |
+| `status` | string | One of the twelve statuses above. `stale` means the dependency was listed from the startup classpath, no run in scope loaded a class from it, and the service has recorded a load, dated by `last_loaded_at`. A request with `version` or `active_within_days` never gets `stale`, and answers `unloaded` instead. `counts-behind` means the status the dependency would take (`stale`, `unloaded`, `unreached` or `no-live-reference`) rests on counts that a run not yet settled has not delivered, and it claims nothing. `resources-only` means every in-scope listing counted no class in the jar and no run loaded a class from it. `failed-to-initialize` means the dependency is loaded, has no live reference, and some run that judged it references it from a class that reads as [failed to initialise](findings#failed-to-initialise). `without-evidence` means the status it would take (`unreached` or `no-live-reference`) rests on zero counts that no settled run is evidence for. Both claim nothing. |
 | `loaded_classes_total` | integer | The largest count of loaded classes any in-scope run reported. |
 | `class_count` | integer or null | Classes in the jar, when a run reported it. |
 | `discovery_sources` | array of strings | How the agent learned of it: `startup_classpath`, `load`, or `unspecified`. |
 | `first_known_at`, `first_loaded_at`, `last_loaded_at`, `dates_capped` | | See [shared fields](#fields-every-response-uses). `first_loaded_at` and `last_loaded_at` are `null` for a dependency never loaded, and `last_loaded_at` is `null` when `dates_capped` is `true`. `last_loaded_at` is the arrival time of the latest batch that raised a loaded-class total, and can trail the true one by up to an hour. |
-| `sites` | array | The places in your code that reference the dependency. Filled only for `unreached`, `no-live-reference` and `failed-to-load`. Every other status, `counts-behind` included, has `[]`. At most 50 entries. |
+| `sites` | array | The places in your code that reference the dependency. Filled only for `unreached`, `no-live-reference`, `failed-to-load` and `failed-to-initialize`. Every other status, `counts-behind` and `without-evidence` included, has `[]`. At most 50 entries. |
 | `sites_total` | integer | The true count of sites. |
 
-A site is `{"class_name", "method_name", "method_descriptor", "never_loaded", "failed_to_load", "failed_since", "line"}` plus the [method naming fields](#method-naming-fields). `method_name` and `method_descriptor` are `null` on a class-level site, which then names the class in the naming fields. `never_loaded` is `true` for a site only a static baseline knows, in a class that reads as [never loaded](findings#never-loaded): no run in scope loaded it, and on a read with no `version` and no `active_within_days` the service has no record of it loading. `failed_to_load` is `true` when that class failed to load, and `failed_since` is then the class's `first_failed_at`, or `null` when no environment in scope has a row for it.
+A site is `{"class_name", "method_name", "method_descriptor", "never_loaded", "failed_to_load", "failed_to_initialize", "failed_since", "line"}` plus the [method naming fields](#method-naming-fields). `method_name` and `method_descriptor` are `null` on a class-level site, which then names the class in the naming fields. `never_loaded` is `true` for a site only a static baseline knows, in a class that reads as [never loaded](findings#never-loaded): no run in scope loaded it, and on a read with no `version` and no `active_within_days` the service has no record of it loading. `failed_to_load` is `true` when that class failed to load, and `failed_since` is then the class's `first_failed_at`, or `null` when no environment in scope has a row for it. `failed_to_initialize` is `true` when the site is in a class that reads as failed to initialise.
 
 ### `GET /services/{service}/absent-references`
 

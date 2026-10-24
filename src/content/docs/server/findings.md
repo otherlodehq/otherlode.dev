@@ -10,23 +10,37 @@ For why the server judges this way, read [How findings are judged](how-it-works)
 
 ## What every finding shares
 
-Every finding follows the same five rules.
+Every finding follows the same six rules.
 
 - **A finding is a lead, not a verdict.** A zero count means no run you sent has seen the code run. It does not prove nobody needs the code. A service that has reported for less than 30 days shows its watched time in amber in the top bar: code that runs weekly or monthly reads as never hit until it runs. Check a finding against how long the service has been watched. See [Dates](dates).
 - **A finding covers judgeable code only.** The server stores code it cannot judge, and shows it, but never counts it in a finding. Inline methods, generated methods, routine outcomes and unread shapes are not judgeable. An endpoint is judgeable unless its framework module switched itself off. A class is judgeable when at least one of its declared methods is not inline, not generated and not an unread shape.
 - **A finding reads production runs only.** It reads the runs that pass the page's [scope](scope). It leaves out test runs, which exist to name the tests that call code (see [Unreached clusters](unreached-clusters)). It also leaves out every run sent through a collector older than its agent, since such a collector drops fields the server judges by. The **Instances** list marks that run with the badge **Collector older than agent**, and the top bar's evidence list shows the **Stripped runs** fact. Upgrade the collector to the agent's version so new runs count.
 - **A zero-count claim needs every run that knows the code to be settled.** A run is settled when a delta batch from it has arrived and its newest payload says no counts are pending. A run that sent only a manifest is not settled, and neither is one whose counts a collector or proxy refused. When a run in scope that knows a method, a condition path, a class, an endpoint, an optional parameter or a dependency is not settled, the finding makes no zero-count claim about it, since the hits that run has not delivered could be the ones that ran. Code with hits is hit, whichever run counted them, and a run that does not know the code holds nothing back. The claim returns when the run is settled. The **Instances** page and the top bar's evidence list (the **Counts behind** fact) name the runs that are not settled. [Scope](scope#runs-that-are-not-settled) covers it.
+- **A zero-count claim needs a run that is evidence.** A run is evidence about a class when it is watched, has no verification failure it could not place, did not fail the class and did not leave the class's static initialiser running. When no run that knows the code is evidence, the finding makes no claim. [Without evidence](#without-evidence) covers it.
 - **A full read leaves out removed code.** Code, an endpoint or a dependency that every live run of the environment proves absent is on the [Removed](inventory#removed) list and in no finding. See [Removed code](#removed-code).
 
 Beside each finding page's title, an info icon opens the finding's section of these docs. Hover over it, or move focus to it, to read the finding's definition in one line.
 
 Code that is stored but not judged still shows where it is useful. A strip above the overview's graph counts the methods and conditions in unread shapes, such as "12 methods in unread shapes, agent 0.9.1". It names the agent versions that sent them and shows only when some exist. Click the count to see each family of compiler output the agent has not read, such as "Scala case-class plumbing" or "string switch lowering". Routine outcomes are listed on request, as [Never hit](#never-hit) describes.
 
+### Without evidence
+
+A zero count is a claim only when a run that could have seen the code run is evidence for it. The server withholds the claim, and counts the code apart as **without evidence**, in these cases:
+
+- The run's agent could not see the verifier's rejections, so the run shows as unwatched. The verifier may have rejected any class of that run with no hits.
+- The run reported a verification failure it could not place in a class. Any class of that run with no hits may be that class.
+- The run failed the class, or the class failed to initialise in scope.
+- The class's static initialiser is still running in the run: its entry probe counted, and neither its returned probe nor its threw probe did.
+
+A claim needs at least one evidence run among the runs that know the code, so one unwatched instance does not silence the others. Hits still stand, and a run that does not know the code is not asked. A run that is not settled holds a claim back as **counts behind**, and that wins over **without evidence**, since its counts may still arrive.
+
+The rule covers every zero-count claim, which means never-hit methods and condition paths, class findings, never-called endpoints, always-supplied optional parameters and dependencies. The report counts the methods, condition paths, endpoints and dependencies it withholds in their `without_evidence` figures. A method, a condition path or an endpoint with no hits reads as possibly run, not as never hit. An endpoint reads **Without evidence** and a dependency reads **Without evidence** where the status they would take rests on such a zero count. The strip above the overview's graph states them, such as "4 methods, conditions and endpoints without evidence", and counts the instances behind them, such as "1 instance with the verifier unwatched" or "1 instance with an unplaced verification failure". [Troubleshooting](troubleshooting#a-method-or-endpoint-reads-without-evidence) says what to look at.
+
 ### Counts in the panel
 
-The counts beside **Never hit**, **Never called**, **Never supplied**, **Never loaded**, **Failed to load**, **Never initialised**, **Never instantiated**, **Unreached clusters**, **Unused dependencies**, **Dependencies failed to load**, **Instances**, **Dependencies**, **Absent references** and **Removed** come from the report. The count beside **Removed** is the sum of the report's four removed counts. For most scopes the report is read from a snapshot, which can trail the data by up to about 20 minutes. **Never hit**, **Never initialised**, **Never instantiated**, **Unreached clusters** and **Removed** are read from the same snapshot, so their counts match their pages. The Removed list is part of that snapshot, so it agrees with those findings. The other pages are worked out when you open them, so one of their counts can differ from the total on its page. While the report is being prepared, those counts are left out. The counts beside **Stale** and **Classes** are read with each page's scope, and days for **Stale**, the way the page is: from the snapshot when the scope has one, and worked out when you read when it has none. The counts beside **Endpoints** and **Unclassified** are read with each page's scope and are never from a snapshot. See [the report's snapshot](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots).
+The counts beside **Never hit**, **Never called**, **Never supplied**, **Never loaded**, **Failed to load**, **Failed to initialise**, **Never initialised**, **Never instantiated**, **Unreached clusters**, **Unused dependencies**, **Dependencies failed to load**, **Dependencies failed to initialise**, **Instances**, **Dependencies**, **Absent references** and **Removed** come from the report. The count beside **Removed** is the sum of the report's four removed counts. For most scopes the report is read from a snapshot, which can trail the data by up to about 20 minutes. **Never hit**, **Never initialised**, **Never instantiated**, **Unreached clusters** and **Removed** are read from the same snapshot, so their counts match their pages. The Removed list is part of that snapshot, so it agrees with those findings. The other pages are worked out when you open them, so one of their counts can differ from the total on its page. While the report is being prepared, those counts are left out. The counts beside **Stale** and **Classes** are read with each page's scope, and days for **Stale**, the way the page is: from the snapshot when the scope has one, and worked out when you read when it has none. The counts beside **Endpoints** and **Unclassified** are read with each page's scope and are never from a snapshot. See [the report's snapshot](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots).
 
-A finding's count above zero shows in bold in the never-hit colour, or in the stale colour for **Stale**, and a zero shows muted. **Failed to load** and **Dependencies failed to load** appear only while their count is above zero. The dependency counts show a trailing `~` while the dependency listing is incomplete, which means the count may change. See [Unused dependencies](#unused-dependencies).
+A finding's count above zero shows in bold in the never-hit colour, or in the stale colour for **Stale**, and a zero shows muted. **Failed to load**, **Failed to initialise**, **Dependencies failed to load** and **Dependencies failed to initialise** appear only while their count is above zero. The dependency counts show a trailing `~` while the dependency listing is incomplete, which means the count may change. See [Unused dependencies](#unused-dependencies).
 
 ### Removed code
 
@@ -82,6 +96,7 @@ The page never counts:
 - A folded site. A condition inside code that a row of this page already covers has no row of its own, since deleting the covering code deletes the condition. That holds for a condition inside a listed method and for a condition behind a listed untaken outcome.
 - An optional-parameter omission. [Never supplied](#never-supplied) reads those.
 - A condition outcome with no hits and no branch key, in an environment that has lost a production run. A removed run may hold its only hit, so the server makes no claim. The report counts these sites as `withheld`, and the strip above the overview's graph states "N conditions withheld".
+- A method or condition path with no hits that no run is evidence about. The report counts them apart as **without evidence**. See [Without evidence](#without-evidence).
 - A method or condition path with no hits that a run not yet settled knows. A class page's count line and the report count them apart as **counts behind**, and the strip above the overview's graph states "N methods and conditions not judged yet". An endpoint with no recorded call that a run not yet settled knows is in that count too. When the count holds endpoints, the strip names them, such as "3 methods, conditions and endpoints not judged yet" or "1 endpoint not judged yet". A lambda body that such a run knows does not fold into the method that creates it, and a class finding does not cover a method that such a run knows. Both count as behind too.
 
 ### Filters
@@ -155,6 +170,7 @@ A class is never loaded when all of these hold:
 - A run in scope sent a complete baseline that declares the class. The latest complete scan of each run counts. A scan is complete only when every chunk has arrived.
 - No run in scope loaded the class. A class that was skipped, or that a sweep found loaded where no transformer saw it, counts as loaded.
 - No run in scope names the class as failed to load. [Failed to load](#failed-to-load) holds that class.
+- No in-scope run initialised the class and some in-scope run failed it. [Failed to initialise](#failed-to-initialise) holds that class.
 - At least one declared method of the class is not inline, not generated and not an unread shape.
 
 A read that names no version and no seen-within window also counts a class that any production run of the service loaded, in the environments in scope, even when that run's data has since been removed. A read that names a version or a seen-within window answers for the runs it selects.
@@ -183,6 +199,25 @@ The panel shows the item only while its count is above zero, and the strip above
 **Failing since** and **Last failed** are server arrival times, kept for each environment. With no environment in scope, the page shows the earliest first date and the latest last date across environments. The scope's version and seen-within filters never change them. A class that failed for a long time is evidence that nothing needs it, and so is a dependency that only such a class uses. See [Dependencies failed to load](#dependencies-failed-to-load).
 
 The same data is at the `failed-to-load` route.
+
+## Failed to initialise
+
+**Failed to initialise** names classes that the JVM defined and could not initialise: their verification failed, or their static initialiser threw. A class like this can never run in that JVM, so its methods never being hit says nothing about whether anyone needs them. It is a deployment to fix, not code to delete. The server keeps it out of [Never initialised](#never-initialised), [Never instantiated](#never-instantiated), the never-hit rows and the clusters. Hits it recorded still stand. See [Failed to initialise](/docs/agent/classes#failed-to-initialise).
+
+A class failed in a run when the run names it, or when it is a confirmed class of the run whose supertypes reach a class the run names. A rejection by the verifier reaches every subtype, through the superclass chain and through interfaces. A thrown initialiser reaches every subclass, and a class that implements an interface only when the interface declares a non-abstract instance method. The class is listed when some run in scope failed it and no run in scope initialised it. The server judges a class that some run in scope initialised from the runs that did not fail it, whatever another run says. A class is initialised in a run when its initialiser returned. A class with no initialiser, or from an agent that sends no initialiser counts, is initialised when any of its probes has hits. A read with no version and no seen-within window also counts a returned initialiser that the service has recorded, even when that run's data has since been removed. A test run, or a run sent through an older collector, names nothing.
+
+The panel shows the item only while its count is above zero, and the strip above the overview's graph states the count, such as "2 classes failed to initialise", linked to this page. The page reads "No class failed to initialise in this scope." when the list is empty. The only filter is **Class prefix**. A class on this page is marked **Failed to initialise** on the [Classes](inventory#classes) list and on its class page.
+
+| Column | Content |
+|---|---|
+| **Class** | The class name, linked to its class page. |
+| **Reasons** | Why runs named the class: **Static initialiser threw**, **Verifier rejected**, or **Unknown** for a reason a newer agent sent. A dash for a class that fails only because a supertype does. |
+| **Carried from** | The supertypes some run named, which the class's failure comes from. A dash when no named supertype carries the failure to the class. |
+| **Instances naming** | How many instances have a run that failed the class, named or carried. |
+| **Failing since** | The date the server first received a manifest naming the class, with the days since, for example "1 Jun 2026 (122 days)". |
+| **Last failed** | The date the server last received one. |
+
+**Failing since** and **Last failed** are server arrival times, kept for each environment, as for [Failed to load](#failed-to-load). A dash shows when no manifest from the scoped environments has named the class itself. The same data is at the `failed-to-initialize` route.
 
 ## Never initialised
 
@@ -257,7 +292,7 @@ The same data is at the `stale-hit` route, with the optional `days` parameter. I
 
 **Unused dependencies** claims that a library shows no live use. The page is **Dependencies** with **Status** set to **Unused**. A dependency is one library, merged across instances and versions by its group and artifact. The panel counts four statuses as unused: **Unloaded**, **Unreferenced**, **Unreached** and **No live reference**. See [Dependencies](/docs/agent/dependencies#statuses).
 
-The server decides one status for each dependency, from the runs in scope, and checks the statuses in the order of this table. The first that holds wins, except that **Counts behind** takes the place of four of them, as below.
+The server decides one status for each dependency, from the runs in scope, and checks the statuses in the order of this table. The first that holds wins, except that **Counts behind** takes the place of four of them, and **Without evidence** of two, as below.
 
 | Status | Meaning | In the unused count |
 |---|---|---|
@@ -267,10 +302,12 @@ The server decides one status for each dependency, from the runs in scope, and c
 | **Loaded** | A class loaded, but no run that lists the library records references, so nothing more is claimed. | No |
 | **Used** | A run that lists the library and records references holds a live reference to it. | No |
 | **Failed to load** | A loaded library with no live reference that a class which failed to load references. | No |
+| **Failed to initialise** | A loaded library with no live reference and none from a class that failed to load, that a class which failed to initialise references. | No |
 | **No live reference** | A loaded library with no live reference, where some run that judged it has no complete baseline, so the server cannot tell unreferenced from unreached. | Yes |
 | **Unreferenced** | A loaded library that nothing in your code references. | Yes |
 | **Unreached** | A loaded library that your code references only from methods never hit or classes never loaded. | Yes |
 | **Counts behind** | A library that would read as **Stale**, **Unloaded**, **No live reference** or **Unreached**, where the zero count behind that status is not settled. | No |
+| **Without evidence** | A library that would read as **No live reference** or **Unreached**, where no run that knows a method holding a reference is [evidence](#without-evidence) that the method never ran. | No |
 
 **Counts behind** claims nothing. It replaces **Stale** and **Unloaded** when a run that lists the library is not settled, since a class loaded there would make it loaded. It replaces **No live reference** and **Unreached** when a method that holds a reference has no hits, and a run that knows that method is not settled, since the method may have run. A reference from a method with hits is live whichever run counted the hits, so the library is **Used**. **Unreferenced** reads only manifests and complete scans, so a run that is not settled does not hold it back, and neither does it hold back **Failed to load**. The tooltip reads "A run that knows it has not sent all its counts, so it is not called unloaded, unreached or without a live reference yet." The status shows no sites, and the library returns to its usual status once the run is settled.
 
@@ -278,7 +315,7 @@ The server decides one status for each dependency, from the runs in scope, and c
 
 **Resources only** is checked first and claims nothing. A native library, a jar of web assets or a jar of message bundles has no class that can load, so a load count of zero says nothing about whether the service uses it. A listing whose class count is unknown does not count as zero, so such a library falls through to the other statuses. The tooltip reads "No class in it can load, such as a native library or web assets. Nothing is claimed."
 
-A reference from a method is live when the method has hits. A method has hits when any run in scope hit it. On a read with no version and no seen-within window, a method the service has recorded a hit of also has hits. A run's manifest or its static baseline can name the method, and the result is the same. A reference at class level is live when the class has loaded. A class has loaded when a run in scope loaded it, or, on a read with no version and no seen-within window, when the service has recorded it loading. A class that failed to load holds no live reference. The page never counts a reference held by an inline method, and it ignores a reference to a class that a run's own mapping assigns to no library it listed. An absent reference is a reference to a class no loader can find. The page links to those as "1 absent reference" or "3 absent references", and [Inventory](inventory) describes that list.
+A reference from a method is live when the method has hits. A method has hits when any run in scope hit it. On a read with no version and no seen-within window, a method the service has recorded a hit of also has hits. A run's manifest or its static baseline can name the method, and the result is the same. A reference at class level is live when the class has loaded. A class has loaded when a run in scope loaded it, or, on a read with no version and no seen-within window, when the service has recorded it loading. A class that failed to load holds no live reference. A class that failed to initialise holds no live reference at class level, and a method of it holds one only when the method has hits. The page never counts a reference held by an inline method, and it ignores a reference to a class that a run's own mapping assigns to no library it listed. An absent reference is a reference to a class no loader can find. The page links to those as "1 absent reference" or "3 absent references", and [Inventory](inventory) describes that list.
 
 The statuses **Unreferenced** and **Unreached** need a complete static baseline from every run that judged the library. Without one, the server reports **No live reference**, which is true in both cases. A library reached through a service lookup, such as a JDBC driver, can read as unreferenced while the application needs it, so read the status next to the loaded-class count. Each status is a lead, not an instruction to remove the library.
 
@@ -291,7 +328,7 @@ The agent marks a run's dependency listing complete once its startup listing has
 
 ### Filters and columns
 
-The one filter is **Status**. It offers **All dependencies**, **Unused**, then each status above, with the count after each name. The page has no class prefix filter. Rows sort by status as **Unloaded**, **Unreferenced**, **Unreached**, **No live reference**, **Failed to load**, **Counts behind**, **Stale**, **Used**, **Loaded** and **Resources only**.
+The one filter is **Status**. It offers **All dependencies**, **Unused**, then each status above, with the count after each name. The page has no class prefix filter. Rows sort by status as **Unloaded**, **Unreferenced**, **Unreached**, **No live reference**, **Failed to load**, **Failed to initialise**, **Counts behind**, **Without evidence**, **Stale**, **Used**, **Loaded** and **Resources only**.
 
 The columns are:
 
@@ -300,7 +337,7 @@ The columns are:
 - **Loaded classes**, as "12 of 340", or "12" when the library's class count is unknown.
 - **Discovery**, which is "startup classpath", "class load" or both.
 - **Known since**, **First loaded** and **Last loaded**.
-- **Sites**, the number of places in your code that hold the references. It shows for **Unreached**, **No live reference** and **Failed to load** rows, and a dash for the others.
+- **Sites**, the number of places in your code that hold the references. It shows for **Unreached**, **No live reference**, **Failed to load** and **Failed to initialise** rows, and a dash for the others.
 
 Click a row with sites to expand them. Each site shows its class and method, and whether the class is "loaded" or "never loaded". A row lists at most 50 sites and then reads "Showing 50 of 63 sites."
 
@@ -315,3 +352,13 @@ A live reference still wins, so a library that another class uses live is **Used
 The filter and the columns are those of [Unused dependencies](#unused-dependencies). The expanded sites of a failed library mark each failed class "failed to load since" with its date from [Failed to load](#failed-to-load), and the class links to that page. The listing notes above the table and the `~` on the panel count apply here too.
 
 The same data is at the `dependencies` route, with `status=failed-to-load`.
+
+## Dependencies failed to initialise
+
+**Dependencies failed to initialise** claims that only a class that failed to initialise references a library. The page is **Dependencies** with **Status** set to **Failed to initialise**. The panel shows the item only while its count is above zero. A library has this status when it is loaded, has no live reference, no judging run references it from a class that failed to load, and some run that judged it references it from a class that reads as [failed to initialise](#failed-to-initialise). A live reference still wins, so a library that another class uses live is **Used**. A reference from such a class is live only when the method that holds it has hits.
+
+The status takes the place of **No live reference**, **Unreferenced** and **Unreached**, and it is not in the **Unused** count. It asks for review and claims no removal: the class may fail because of the library, or the library may be needed once the class is fixed. The tooltip reads "Only classes that failed to initialise reference it. Review it, do not remove it blind."
+
+The filter and the columns are those of [Unused dependencies](#unused-dependencies). The expanded sites of such a library mark each failed class "failed to initialise", and the class links to [Failed to initialise](#failed-to-initialise). The listing notes above the table and the `~` on the panel count apply here too.
+
+The same data is at the `dependencies` route, with `status=failed-to-initialize`.
