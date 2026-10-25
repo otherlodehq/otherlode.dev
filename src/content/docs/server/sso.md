@@ -10,13 +10,14 @@ A tenant that does not enforce SSO still signs in with Google, Microsoft, or Git
 
 ## Before you start
 
-You need three things:
+You need four things:
 
+- Single sign-on in your tenant's plan. An operator turns it on. Until then the page shows only "Single sign-on is not in this tenant's plan."
 - An admin user in the tenant. A viewer sees only the message "Only admins can see this page."
 - Access to your identity provider's admin console, to create the connection.
 - Access to your domain's DNS settings, to add a record that proves you own your email domain. Without it you cannot enforce SSO.
 
-You do not need an operator to set anything up first. A tenant that has never used SSO shows "Not set up yet. Setting up SSO links this tenant to a WorkOS organization." Your first click on any **Set up** or **Verify** button on the page creates that link for you.
+Once single sign-on is on for your tenant, the rest needs no operator. A tenant that has never used SSO shows "Not set up yet. Setting up SSO links this tenant to a WorkOS organization." Your first click on any **Set up** or **Verify** button on the page creates that link for you.
 
 ## Set up an SSO connection
 
@@ -56,7 +57,7 @@ A domain belongs to one tenant. If WorkOS verifies a domain for your organizatio
 
 ## Set up directory sync
 
-Directory sync is optional. In the **Directory sync** card, click **Set up directory sync** and follow the Admin Portal's steps. The **Directories** table shows each directory with its name, type, and state.
+Directory sync is optional. It is its own add-on, which an operator turns on for your tenant, and it needs single sign-on. Without it, the **Directory sync** card shows "Directory sync is not in this tenant's plan." In the **Directory sync** card, click **Set up directory sync** and follow the Admin Portal's steps. The **Directories** table shows each directory with its name, type, and state.
 
 When your directory removes or suspends someone, their user here is deleted and their sessions end. [Manage users and roles](users) explains what directory sync does to users.
 
