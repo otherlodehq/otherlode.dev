@@ -82,13 +82,13 @@ java \
 
 To list more than one package, separate them with a semicolon, as in `includePackages=com.acme.shop;com.acme.billing`. If you start your service with Gradle, a Spring Boot fat jar or a container instead, [Attach the agent](/docs/agent/attach) shows the flag for each.
 
-The agent writes its lines to stderr, and each starts with `otherlode:`. A healthy start prints one line that names the endpoint modules it installed:
+The agent writes to stderr through the JVM's logger. Each message starts with `otherlode:`, and the logger puts its level in front, as in `INFO: otherlode:`, below a line with the time and the class that logged it. A healthy start prints one message that names the endpoint modules it installed:
 
 ```text
 otherlode: installing endpoint modules: javalin-6, javalin-7, jaxrs, jdk-httpserver, ktor-2, ktor-3, micronaut, micronaut-3, servlet, spring-webflux, spring-webmvc, vertx-web
 ```
 
-It also warns `otherlode: exportUrl uses plain http, so the auth token is sent unencrypted`. The token goes no further than `localhost` here, so you can ignore it on your own machine.
+It also warns `otherlode: exportUrl uses plain http, so the auth token is sent unencrypted`. The token goes no further than `localhost` here, so you can ignore it on your own machine. A HotSpot JVM also prints its own line, `Sharing is only supported for boot loader classes because bootstrap classpath has been appended`, which is harmless. See [The CDS warning](/docs/agent/compatibility#the-cds-warning).
 
 If the agent prints `includePackages is not set`, the option is missing or empty and the agent instruments nothing. When it can find your main class, the line suggests a package to use. [Choose includePackages](/docs/agent/attach#choose-includepackages) covers the option.
 
@@ -98,7 +98,7 @@ The agent sends a batch every 60 seconds, even when nothing ran, so your service
 
 Open `https://app.otherlode.dev`. The **Services** page opens first and lists your service under the `serviceName` you set, with its instance count, **Last seen** and **Watched for**. Until a service reports, the page says "No service has reported yet."
 
-If the service doesn't appear, read `docker logs otherlode-collector`. A line that starts with `dropping payload` ends with the status Otherlode returned, and [Send data from your collector](/docs/server/connect#read-what-ingest-answers) says what each status means.
+If the service doesn't appear, read `docker logs otherlode-collector`. A line whose `msg` starts with `dropping payload` has an `error` field that ends with the status Otherlode returned, such as `backend returned 401 Unauthorized`, and [Send data from your collector](/docs/server/connect#read-what-ingest-answers) says what each status means.
 
 Now use your service for a while, the way its users do. Call its endpoints and run its jobs, so the agent counts the code that runs.
 
