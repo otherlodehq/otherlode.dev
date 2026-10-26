@@ -48,6 +48,13 @@ release's code; the sync never replaces a release already on master. Put
 the same fix in the source repo's `docs/site/` when it still applies, or
 the next release copies the mistake again.
 
+A change to a how-to or a technical doc is done only after you run every
+command, step and check it describes and see the result it promises: the
+output, the log line, the page. When a step cannot run as written, such as
+a host or a release that does not exist yet, run the nearest local
+stand-in and name each substitute in the reply. Where the result differs,
+fix the doc. Reading the code is not enough.
+
 ## Commits
 
 A commit message never carries a `Claude-Session` line, a session link
