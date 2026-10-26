@@ -34,7 +34,7 @@ The agent and the collector are open source under the Apache 2.0 licence, at [ot
 
 Your agents send their reports to your collector, and the collector forwards them to Otherlode with an ingest key. The collector is the one place that holds the key, and it is where you turn on blanking. [Send data from your collector](/docs/server/connect) sets up the key and the forward address.
 
-Otherlode keeps what the collector forwards in Google Cloud's London region. [What the server keeps](/docs/server/data-kept) lists what it stores and when it deletes it, and the [privacy policy](/privacy) covers the personal data.
+Otherlode keeps what the collector forwards in Google Cloud's London region. [What Otherlode keeps](/docs/server/data-kept) lists what it stores and when it deletes it, and the [privacy policy](/privacy) covers the personal data.
 
 ## A finding is a lead to check
 
