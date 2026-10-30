@@ -4,9 +4,9 @@ description: Every route of the read API, with its authentication, parameters, p
 order: 120
 ---
 
-The read API returns what the web UI shows, as JSON. Use it to pull findings into a script, a dashboard, or a CI check. Every route answers `GET` and returns `application/json`.
+The read API returns what the web app shows, as JSON. Use it to pull findings into a script, a dashboard, or a CI check. Every route answers `GET` and returns `application/json`.
 
-Admin actions and the audit log are in the web UI only. Their routes answer an admin's browser session and never an API key, so this page does not list them. See [Audit log](audit-log).
+Admin actions and the audit log are in the web app only. Their routes answer an admin's browser session and never an API key, so this page does not list them. See [Audit log](audit-log).
 
 ## Authenticate with a read key
 
@@ -18,9 +18,9 @@ Send a `read` key as a bearer token:
 curl -H "Authorization: Bearer $OTHERLODE_READ_KEY" https://app.otherlode.dev/api/v1/me
 ```
 
-An admin creates the key in the web UI. See [Manage API keys](api-keys). A key has one scope. An `ingest` key, the kind a collector holds, gets `403` on every API route and reads nothing.
+An admin creates the key in the web app. See [Manage API keys](api-keys). A key has one scope. An `ingest` key, the kind a collector holds, gets `403` on every API route and reads nothing.
 
-The web UI calls the same routes with the session cookie of a signed-in user. A request that carries an `Authorization` header is judged on the key alone, even when it also carries a valid cookie, and an empty header counts as present. The read API has no rate limit.
+The web app calls the same routes with the session cookie of a signed-in user. A request that carries an `Authorization` header is judged on the key alone, even when it also carries a valid cookie, and an empty header counts as present. The read API has no rate limit.
 
 ## Errors
 
@@ -36,8 +36,8 @@ Every error has a JSON body with one field, `error`.
 | `401` | "unauthorized" | The header is missing, is not a bearer header, or holds an unknown or revoked key. |
 | `403` | "this route needs a read key" | The key is valid and has the `ingest` scope. |
 | `404` | "service not found" | The tenant has no such service. See [name a service in the path](#name-a-service-in-the-path). |
-| `500` | "internal error" | The server failed. The body never names the cause. |
-| `503` | "unavailable" | The server could not check the key. The key may still be valid, so retry. |
+| `500` | "internal error" | Otherlode failed. The body never names the cause. |
+| `503` | "unavailable" | Otherlode could not check the key. The key may still be valid, so retry. |
 
 A route checks the service before it checks the other parameters. A request for an unknown service gets `404` even when its `limit` is also wrong.
 
@@ -54,7 +54,7 @@ Both shapes take the same parameters and return the same fields. The rest of thi
 
 - **Both values come from `/services`.** The `namespace` and `name` fields of [`/services`](#get-services) give both values for the path. A `namespace` of `null` means the first shape.
 - **A slash is escaped.** Write a `/` in a namespace or a name as `%2F`, as in `/api/v1/namespaces/team%2Fa/services/checkout/report`.
-- **Case is kept.** The server trims spaces around either value and keeps the case. `Shop` and `shop` are two namespaces.
+- **Case is kept.** Otherlode trims spaces around either value and keeps the case. `Shop` and `shop` are two namespaces.
 - **The unspecified namespace stands alone.** It never matches a named one, even one called `none`. A blank or unknown namespace in the second shape gets `404` and never falls back to the first shape.
 
 A service that only [test runs](/docs/agent/test-runs) reached is missing from `/services`, but its own routes answer.
@@ -71,7 +71,7 @@ Every per-service route takes these three parameters. They choose which runs a r
 
 | Parameter | Value | Effect |
 |---|---|---|
-| `environment` | A name | Keeps only runs in that environment. The server trims the name and lowercases it, so `PROD` and `prod` match. `none` selects the runs that named no environment. A blank value means every environment. This is the one scope parameter that also picks which [dates](dates) a route shows. |
+| `environment` | A name | Keeps only runs in that environment. Otherlode trims the name and lowercases it, so `PROD` and `prod` match. `none` selects the runs that named no environment. A blank value means every environment. This is the one scope parameter that also picks which [dates](dates) a route shows. |
 | `version` | A string | Keeps only runs that reported exactly that version. An unset value means every version. |
 | `active_within_days` | A whole number, 1 to 36500 | Keeps only runs last seen within that many days. Another value gets `400` with "active_within_days must be a whole number from 1 to 36500". |
 
@@ -86,7 +86,7 @@ Every list route takes `limit` and `offset`. The routes without them are `/me`, 
 | `limit` | 500 | 1 to 5000 | "limit must be between 1 and 5000" |
 | `offset` | 0 | 0 or more | "offset must be 0 or greater" |
 
-Each list response carries `total`, the number of matching rows across every page. The server computes it with the same filters and before `limit` and `offset` apply. To read everything, request pages until `offset` reaches `total`. Rows come in a fixed order. A page counts the unit the route lists. On `/never-hit` a site is one row, however many outcomes it has, and on `/unreached-clusters` a cluster is one row, however many members it has.
+Each list response carries `total`, the number of matching rows across every page. Otherlode computes it with the same filters and before `limit` and `offset` apply. To read everything, request pages until `offset` reaches `total`. Rows come in a fixed order. A page counts the unit the route lists. On `/never-hit` a site is one row, however many outcomes it has, and on `/unreached-clusters` a cluster is one row, however many members it has.
 
 ### Filters shared by list routes
 
@@ -99,11 +99,11 @@ A route ignores a parameter it does not read.
 
 ### Fields every response uses
 
-- **Timestamps** are RFC 3339 in UTC, such as `2026-09-24T21:40:10Z`. Every date is the time the server received the data, except `as_of` and `last_failed_at`, which are times the server computed or tried to compute a result. See [Dates](dates).
-- **`as_of` and `from_snapshot`** are on every `200` of the [routes read from a snapshot](#routes-read-from-a-snapshot). `as_of` is when the server read the data. `from_snapshot` is `true` when a stored snapshot gave the answer and `false` when the server read it live.
+- **Timestamps** are RFC 3339 in UTC, such as `2026-09-24T21:40:10Z`. Every date is the time Otherlode received the data, except `as_of` and `last_failed_at`, which are times it computed or tried to compute a result. See [Dates](dates).
+- **`as_of` and `from_snapshot`** are on every `200` of the [routes read from a snapshot](#routes-read-from-a-snapshot). `as_of` is when Otherlode read the data. `from_snapshot` is `true` when a stored snapshot gave the answer and `false` when Otherlode read it live.
 - **Absent values** are `null`. A list with nothing in it is `[]`, never `null`.
 - **`watched_since`** is the time the service first reported in the scoped environment. With no `environment`, it is the earliest across the environments. It is `null` when nothing matches. A finding's age means something only against it. The routes that carry it say so.
-- **`first_known_at`, `first_hit_at`, `last_hit_at`** and their endpoint names (`first_called_at`, `last_called_at`), optional-parameter names (`first_omitted_at`, `last_omitted_at`) and dependency names (`first_loaded_at`, `last_loaded_at`) are the dates the server keeps for each location. Each last date can trail the true one by up to an hour, since the server moves it only when the stored date is more than an hour old. See [Dates](dates).
+- **`first_known_at`, `first_hit_at`, `last_hit_at`** and their endpoint names (`first_called_at`, `last_called_at`), optional-parameter names (`first_omitted_at`, `last_omitted_at`) and dependency names (`first_loaded_at`, `last_loaded_at`) are the dates Otherlode keeps for each location. Each last date can trail the true one by up to an hour, since it moves only when the stored date is more than an hour old. See [Dates](dates).
 - **`dates_capped`** is `true` when the row has no service-wide dates, so its dates come from the runs in scope. A capped first date can be later than the true one, and a capped last date earlier.
 - **`instances_known`** is the number of distinct instances with an in-scope run that knows the location.
 
@@ -117,9 +117,9 @@ A route ignores a parameter it does not read.
 
 A snapshot holds the scope's report and every row of the other eight routes. The route applies the request's other parameters to those rows when the request arrives, as a live read applies them: `class_prefix`, `class`, `kind`, `routed`, `routine`, `order`, `include_generated`, `include_unread`, `limit` and `offset`, `days` on `/stale-hit`, and `known_for_days` on `/never-initialized` and `/never-instantiated`. A day parameter counts back from the snapshot's `as_of`, not from the time of the request. `known_for_days` on `/never-hit` and `/unreached-clusters` changes which code folds into another row or cluster, so a request to either route with it is computed live.
 
-The server refreshes a snapshot when something its findings read has changed in the runs it covers, at most once every 15 minutes, and at least once every 2 hours with nothing changed. A batch that only raises counts on code hit within the last day changes nothing, unless they are counts of an optional parameter or the method it belongs to, which the report's `optional_parameters` counts read. A version's snapshot covers that version's runs. It counts test runs and runs from a collector older than their agent only while one of the version's other runs is still reporting. When a run's counts fall behind, the server refreshes the service's snapshots without the 15-minute wait. A snapshot's findings can trail the data by up to about 20 minutes, the interval plus the 5-minute period of the refresh job, and more while the refresh has a backlog. Counts and dates on it, such as `hits_total` and last-hit times, can trail by up to about 2 hours. The nine routes trail together, so a count in the report matches the `total` of a route read from the same snapshot, and can differ from a route computed live by what arrived in that time. Every other request is computed live when it arrives: a `version` outside the 3 newest, a `version` with no `environment`, any `active_within_days`, `known_for_days` on `/never-hit` or `/unreached-clusters`, a service or environment that only test runs have reached, and an environment the service does not track. Every route not named above is computed live. See [How findings are judged](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots).
+Otherlode refreshes a snapshot when something its findings read has changed in the runs it covers, at most once every 15 minutes, and at least once every 2 hours with nothing changed. On the free plan both are 6 hours. A batch that only raises counts on code hit within the last day changes nothing, unless they are counts of an optional parameter or the method it belongs to, which the report's `optional_parameters` counts read. A version's snapshot covers that version's runs. It counts test runs and runs from a collector older than their agent only while one of the version's other runs is still reporting. A change that can take findings away refreshes without the wait, on every plan: a run that ends, passes its live deadline or falls behind, and a class listing or static baseline that completes. [How findings are judged](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots) says which snapshots each refreshes. A snapshot's findings can trail the data by up to about 20 minutes, the interval plus the 5-minute period of the refresh job, and more while the refresh has a backlog. Counts and dates on it, such as `hits_total` and last-hit times, can trail by up to about 2 hours. On the free plan both can trail by up to about 6 hours. The nine routes trail together, so a count in the report matches the `total` of a route read from the same snapshot, and can differ from a route computed live by what arrived in that time. Every other request is computed live when it arrives: a `version` outside the 3 newest, a `version` with no `environment`, any `active_within_days`, `known_for_days` on `/never-hit` or `/unreached-clusters`, a service or environment that only test runs have reached, and an environment the service does not track. Every route not named above is computed live. See [How findings are judged](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots).
 
-Every `200` of the nine routes carries `as_of`, the time the server read the data, and `from_snapshot`. For a snapshot, `from_snapshot` is `true` and `as_of` is the time the snapshot was computed. For a live read, `from_snapshot` is `false` and `as_of` is the time the read started.
+Every `200` of the nine routes carries `as_of`, the time Otherlode read the data, and `from_snapshot`. For a snapshot, `from_snapshot` is `true` and `as_of` is the time the snapshot was computed. For a live read, `from_snapshot` is `false` and `as_of` is the time the read started.
 
 A refresh can replace a snapshot while you page through a route, and the pages of two snapshots do not fit together. When a later page has another `as_of` than the first and either page has `from_snapshot` `true`, start again from the first page. Two live pages always differ in `as_of`, since each is read when it arrives, so do not start again for them.
 
@@ -129,7 +129,7 @@ A snapshot scope with no snapshot yet answers `202` with no rows or counts and a
 {"status": "computing", "last_failed_at": null}
 ```
 
-A new service, environment or version has none until the next refresh computes it, and neither has any scope after a server release that changes how findings are judged. The refresh runs every 5 minutes. It computes your missing snapshots before your other snapshots, and among them every scope with no `version` before any scope with one. The `202` is not an error. Repeat the request a minute or two later. A route never computes a snapshot scope live in its place.
+A new service, environment or version has none until the next refresh computes it, and neither has any scope after Otherlode changes how findings are judged. The refresh runs every 5 minutes. It computes your missing snapshots before your other snapshots, and among them every scope with no `version` before any scope with one. The `202` is not an error. Repeat the request a minute or two later. A route never computes a snapshot scope live in its place.
 
 `last_failed_at` is the time the last refresh of the scope failed, or `null` when none has failed since its last snapshot. A refresh that stopped without a result, such as one that ran out of memory, counts as failed at the time it started, once it is more than 6 minutes old. A failed refresh holds back every scope of its service for an hour, so a scope can wait with `last_failed_at` `null` while another scope of its service failed. The refresh then tries the other scopes first and the failed one after them. The `202` never says why a refresh failed.
 
@@ -150,7 +150,7 @@ A call to `/me` is the quickest check that a key works.
 
 ## `GET /services`
 
-Lists every service that a production run has reported, ordered by namespace and then name. The unspecified namespace comes first.
+Lists every tracked service that a production run has reported, ordered by namespace and then name. The unspecified namespace comes first. A service past your tenant's service cap is not tracked and appears in `not_tracked_services` instead.
 
 ```json
 {
@@ -167,6 +167,14 @@ Lists every service that a production run has reported, ordered by namespace and
       ],
       "not_tracked_environments": []
     }
+  ],
+  "not_tracked_services": [
+    {
+      "namespace": null,
+      "name": "reports",
+      "instances": 1,
+      "last_seen_at": "2026-10-06T13:40:02Z"
+    }
   ]
 }
 ```
@@ -181,7 +189,18 @@ Lists every service that a production run has reported, ordered by namespace and
 | `environments` | array | Each watched environment, ordered by name. Each is `{"name", "watched_since"}`. |
 | `not_tracked_environments` | array | The names of the environments a production run reported in after the service reached its environment cap, ordered by name. No dead-code claim counts their runs. `instances` and `last_seen_at` do. See [Scope and environments](scope#a-service-watches-at-most-10-environments). |
 
-A test run counts toward none of these figures. See [Inventory](inventory) for the same list in the UI.
+Each entry of `not_tracked_services` is a service that a production run has reached and that holds no slot of your tenant's service cap. Its runs are stored, and no dead-code claim counts them. The array is empty when there is none.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `namespace` | string or null | As in `services`. |
+| `name` | string | The service's name. |
+| `instances` | integer | Distinct instances with a production run, counted as in `services`. |
+| `last_seen_at` | timestamp or null | The latest time any production run was seen, as in `services`. |
+
+Every route under `/services/{service}/` for a service that is not tracked answers `404` with `{"error":"service not tracked"}`. A service that does not exist answers `{"error":"service not found"}`. See [Scope and environments](scope#your-plan-tracks-a-fixed-number-of-services) for how a service gets a slot.
+
+A test run counts toward none of these figures. See [Inventory](inventory) for the same list in the web app.
 
 ## Read a service
 
@@ -200,7 +219,7 @@ The response is `{"instances": [...]}`. `run_id`, `version` and `environment` co
 | `runs` | integer | The number of in-scope runs of the instance. |
 | `version` | string or null | The latest run's version. |
 | `environment` | string | The latest run's environment. `none` when the run named none. |
-| `first_seen_at` | timestamp | When the server first heard from the instance. |
+| `first_seen_at` | timestamp | When Otherlode first heard from the instance. |
 | `last_seen_at` | timestamp | The latest time any in-scope run was seen. |
 | `baseline` | string | `complete` when any in-scope run holds a complete [static baseline](/docs/agent/classes#never-loaded), `incomplete` when one holds a scan that is not complete, else `none`. |
 | `ended_cleanly` | boolean | `true` once the latest run's shutdown flush arrived. |
@@ -209,7 +228,7 @@ The response is `{"instances": [...]}`. `run_id`, `version` and `environment` co
 | `fields_stripped` | boolean | `true` when the latest run is a stripped run. The list shows it, and no finding counts it. |
 | `deltas_received` | boolean | `true` once a delta batch of the latest run has arrived. A run that sent only a manifest reads `false`. |
 | `earlier_run_unsettled` | boolean | `true` when an in-scope run of the instance other than the latest has received no delta batch or has counts that are behind. The report's `unsettled` counts the instance for it. |
-| `counts_behind_since` | timestamp or null | When the server received the first payload that said some hits the latest run recorded had not reached it. `null` when the run's newest payload says none are missing. |
+| `counts_behind_since` | timestamp or null | When Otherlode received the first payload that said some hits the latest run recorded had not reached it. `null` when the run's newest payload says none are missing. |
 
 ### `GET /services/{service}/report`
 
@@ -222,23 +241,23 @@ The route is [read from a snapshot](#routes-read-from-a-snapshot) for most scope
 | `namespace`, `service` | string or null, string | The service. |
 | `version` | string or null | The `version` filter, `null` when unset. |
 | `active_within_days` | integer or null | The `active_within_days` filter, `null` when unset. |
-| `as_of` | timestamp | When the server read the data. See [routes read from a snapshot](#routes-read-from-a-snapshot). |
+| `as_of` | timestamp | When Otherlode read the data. See [routes read from a snapshot](#routes-read-from-a-snapshot). |
 | `from_snapshot` | boolean | `true` when a stored snapshot gave the report, `false` for a live read. |
-| `instances` | object | `total`, `listed`, `with_complete_baseline`, `ended_cleanly`, `silent_without_final_flush`, `unsettled`, `verifier_unwatched` and `unplaced_verification`. Each counts distinct instances. `unsettled` counts the instances with an in-scope run that has received no delta batch or whose counts are behind. `total` counts the instances with a run a finding can judge. `listed` counts every instance the `/instances` route lists, so it also counts an instance whose every run that matches the scope came through a collector older than its agent. It is never below `total`. `ended_cleanly` and `silent_without_final_flush` judge an instance by its latest run. `unsettled` counts an instance once when any of its in-scope runs is unsettled, so the instance list shows the same instance with a badge for its latest run or with `earlier_run_unsettled`. A run is silent when it has not ended cleanly and was not seen for over an hour. `verifier_unwatched` counts the instances with an in-scope run whose agent could not see the verifier's rejections. `unplaced_verification` counts the instances with an in-scope run that reported a verification failure it could not place in a class. Neither kind of run supports a zero-count claim. See [Findings](findings#without-evidence). |
+| `instances` | object | `total`, `listed`, `with_complete_baseline`, `ended_cleanly`, `silent_without_final_flush`, `unsettled`, `verifier_unwatched`, `unplaced_verification` and `with_skipped_class`. Each counts distinct instances. `unsettled` counts the instances with an in-scope run that has received no delta batch or whose counts are behind. `total` counts the instances with a run a finding can judge. `listed` counts every instance the `/instances` route lists, so it also counts an instance whose every run that matches the scope came through a collector older than its agent. It is never below `total`. `ended_cleanly` and `silent_without_final_flush` judge an instance by its latest run. `unsettled` counts an instance once when any of its in-scope runs is unsettled, so the instance list shows the same instance with a badge for its latest run or with `earlier_run_unsettled`. A run is silent when it has not ended cleanly and was not seen for over an hour. `verifier_unwatched` counts the instances with an in-scope run whose agent could not see the verifier's rejections. `unplaced_verification` counts the instances with an in-scope run that reported a verification failure it could not place in a class. Neither kind of run supports a zero-count claim. `with_skipped_class` counts the instances with an in-scope run whose manifest named a skipped class. A skipped class supports no zero-count claim in any run, and a skip kept from a run that has expired is not counted. See [Findings](findings#without-evidence). |
 | `methods` | object | `known` is the sum of `hit`, `never_hit`, `in_class_findings`, `in_never_hit_code`, `unjudged_constructors`, `counts_behind` and `without_evidence`. It counts judgeable methods and leaves out static initialisers. A method the service has recorded a hit of counts in `hit` when the request names no `version` and no `active_within_days`, even when no run in scope holds a hit. `counts_behind` counts the methods with no hits that a run not yet settled knows. They make no zero-count claim. `without_evidence` counts the other methods with no hits that no run is [evidence](findings#without-evidence) about. They make no zero-count claim either. |
 | `branch_sites` | object | `known`, `all_outcomes_hit`, `with_never_hit_outcome`, `in_never_hit_code`, `routine`, `counts_behind`, `withheld` and `without_evidence`. A site that folds into code a finding already lists counts in `in_never_hit_code`. `routine` counts sites whose only never-hit outcomes are routine. `counts_behind` counts sites whose judgeable outcomes with no hits are all in locations a run not yet settled knows. `withheld` counts the other sites with an outcome with no hits and no branch key, in an environment that has lost a production run. `without_evidence` counts the other sites with a never-hit outcome that no run is evidence about. They make no claim. The first three leave the other five out. |
 | `probes` | object | `inline` and `generated` count the probes the counts above leave out. `no_debug_info` counts judgeable probes in classes that carry no line numbers. |
-| `classes` | object | `declared`, `loaded`, `never_loaded`, `never_initialized`, `never_instantiated`, `all_inline_or_generated`, `unreported`, `failed_to_load` and `failed_to_initialize`. `unreported` counts classes a sweep found loaded that the agent reported nowhere else. They count as loaded. A class that failed to load is in none of `declared`, `loaded` or `never_loaded`. `failed_to_initialize` counts the classes that [failed to initialise](findings#failed-to-initialise). The JVM defined them, so they stay in `declared` and `loaded`, and they are in no class finding. |
-| `endpoints` | object | `known`, `called`, `never_called`, `module_disabled`, `counts_behind` and `without_evidence`. An endpoint whose module switched itself off counts only in `module_disabled`. An endpoint with no calls that a run not yet settled knows counts only in `counts_behind`. `without_evidence` counts the endpoints that would be `never-called` but have no run that is [evidence](findings#without-evidence) about them. `never_called` counts the endpoints whose `status` is `never-called`. `known` is not `called` plus `never_called`: the difference is the endpoints found only by dispatch that show no call, which read `not-judged`, and the `without_evidence` endpoints. |
+| `classes` | object | `declared`, `loaded`, `never_loaded`, `never_initialized`, `never_instantiated`, `all_inline_or_generated`, `unreported`, `failed_to_load`, `failed_to_initialize` and `skipped`. `unreported` counts classes a sweep found loaded that the agent reported nowhere else. They count as loaded. A class that failed to load is in none of `declared`, `loaded` or `never_loaded`. `failed_to_initialize` counts the classes that [failed to initialise](findings#failed-to-initialise). The JVM defined them, so they stay in `declared` and `loaded`, and they are in no class finding. `skipped` counts the classes with code in scope that a run skipped. A skipped class supports no claim that rests on missing hits. A read that names no `version` and no `active_within_days` also counts the classes with code in scope that the environment's record names, so the count outlives the run that skipped them. |
+| `endpoints` | object | `known`, `called`, `never_called`, `never_called_outside`, `module_disabled`, `counts_behind` and `without_evidence`. An endpoint whose module switched itself off counts only in `module_disabled`. An endpoint with no calls that a run not yet settled knows counts only in `counts_behind`. `without_evidence` counts the endpoints that would be `never-called` but have no run that is [evidence](findings#without-evidence) about them. `never_called` counts the endpoints whose `status` is `never-called`, except the [outside routes](findings#outside-routes). `never_called_outside` counts the outside routes whose `status` is `never-called`. `known` is not `called` plus `never_called`: the difference is the endpoints found only by dispatch that show no call, which read `not-judged`, the `without_evidence` endpoints, and the outside routes in `never_called_outside`. |
 | `optional_parameters` | object | `known`, `never_supplied` and `always_supplied`. |
-| `disabled_endpoint_modules` | array | `{"module", "kind", "kind_label", "reason", "instances"}` for each endpoint module that switched itself off or that the agent's configuration kept off. The `kind` and `reason` are the ones the newest in-scope run gave. `kind` is `linkage_error` (the framework release differs from the one the module was built for), `advice_failed` (the module's advice threw), `transform_failed` (the module's transform threw, or a framework class it hooks failed to weave), `route_walk_failed` (walking the framework's route objects threw), `hook_unmatched` (a hook matched no method on the framework class it hooks), `configured_off` (the agent's configuration kept the module off), `routes_not_counted` (the runtime has no dispatch point the module counts requests at, so it declared no route), `unspecified` when the agent gave none, or `unknown` for a kind this server does not name, which a newer agent sent. `kind_label` is the server's text for the kind. |
-| `framework_markers` | array | `{"id", "kind", "label", "classes", "instances"}` for each framework marker some in-scope run reported and the server does not judge covered for that run's agent version, ordered by `id`. A marker is the agent's observation that one framework's routing was set up, so the endpoint list leaves its routes out. `kind` is `started` or `configured`, the claim the agent observed, or `unknown` for an id this server does not name. `label` is the server's text for the claim. For an unknown id it says a newer agent reported the marker. `classes` are the class names that proved it, from the newest in-scope run that reported it and is not judged covered. `instances` counts the instances with such a run. |
+| `disabled_endpoint_modules` | array | `{"module", "kind", "kind_label", "reason", "instances"}` for each endpoint module that switched itself off or that the agent's configuration kept off. The `kind` and `reason` are the ones the newest in-scope run gave. `kind` is `linkage_error` (the framework release differs from the one the module was built for), `advice_failed` (the module's advice threw), `transform_failed` (the module's transform threw, or a framework class it hooks failed to weave), `route_walk_failed` (walking the framework's route objects threw), `hook_unmatched` (a hook matched no method on the framework class it hooks), `configured_off` (the agent's configuration kept the module off), `routes_not_counted` (the runtime has no dispatch point the module counts requests at, so it declared no route), `unspecified` when the agent gave none, or `unknown` for a kind Otherlode does not name, which a newer agent sent. `kind_label` is Otherlode's text for the kind. |
+| `framework_markers` | array | `{"id", "kind", "label", "classes", "instances"}` for each framework marker some in-scope run reported and Otherlode does not judge covered for that run's agent version, ordered by `id`. A marker is the agent's observation that one framework's routing was set up, so the endpoint list leaves its routes out. `kind` is `started` or `configured`, the claim the agent observed, or `unknown` for an id Otherlode does not name. `label` is Otherlode's text for the claim. For an unknown id it says a newer agent reported the marker. `classes` are the class names that proved it, from the newest in-scope run that reported it and is not judged covered. `instances` counts the instances with such a run. |
 | `unreached_clusters` | object | `count`, `methods_attributed`, `called_only_by_tests`, `test_only_unconfirmed`, `called_from_outside_scope`, and `largest`. `largest` is `{"root", "members_total"}` for the biggest cluster, or `null`. `root` has the shape of a [cluster root](#get-servicesserviceunreached-clusters). |
 | `dependencies` | object | `known`, one count for each status (`unloaded`, `unreferenced`, `unreached`, `no_live_reference`, `failed_to_load`, `failed_to_initialize`, `counts_behind`, `without_evidence`, `stale`, `used`, `loaded`, `resources_only`), `absent_references`, and four more fields. `failed_to_initialize` counts the loaded dependencies with no live reference that only a class that failed to initialise references, and claims no removal. `without_evidence` counts the dependencies whose `unreached` or `no-live-reference` status would rest on zero counts that no settled run is evidence for. It claims nothing, and no other count includes those dependencies. `counts_behind` counts the dependencies whose status would rest on counts that a run not yet settled has not delivered. It claims nothing, and no other count includes those dependencies. `stale` counts the startup dependencies that no run in scope loaded a class from, though the service has recorded a load. It claims no removal, and the read must name no `version` and no `active_within_days`. `references_recorded` is `true` when some run records references. `split_available` is `true` when some dependency was judged on its references and every such dependency was judged only by runs with a complete baseline. `listing_complete` and `instances_awaiting_listing` say whether every dependency listing arrived. A zero in `unreferenced` or `unreached` means none only when `split_available` and `listing_complete` are both `true`. |
 | `removed` | object | `classes`, `methods`, `endpoints` and `dependencies`, the count of each kind on the [`/removed`](#get-servicesserviceremoved) list. A method of a removed class is not counted. No other count in the report includes removed code. Each count is `0` for a read that names a `version` or an `active_within_days`. |
 | `test_runs` | object | `count` and `last_seen_at` of the service's test runs in every environment and version. No other figure counts them. |
 | `stripped_runs` | integer | The service's stripped production runs in every environment and version. |
-| `unread_shapes` | object | `methods` and `outcomes` map each unread-shape family to a count, and `agent_versions` lists the agent versions that sent any. A family the server does not name adds up under `unknown`. |
+| `unread_shapes` | object | `methods` and `outcomes` map each unread-shape family to a count, and `agent_versions` lists the agent versions that sent any. A family Otherlode does not name adds up under `unknown`. |
 
 ### `GET /services/{service}/never-hit`
 
@@ -336,7 +355,7 @@ The response is `{"probes", "total", "watched_since", "as_of", "from_snapshot"}`
 | `recorded_hit` | boolean | `true` when the request names no `version` and no `active_within_days`, the service has recorded a hit of the location, and the location's dates are not capped. `hits_total` stays the in-scope count, so a location with `recorded_hit` can show `0` hits. Such a location counts as hit. A client that draws a hit status reads `hits_total` above `0` or `recorded_hit`. |
 | `claim_withheld` | boolean | `true` on a branch row with no `branch_key` when an environment of the read has lost a production run. With `hits_total` `0` the outcome is neither hit nor never hit, since a removed run may have hit it. `false` on every other row. A client must not draw such an outcome as never hit. |
 | `inline` | boolean | `true` for a probe inside a Kotlin inline function. |
-| `generated_by`, `unread_shape` | string | The probe's marks. A probe with either mark is stored and shown, and never judged. |
+| `generated_by`, `unread_shape` | string | The probe's marks. A probe with either mark is stored and shown, and never judged. `generated_by` is `none`, `enum`, `data_class`, `default_impls`, `record`, `jvm_overloads`, `multifile_facade`, `case_class`, `static_forwarder`, `scala_object`, `value_class`, `kotlinx_serialization`, or `unknown` for a value Otherlode does not name, which a newer agent sent. |
 | `inlined_from_class_name` | string or null | The class an inlined branch copy came from. |
 | `routes` | array | As on a never-hit row. |
 | `parameter_index`, `parameter_name`, `overridable`, `target_class_name` | integer or null, string or null, boolean, string or null | For an optional-argument probe. `target_class_name` is set only for a Scala constructor default. |
@@ -462,7 +481,7 @@ Classes a scan found but could not read or probe. It takes `class_prefix`, and t
 
 Classes, methods, endpoints and dependencies that every live run of the environment proves absent. See [Removed](inventory#removed) for what proves it. The route takes `class_prefix`, and the response is `{"rows", "total", "as_of", "from_snapshot"}`. The route is [read from a snapshot](#routes-read-from-a-snapshot) for most scopes, and answers `202` while the snapshot is computing. So without a `class_prefix` its `total` equals the sum of the report's `removed` counts, and a class on this list is in none of the findings that the same snapshot holds. A request that names a `version` or an `active_within_days` lists no rows, and its `total` is 0.
 
-Rows come in this order: by kind (`class`, `method`, `endpoint`, `dependency`), and then within a kind by the identifiers as the server stores them, compared byte by byte. A class row goes by `class_name`. A method row goes by `class_name`, `method_name` and `method_descriptor`. An endpoint row goes by `verb`, then `route_template`, then `template_kind`, so the stored verb `*`, which stands for any verb, comes before every named verb. A dependency row goes by `identity_key`, which is its `group:artifact` pairs sorted and joined with commas, so a dependency whose first identity has no group comes before one that has a group, and the order is not that of the names a page shows.
+Rows come in this order: by kind (`class`, `method`, `endpoint`, `dependency`), and then within a kind by the identifiers as Otherlode stores them, compared byte by byte. A class row goes by `class_name`. A method row goes by `class_name`, `method_name` and `method_descriptor`. An endpoint row goes by `verb`, then `route_template`, then `template_kind`, so the stored verb `*`, which stands for any verb, comes before every named verb. A dependency row goes by `identity_key`, which is its `group:artifact` pairs sorted and joined with commas, so a dependency whose first identity has no group comes before one that has a group, and the order is not that of the names a page shows.
 
 A row has the fields of its kind and no others:
 
@@ -475,7 +494,7 @@ A row has the fields of its kind and no others:
 | `verb`, `route_template`, `template_kind`, `template_kind_label` | `endpoint` | The endpoint, as an `/endpoints` row carries it. The verb `*` stands for any verb. |
 | `identity_key` | `dependency` | The dependency's cross-run name. |
 | `identities` | `dependency` | `{"group_id", "artifact_id", "versions"}` for each identity, as `/dependencies` shows them. |
-| `stopped_at` | every row | The latest time the server received a payload from a run that held the thing. |
+| `stopped_at` | every row | The latest time Otherlode received a payload from a run that held the thing. |
 
 A class row also carries the [class naming fields](#class-naming-fields), and a method row the [method naming fields](#method-naming-fields), which already describe the method's class. They come from the same facts as any other row of that class or method, so a client names a removed row as it names the rest. The row has no name field: a client builds the text it shows from these fields.
 
@@ -489,6 +508,7 @@ Endpoints merged across the in-scope runs and identified by `verb`, `route_templ
 | `days` | A whole number, 1 to 36500 | The cutoff between `live` and `stale`. The default is 30. Every status accepts it, and `module-disabled` and `never-called` ignore it. Another value gets `400` with "days must be a whole number from 1 to 36500". |
 | `order` | `route`, `never_called_first` or `live_first` | `route`, the default, sorts by verb, then route template, then template kind. A client that pages with `offset` should keep it, since a status order moves rows between pages as calls arrive. `never_called_first` sorts `never-called`, then `stale`, then `live`. `live_first` sorts `live`, then `stale`, then `never-called`. Within a status the strongest case comes first: the earliest `first_known_at` for `never-called`, the oldest `last_called_at` for `stale` and the newest for `live`. Then come `module-disabled`, then `counts-behind` and `without-evidence` together, then `not-judged`, each by verb, route template and template kind. The order applies to the rows `status` keeps. Another value gets `400` with `order must be "route", "never_called_first", or "live_first"`. |
 | `framework` | A module name | Keeps endpoints from that framework module, matched exactly. |
+| `outside` | `exclude` or `only` | Without it every endpoint is listed. `exclude` keeps the endpoints whose `handler_included` is not `false`, which are the service's own routes and the ones with no answer. `only` keeps the [outside routes](findings#outside-routes), the endpoints whose `handler_included` is `false`. `total` counts the rows it keeps. Another value gets `400` with `outside must be "exclude" or "only"`. |
 
 `class_prefix` matches the handler class. A row has these fields:
 
@@ -496,12 +516,13 @@ Endpoints merged across the in-scope runs and identified by `verb`, `route_templ
 |---|---|---|
 | `verb` | string | The HTTP method, upper case. `*` when the framework takes any method. |
 | `route_template` | string | The agent's normalised template. For a `regex` template it is the framework's regular expression as written. For a `servlet_pattern` template it is the servlet mapping as written, such as `*.do` or `/`. |
-| `template_kind` | string | `path` for a path template, `regex` for a regular expression, `servlet_pattern` for a servlet extension mapping or default mapping, or `unknown` for a kind this server does not name. An agent that predates the field reads as `path`. A `regex` or `servlet_pattern` template is never a path: no filter or label reads it as one. |
-| `template_kind_label` | string | The text the server writes for the kind: `Path`, `Regular expression`, `Servlet pattern`, or for `unknown` a label saying a newer agent sent it. |
+| `template_kind` | string | `path` for a path template, `regex` for a regular expression, `servlet_pattern` for a servlet extension mapping or default mapping, or `unknown` for a kind Otherlode does not name. An agent that predates the field reads as `path`. A `regex` or `servlet_pattern` template is never a path: no filter or label reads it as one. |
+| `template_kind_label` | string | The text Otherlode writes for the kind: `Path`, `Regular expression`, `Servlet pattern`, or for `unknown` a label saying a newer agent sent it. |
 | `verbatim_template` | string | The framework's own spelling of the template. |
 | `framework` | string | The endpoint module that reported it. |
 | `discovery_source` | string | `registration` when a framework hook declared it, `dispatch` when the first request found it. |
 | `handler_class`, `handler_method`, `handler_descriptor` | string or null | The handler, when the agent could join the endpoint to one. |
+| `handler_included` | boolean, or absent | `false` for an [outside route](findings#outside-routes): every in-scope run that declares the endpoint named a handler class and sent include rules that do not cover it. `true` when the include rules of some in-scope run cover a handler class that run named. The key is absent when no run covers the handler class and some run named no handler class or sent no rules. It changes no `status`. |
 | `instances_known`, `first_known_at`, `first_called_at`, `last_called_at`, `dates_capped` | | See [shared fields](#fields-every-response-uses). |
 | `calls_total` | integer | Calls across the in-scope runs. It never includes a call that only the service's record holds, so on a request that names no `version` and no `active_within_days` a stale endpoint can show `0`. |
 | `status` | string | The one status of the endpoint. `module-disabled`: every in-scope run that knows it had its module switched off. `live`: it was called and its last call is on or after the cutoff. `counts-behind`: a run that knows it is not settled, and it is not live. `never-called`: it was registered, has no calls and no call on record, no run that knows it is unsettled, and some settled run that reports it is [evidence](findings#without-evidence) about it. `without-evidence`: it would be `never-called`, but no run that reports it is evidence about it. `stale`: it was called, its last call is before the cutoff, and its dates are not capped. `not-judged`: none of these, for example an endpoint found only by dispatch whose count was lost, or a called endpoint whose capped last call is before the cutoff. The checks run in this order and the first match wins. |
@@ -570,7 +591,7 @@ The resolved call graph. It takes `class_prefix`, which matches the caller's cla
 |---|---|---|
 | `caller`, `callee` | object | Graph nodes, as under [unreached clusters](#get-servicesserviceunreached-clusters). |
 | `kind` | string | `call` or `creates`. |
-| `virtual` | boolean | `true` for a virtual call, which the server already widened to every override in scope. |
+| `virtual` | boolean | `true` for a virtual call, which Otherlode already widened to every override in scope. |
 | `captured_count` | integer | For a `creates` edge from `invokedynamic`, how many leading parameters the edge captures. Otherwise `0`. |
 | `guard` | integer or null | The branch index, in the caller's class, of the innermost outcome that must run before the call. |
 | `declared_owner` | string | The callee's class as the caller's bytecode named it. It differs from `callee.class_name` for an inherited or overridden method. |
