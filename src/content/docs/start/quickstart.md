@@ -106,7 +106,7 @@ Now use your service for a while, the way its users do. Call its endpoints and r
 
 Click your service to open its Overview. The panel lists the findings, each with a count, such as **Never hit** for methods and condition paths that never ran and **Never called** for endpoints that received no request.
 
-A new service has no report until the next refresh computes it, and until then the Overview says "Computing…". After that, the report trails the data by up to about 20 minutes, so a call you just made can take that long to leave **Never hit**.
+A new service has no report until the next refresh computes it, and until then the Overview says "Computing…". After that, the report trails the data by up to about 6 hours on the free plan, and about 20 minutes on the Team and Enterprise plans. So a call you just made can take that long to leave **Never hit**.
 
 A finding is a lead to check, not proof. It covers only the time the agent watched, so code that runs once a week reads as never hit until it runs. The top bar shows how long the service has been watched, in amber for its first 30 days. [How Otherlode fits together](/docs/start/overview#a-finding-is-a-lead-to-check) explains how to read a finding.
 
