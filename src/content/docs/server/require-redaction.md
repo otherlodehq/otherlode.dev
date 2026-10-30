@@ -8,7 +8,7 @@ Your collector can blank string literals before a payload leaves your network, a
 
 The **Require redacted payloads** setting makes ingest refuse those payloads. While it is on, ingest stores a payload only when it carries the fingerprint of your collector's secret. The setting is off by default. Only an admin can change it, on the **Redaction** page in the admin area.
 
-The setting catches a mistake, not a deliberate bypass. The fingerprint travels in a plain HTTP header, so anyone who holds one of your ingest keys can copy it into a request. The server does not look inside the payload either. It trusts the collector to have blanked what its settings name.
+The setting catches a mistake, not a deliberate bypass. The fingerprint travels in a plain HTTP header, so anyone who holds one of your ingest keys can copy it into a request. Otherlode does not look inside the payload either. It trusts the collector to have blanked what its settings name.
 
 ## Before you start
 
@@ -29,11 +29,11 @@ Check the line on each collector. Two collectors with the same secret log the sa
 3. Paste the fingerprint into **Fingerprint**. The page trims spaces around it.
 4. Click **Require redacted payloads**, then confirm in the sheet.
 
-The page then reads **Require redacted payloads: on** and shows the fingerprint. Every server process applies the change within about 15 seconds. A fingerprint that is not 16 lowercase hex characters is refused with "Fingerprint must be 16 lowercase hexadecimal characters, the secret_fingerprint the collector logs at startup."
+The page then reads **Require redacted payloads: on** and shows the fingerprint. Every Otherlode process applies the change within about 15 seconds. A fingerprint that is not 16 lowercase hex characters is refused with "Fingerprint must be 16 lowercase hexadecimal characters, the secret_fingerprint the collector logs at startup."
 
 ### Data already stored stays as it is
 
-Turning the requirement on changes nothing the server already holds. Runs that arrived without redaction keep their literals and plain keys until they pass your tenant's retention period. To remove them sooner, ask an operator. See [What an operator removes on request](data-kept#what-an-operator-removes-on-request).
+Turning the requirement on changes nothing Otherlode already holds. Runs that arrived without redaction keep their literals and plain keys until they pass your tenant's retention period. To remove them sooner, ask an operator. See [What an operator removes on request](data-kept#what-an-operator-removes-on-request).
 
 ## Change the fingerprint
 
@@ -43,7 +43,7 @@ Ingest checks one fingerprint at a time. Payloads from a collector that still ha
 
 ## Stop requiring redacted payloads
 
-Open **Redaction**, click **Stop requiring redacted payloads** and confirm. Ingest then accepts payloads with or without the header, and ignores the header. The server clears the fingerprint, so turning the requirement on again asks for it again.
+Open **Redaction**, click **Stop requiring redacted payloads** and confirm. Ingest then accepts payloads with or without the header, and ignores the header. Otherlode clears the fingerprint, so turning the requirement on again asks for it again.
 
 ## Read the refused payloads
 
@@ -54,11 +54,11 @@ The **Refused payloads** table on the **Redaction** page has one row for each re
 | **No fingerprint, or a malformed one** | `redaction_required` | The payload had no `Otherlode-Redaction` header, more than one, or a value that is not 16 lowercase hex characters. The sender is a collector with redaction off, or an agent that sends straight to ingest. |
 | **Another secret's fingerprint** | `redaction_secret_mismatch` | The payload came through a collector with redaction on and a different secret. |
 
-**Last 7 days** counts the payloads refused on the last 7 UTC dates, today included. **Last refused** shows how long ago the last one was, with the exact UTC time in the tooltip. The counts can trail ingest by about 10 seconds.
+**Last 7 days** counts the payloads refused on the last 7 UTC dates, today included. The counts can trail ingest by about 10 seconds.
 
-When ingest refused anything in the last 24 hours, the **Services** page shows admins a banner, and the strip above a service's overview graph shows the same fact. Each links to the **Redaction** page and to this page.
+When ingest refused anything in the last 24 hours, the **Services** page and each service's overview tell admins so.
 
-The server keeps only these counts. It keeps nothing from a refused payload or its request: no service, instance, address or key. So the table cannot name the sender. To find it, read the logs on your side, as the next section describes. [What the server keeps](data-kept#what-the-server-keeps-about-refused-payloads) says how long the counts stay.
+Otherlode keeps only these counts. It keeps nothing from a refused payload or its request: no service, instance, address or key. So the table cannot name the sender. To find it, read the logs on your side, as the next section describes. [What Otherlode keeps](data-kept#what-otherlode-keeps-about-refused-payloads) says how long the counts stay.
 
 ## What a refused payload looks like
 

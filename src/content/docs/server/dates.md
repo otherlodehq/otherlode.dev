@@ -1,24 +1,24 @@
 ---
 title: Dates
-description: What each date in the web UI and the read API means, which clock sets it, which scope changes it, and when a date is capped.
+description: What each date in the web app and the read API means, which clock sets it, which scope changes it, and when a date is capped.
 order: 80
 ---
 
-Findings about unused code depend on dates, such as how long code has been known and when it last ran. This page lists every date the server shows, the name each one has for methods, endpoints, optional parameters, dependencies and failed classes, and the rules that move it. For the filters that choose which runs a read covers, see [Scope and environments](scope).
+Findings about unused code depend on dates, such as how long code has been known and when it last ran. This page lists every date Otherlode shows, the name each one has for methods, endpoints, optional parameters, dependencies and failed classes, and the rules that move it. For the filters that choose which runs a read covers, see [Scope and environments](scope).
 
-## Dates come from the server's clock
+## Dates come from Otherlode's clock
 
-Every date about your code comes from the server's own clock, at the moment a payload reaches it. It never shows a date from your agent's clock. Agent clocks differ from host to host, and dates taken from many of them could not be put in order. With one clock, the service-wide dates of an item always order as first known, then first hit, then last hit.
+Every date about your code comes from Otherlode's own clock, at the moment a payload reaches it. It never shows a date from your agent's clock. Agent clocks differ from host to host, and dates taken from many of them could not be put in order. With one clock, the service-wide dates of an item always order as first known, then first hit, then last hit.
 
 A date therefore trails the event. The agent sends counts at its flush interval, and a collector that buffers or retries delivers them later still. Treat a date as accurate to a flush interval or more. The dates can tell you how long code has gone unused. They are not an audit record.
 
 The API writes every date as a UTC time in ISO 8601 form with a `Z` suffix, such as `2026-09-22T23:19:31Z`.
 
-Two times are not arrival times. `as_of`, shown as **As of** in the top bar's evidence list on every service page and on the pages read from a snapshot, is the time the server computed the result: the time its stored snapshot was computed, or the time of a live read. `last_failed_at`, shown while a snapshot is being prepared, is the time the server last failed to compute it. A day filter on a page read from a snapshot, such as **Stale after (days)**, counts back from `as_of`. See [the snapshots](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots).
+Two times are not arrival times. `as_of`, shown as **As of** in the evidence list of every service page and on the pages read from a snapshot, is the time Otherlode computed the result: the time its stored snapshot was computed, or the time of a live read. `last_failed_at`, shown while a snapshot is being prepared, is the time Otherlode last failed to compute it. A day filter on a page read from a snapshot, such as **Stale after (days)**, counts back from `as_of`. See [the snapshots](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots).
 
 ## Service-wide dates
 
-The server keeps one set of dates for each method, branch outcome, endpoint, optional parameter and dependency of a service, in each environment. These are the service-wide dates. They belong to the service, not to an instance or a run.
+Otherlode keeps one set of dates for each method, branch outcome, endpoint, optional parameter and dependency of a service, in each environment. These are the service-wide dates. They belong to the service, not to an instance or a run.
 
 | Date | What it is |
 |---|---|
@@ -32,7 +32,7 @@ An item that no run has hit has no first hit and no last hit. The API sends `nul
 
 ### Names for each kind of item
 
-First hit and last hit change name with the item. The table gives the API field and the column or label in the web UI.
+First hit and last hit change name with the item. The table gives the API field and the column or label in the web app.
 
 | Item | First known | First hit | Last hit |
 |---|---|---|---|
@@ -41,7 +41,7 @@ First hit and last hit change name with the item. The table gives the API field 
 | Optional parameter | `first_known_at`, **Known since** | `first_omitted_at`, **First omitted** | `last_omitted_at`, **Last omitted** |
 | Dependency | `first_known_at`, **Known since** | `first_loaded_at`, **First loaded** | `last_loaded_at`, **Last loaded** |
 
-A dependency's last loaded date is the arrival time of the latest delta batch that raised a loaded-class total above zero. The total stops rising soon after startup, and a new run loads the same classes again, so the date follows restarts. The server writes it at most once an hour. It dates the latest load of a class from the library, not its last use. It is `null` for a dependency never loaded. The [stale](findings#unused-dependencies) status shows it.
+A dependency's last loaded date is the arrival time of the latest delta batch that raised a loaded-class total above zero. The total stops rising soon after startup, and a new run loads the same classes again, so the date follows restarts. Otherlode writes it at most once an hour. It dates the latest load of a class from the library, not its last use. It is `null` for a dependency never loaded. The [stale](findings#unused-dependencies) status shows it.
 
 The **Never initialised** and **Never instantiated** pages show **Known since** for a class. It is the first known date of the method that decides the finding. See [Findings](findings).
 
@@ -51,21 +51,21 @@ The [Instances](inventory) page shows **First seen** and **Last seen** for each 
 
 A class that failed to load has its own pair of dates, kept for each environment. See [Classes](/docs/agent/classes#failed-to-load) for how the agent decides a class failed. A class that failed to initialise has a pair of its own, kept the same way. See [Classes](/docs/agent/classes#failed-to-initialise).
 
-| Date | API field | UI |
+| Date | API field | Web app |
 |---|---|---|
-| The arrival of the first manifest that named the class as failed | `first_failed_at` | **Failing since** on the **Failed to load** and **Failed to initialise** pages, shown as a date and a day count, such as "1 Jun 2026 (122 days)" |
+| The arrival of the first manifest that named the class as failed | `first_failed_at` | **Failing since** on the **Failed to load** and **Failed to initialise** pages |
 | The arrival of the latest manifest that named it | `last_failed_at` | **Last failed** |
 
 `failing_for_days` is the number of whole days from `first_failed_at` to the time of the read. All three are `null` when no environment in scope has a failure date for the class.
 
 The failure dates are history. A class reads as failed to load only while no in-scope run loaded it, and as failed to initialise only while no in-scope run initialised it, whatever its dates say. A test run or a stripped run writes no failure date. A class that fails to initialise has no date when no manifest from the scoped environments has named the class itself, and its fields on `/failed-to-initialize` are then `null`.
 
-A dependency that only a failed class references has the status `failed-to-load`. Its sites carry `failed_since`, the failing class's `first_failed_at`, and the UI labels each such site "failed to load since" and the date. A dependency that only a class that failed to initialise references has the status `failed-to-initialize`, and its sites carry no date.
+A dependency that only a failed class references has the status `failed-to-load`. Its sites carry `failed_since`, the failing class's `first_failed_at`, and Otherlode labels each such site "failed to load since" and the date. A dependency that only a class that failed to initialise references has the status `failed-to-initialize`, and its sites carry no date.
 
 ### Rules that move a date
 
 - A first date moves only earlier, and a last date moves only later. A manifest sent twice, a restart, or a new instance cannot move a date the wrong way.
-- Counts can reach the server before the manifest that names them. The first known date is then no later than the earliest of those counts.
+- Counts can reach Otherlode before the manifest that names them. The first known date is then no later than the earliest of those counts.
 - A test run and a stripped run write no date. A stripped run is one that carried `fields_stripped`.
 - Scope never changes a date, except through its environment. `version` and `active_within_days` choose which rows a read lists and what their counts add up. They do not change the dates of those rows. A scope on one weekly release still says a method has been known for three years.
 - Expiry never moves a date, and neither does pruning or any other removal of runs. The dates outlive every instance and every run.
@@ -73,9 +73,9 @@ A dependency that only a failed class references has the status `failed-to-load`
 
 ## Dates are kept for each environment
 
-Each environment of a service has its own dates. A smoke test in staging that calls a method once a day keeps its staging dates fresh and leaves its production dates alone. Name an environment in the scope, and every date on the page comes from that environment's rows. Names ignore case and surrounding spaces. Runs that name no environment share the environment `none`, which the UI shows as "not named".
+Each environment of a service has its own dates. A smoke test in staging that calls a method once a day keeps its staging dates fresh and leaves its production dates alone. Name an environment in the scope, and every date on the page comes from that environment's rows. Names ignore case and surrounding spaces. Runs that name no environment share the environment `none`, which Otherlode shows as "not named".
 
-With no environment filter, a read combines every environment the service watches. It shows the earliest first date and the latest last date across them. In that view, a call in staging moves the last called date of an endpoint that production never calls. A service watches at most 10 environments, and an environment past them has no dates in any read. See [Scope and environments](scope#a-service-watches-at-most-10-environments). The environment picker in the top bar chooses between one environment and **All environments**.
+With no environment filter, a read combines every environment the service watches. It shows the earliest first date and the latest last date across them. In that view, a call in staging moves the last called date of an endpoint that production never calls. A service watches at most 10 environments, and an environment past them has no dates in any read. See [Scope and environments](scope#a-service-watches-at-most-10-environments).
 
 An environment that the service has never reported has no dates, and its `watched_since` is `null`.
 
@@ -83,12 +83,12 @@ An environment that the service has never reported has no dates, and its `watche
 
 An item is capped only when it has no service-wide dates. In practice that is a branch outcome with no branch key. The agent leaves out a branch key when two sites in one method share a fingerprint, or when it cannot fingerprint a site. See [Methods and branches](/docs/agent/methods-and-branches) for the key. An outcome with a key has service-wide dates like a method does. A change that alters the key, such as an edit to the outcome's condition, starts its dates over.
 
-A keyless outcome has no service-wide row. Its dates come from the runs in scope instead, and its row carries `dates_capped: true`. These dates are capped, and the scope, expiry and pruning can move them. Once a production run of the environment has been removed, such an outcome makes no never-hit claim, because the removed run may hold the only hit. A removed test run does not count, since a test run is never in scope. It is the environment that counts. In a read that names no environment, a removed production run of any environment of the service has that effect. The server keeps the date of the first removal for each environment, and only an operator's deletion of the environment clears it. A new run does not.
+A keyless outcome has no service-wide row. Its dates come from the runs in scope instead, and its row carries `dates_capped: true`. These dates are capped, and the scope, expiry and pruning can move them. Once a production run of the environment has been removed, such an outcome makes no never-hit claim, because the removed run may hold the only hit. A removed test run does not count, since a test run is never in scope. It is the environment that counts. In a read that names no environment, a removed production run of any environment of the service has that effect. Otherlode keeps the date of the first removal for each environment, and only an operator's deletion of the environment clears it. A new run does not.
 
 - A capped first date can be later than the true one. It is a lower bound on age.
 - A capped last date can be earlier than the true one. It cannot prove the outcome stale.
 
-A row with service-wide dates has `dates_capped: false`. The UI marks a capped **Known since** with an asterisk. Its tooltip reads "capped to the instances in scope".
+A row with service-wide dates has `dates_capped: false`. Otherlode marks a capped **Known since** with an asterisk. Its tooltip reads "capped to the instances in scope".
 
 ### How a filter treats a capped row
 
@@ -99,7 +99,7 @@ A filter that cannot prove a capped row leaves it out and counts it in `capped_h
 | `known_for_days` on `never-hit`, **Known for at least (days)** | Kept when its capped first known date is at least that many days ago, since the true date is older still. Left out and counted in `capped_hidden` when it fails. |
 | `days` on `stale-hit`, **Stale after (days)** | Always left out when it would otherwise be listed, and counted in `capped_hidden`. |
 
-Without `known_for_days`, `never-hit` lists capped rows like any other, except the keyless outcomes of an environment that has lost a production run, and `capped_hidden` counts only those. It applies every other filter of the request, such as the class prefix and the kind, and it counts across every page, like `total`. The UI shows it under the table. For one outcome it reads "1 branch outcome was left out because its dates are not known for the whole service." For more it reads "N branch outcomes were left out because their dates are not known for the whole service."
+Without `known_for_days`, `never-hit` lists capped rows like any other, except the keyless outcomes of an environment that has lost a production run, and `capped_hidden` counts only those. It applies every other filter of the request, such as the class prefix and the kind, and it counts across every page, like `total`. The **Never hit** and **Stale hit** pages give the count when it is above zero.
 
 ### Filters that read a date
 
@@ -121,24 +121,13 @@ The API gives it as `watched_since` on each service and each of its environments
 
 Read a finding's age against watched since. No date can be older than it, and code can only look unused for as long as the service has been watched. A method that was last hit 90 days ago means one thing in a service watched for three years and another in one watched for 90 days. Code that runs weekly or monthly reads as never hit until it runs.
 
-The web UI shows it in two places:
+Otherlode shows it in two places:
 
-- In the top bar of a service, as "watched 3 days". The duration is bold and amber while the service has been watched for under 30 days. Click it to open the evidence list, where **Watched for** reads "3 days, since 22 Sep 2026".
-- In the service list, in the **Watched for** column, as a length of time alone.
+- On every page of a service, as how long the service has been watched. The figure is amber while that is under 30 days. The evidence list adds the date the watching started.
+- In the **Watched for** column of the service list, as a length of time alone.
 
-## How the UI shows a date
+## How Otherlode shows a date
 
-Most dates read as how long ago they were, with the exact UTC time in a tooltip, such as "2026-09-22 23:19:31 UTC".
+Most dates read as how long ago they were, rounded down, with a month counted as 30 days. The tooltip holds the exact UTC time, such as "2026-09-22 23:19:31 UTC".
 
-| Age | Reads as |
-|---|---|
-| Under a minute, or a time in the future | "just now" |
-| Under an hour | "5 minutes ago" |
-| Under a day | "3 hours ago" |
-| Under 60 days | "12 days ago" |
-| Under a year | "2 months ago", counting a month as 30 days |
-| A year or more | "1 year ago" |
-
-Each figure rounds down. A date that does not exist reads "never" in most columns, such as a call that has not happened, and a dash in the rest.
-
-Watched since and failing since read as a UTC calendar date, such as "22 Sep 2026", with the exact time in the tooltip. A length of time, such as "3 days" in a watched-for text, uses the same units without "ago" and reads "less than an hour" under an hour.
+Watched since and failing since read as a calendar date in UTC.

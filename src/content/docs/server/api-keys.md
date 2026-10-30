@@ -4,7 +4,7 @@ description: Create an ingest or read key, copy its plaintext before the sheet c
 order: 40
 ---
 
-An API key identifies your tenant to the server. Only an admin can create or revoke a key. Open the web UI at `https://app.otherlode.dev`, open the tenant menu in the top bar, choose **Admin**, then **API keys**. A viewer who opens the page sees "Only admins can see this page."
+An API key identifies your tenant to Otherlode. Only an admin can create or revoke a key. Open Otherlode at `https://app.otherlode.dev`, open the tenant menu in the top bar, choose **Admin**, then **API keys**. A viewer who opens the page sees "Only admins can see this page."
 
 ## Pick a scope
 
@@ -23,55 +23,47 @@ To create a key, follow these steps.
 
 1. On the **API keys** page, click **Create key**.
 2. Enter a **Name**.
-3. Choose a **Scope**, **Ingest** or **Read**. The note under the choice says what that scope is for.
+3. Choose a **Scope**, **Ingest** or **Read**.
 4. Click **Create key**.
 
-The sheet then shows **Key created** and the new key's plaintext under the label "Key", with the note "Copy this key now. You will not see it again."
+The sheet then shows the new key's plaintext, once.
 
-Click **Copy**, and put the key where it belongs before you click **Done**. If the browser refuses to copy, the sheet says "The browser refused to copy. Select the key and copy it." A click on the key selects all of it.
+Click **Copy**, and put the key where it belongs before you click **Done**. If the browser refuses to copy, click the key to select all of it, then copy it yourself.
 
-The server stores only a hash of the key. It cannot show the plaintext again, to you or to an operator. Closing the sheet clears the key from your browser as well.
+Otherlode stores only a hash of the key. It cannot show the plaintext again, to you or to an operator. Closing the sheet clears the key from your browser as well.
 
 ### Choose a name
 
 A name tells you what a key is for, such as `shop-collector` or `ci-report`. The name has these rules:
 
-- It has 1 to 64 characters after the server trims spaces from both ends.
+- It has 1 to 64 characters after Otherlode trims spaces from both ends.
 - It has no slash, control character, or invisible character.
 - It is not `.` or `..`.
 - No other live key of your tenant has it. The comparison is case-sensitive, so `Shop` and `shop` are two names.
 
-The sheet shows the server's message below the form when a rule fails. A taken name gives "a live key already has this name; revoke it or choose another name". A revoked key does not hold its name, so you can reuse it.
+When a rule fails, the sheet shows Otherlode's message. A taken name gives "a live key already has this name; revoke it or choose another name". A revoked key does not hold its name, so you can reuse it.
 
 ### If you lose the plaintext
 
-If you did not copy the key, nothing can show it again. Revoke it and create another. If the browser reloads, goes back, or closes while the sheet waits for the server, the key can exist without you having seen it. It then shows in the list as live.
+If you did not copy the key, nothing can show it again. Revoke it and create another. If the browser reloads, goes back, or closes while the sheet waits for Otherlode, the key can exist without you having seen it. It then shows in the list as live.
 
 ## Read the key list
 
-The page lists your live keys, newest first, in a table with these columns:
+The page lists your live keys, newest first.
 
-| Column | Shows |
-|---|---|
-| **Name** | The name you gave the key. |
-| **Scope** | `ingest` or `read`. |
-| **Prefix** | The first characters of the key, ending in an ellipsis. |
-| **Created** | When you created the key. |
-| **Status** | "Live", or "Revoked" with the time of the revocation. |
+A key made by Otherlode has the form `otl_` followed by random characters, and its prefix is `otl_` plus the next 8 characters. Compare a key in a config file or a log with the list by its prefix. The prefix is not enough to use the key.
 
-A key made by the server has the form `otl_` followed by random characters, and its prefix is `otl_` plus the next 8 characters. Compare a key in a config file or a log with the list by its prefix. The prefix is not enough to use the key.
-
-Revoked keys stay out of the table. If your tenant has any, the button **Show revoked keys (N)** appears under the table. Click it to list them after the live keys, and click **Hide revoked keys** to hide them again. A tenant with no live keys shows "This tenant has no live keys."
+Revoked keys stay out of the table until you click **Show revoked keys (N)**, which lists them after the live keys.
 
 ## Revoke a key
 
-To revoke a key, click **Revoke** in its row. A sheet asks "Revoke NAME (PREFIX…)? Anything that uses it stops working at once. A revoked key cannot be brought back." Click **Revoke key** to confirm, or **Cancel**. **Cancel** has the focus when the sheet opens, so pressing Enter does not revoke.
+To revoke a key, click **Revoke** in its row, then **Revoke key** to confirm. **Cancel** has the focus when the sheet opens, so pressing Enter does not revoke.
 
-After you confirm, the server rejects the key on its next request. It checks every request against the current list, so no delay applies. A collector that forwards with a revoked ingest key gets `401`, the same answer as for a key that never existed. A script that calls the read API with a revoked read key gets the same `401`.
+After you confirm, Otherlode rejects the key on its next request. It checks every request against the current list, so no delay applies. A collector that forwards with a revoked ingest key gets `401`, the same answer as for a key that never existed. A script that calls the read API with a revoked read key gets the same `401`.
 
 A revoked key cannot be restored. To give a collector or script access again, create a new key. The new key has a new value, so replace the old value wherever it was used.
 
-The key stays in the list as revoked, and its name is free again. If you create a new key under the same name, two rows share the name. Tell them apart by the prefix and the **Created** time. The **Revoke** sheet names a key by its name and prefix together. If you open the sheet for an old row and a newer live key has taken the name, the server answers "the live key with this name is a newer key than the one shown; reload the list" and revokes nothing.
+The key stays in the list as revoked, and its name is free again. If you create a new key under the same name, two rows share the name. Tell them apart by the prefix and the **Created** time. The **Revoke** sheet names a key by its name and prefix together. If you open the sheet for an old row and a newer live key has taken the name, Otherlode answers "the live key with this name is a newer key than the one shown; reload the list" and revokes nothing.
 
 ## Replace a key without a gap
 
