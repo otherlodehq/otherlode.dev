@@ -30,7 +30,7 @@ The root cell reads by the kind of root.
 - A class finding root reads as the class and its finding, such as "AuditLog, never initialised".
 - A root that a method with hits calls adds "called from" and those methods. A caller that the compiler generated carries a label such as "(Kotlin data-class method)".
 
-When tests call an uncalled root but no complete static baseline rules out another caller, the cell adds this line: "Only tests call it. No run in scope has a complete static baseline, so a class that never loaded is not checked."
+When tests call an uncalled root but no complete static baseline rules out another caller, the cell adds this line: "Tests call it. No run in scope has a complete static baseline, so a class that never loaded is not checked."
 
 ### Root kinds
 
