@@ -125,7 +125,7 @@ A service with no name set reports as `unknown_service`. The **Services** page m
 
 ### The service is not tracked
 
-A service that a production run reached can be missing from the **Services** list and the `services` array of `GET /services` and still have its runs stored. Your plan tracks a fixed number of services, and a service past that number is not tracked. The read API lists it in `not_tracked_services`, and each of its per-service routes answers `404` with `{"error":"service not tracked"}`.
+Your plan tracks a fixed number of services, and a service past that number is not tracked. Its runs are still stored. The **Services** list shows it with a **Not tracked** badge, and it opens no page. The service switcher and the `services` array of `GET /services` leave it out. The read API lists it in `not_tracked_services`, and each of its per-service routes answers `404` with `{"error":"service not tracked"}`.
 
 The collector logs a `WARN` line for each of its payloads, at most once an hour for each service, and counts them in `otherlode_collector_forward_notices_total` with the label `notice="service-over-cap"`:
 
