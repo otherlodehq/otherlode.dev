@@ -246,6 +246,7 @@ the safeguards that apply.
 | Data | How long |
 | --- | --- |
 | Account | Until the customer or our team removes it |
+| An email our team enters to add or change an account | Destroyed when it's used, and within 2 days if it isn't |
 | Account choice at sign-in | Deleted within a day of expiring, 5 minutes after it starts |
 | Sessions | Deleted within a day of expiring, after 7 days without use or 30 days in total |
 | Audit log | Until the customer leaves |
