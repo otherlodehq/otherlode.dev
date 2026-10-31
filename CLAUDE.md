@@ -61,7 +61,12 @@ Every code change gets an independent review before it lands on master.
 A reviewer that did not write the change reads the diff and the code it
 touches, without the author's reasoning, and looks for bugs. Fix or
 answer each blocking finding before the change lands. A change to site
-copy, docs, an ADR or a copy guide alone needs none.
+copy, docs, an ADR or a copy guide alone needs none, and nor does a code
+edit with no behaviour in it, such as a typo or a rename inside one file.
+
+When a loaded skill prescribes how code is built and reviewed, such as
+`power-mode`'s review loop, follow it. It adds to this rule and never
+replaces it.
 
 ## Commits
 
