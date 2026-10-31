@@ -55,6 +55,14 @@ a host or a release that does not exist yet, run the nearest local
 stand-in and name each substitute in the reply. Where the result differs,
 fix the doc. Reading the code is not enough.
 
+## Review
+
+Every code change gets an independent review before it lands on master.
+A reviewer that did not write the change reads the diff and the code it
+touches, without the author's reasoning, and looks for bugs. Fix or
+answer each blocking finding before the change lands. A change to site
+copy, docs, an ADR or a copy guide alone needs none.
+
 ## Commits
 
 A commit message never carries a `Claude-Session` line, a session link
