@@ -15,9 +15,7 @@ Otherlode service, and email you send us.
 ## Who we are
 
 Otherlode is run by [CONTROLLER: legal name, and "trading as Otherlode"
-if a sole trader], [POSTAL ADDRESS]. We are registered with the
-Information Commissioner's Office under number [ICO REGISTRATION
-NUMBER].
+if a sole trader], [POSTAL ADDRESS].
 
 For anything about your personal data, email
 [privacy@otherlode.dev](mailto:privacy@otherlode.dev).
