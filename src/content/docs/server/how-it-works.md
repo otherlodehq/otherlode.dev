@@ -74,7 +74,7 @@ Every other scope is worked out when you read it: an older version, a version wi
 
 A new service, environment or version has no snapshot until the next refresh computes it. Neither has any scope after Otherlode changes how findings are judged, since it never shows a snapshot of an older format. It then computes the snapshot in the background and not when you read. Until then, each page and fact that reads the snapshot says it's computing. Each asks Otherlode again every 30 seconds. The panel leaves out the counts that come from the report, and still shows the others. The refresh computes your missing snapshots before your other snapshots, and among them every scope with no version before any version.
 
-When the last attempt to compute a missing snapshot failed, the pages that read it say when it failed. A failed refresh of one scope holds back every scope of its service for an hour, and a scope it holds back says "Computing…". The refresh then tries the other scopes first and the failed one after them.
+When the last attempt to compute a missing snapshot failed, the pages that read it say when it failed. A failed refresh of one scope holds back every scope of its service for an hour, and a scope it holds back says "Computing…". The refresh then tries the other scopes first and the failed one after them. A failure that a retry can fix, such as a lost database connection, holds back only that scope, which is tried again after the others in the next run. If that retry fails too, the service waits the hour.
 
 ## Removed code is kept out of the findings
 
