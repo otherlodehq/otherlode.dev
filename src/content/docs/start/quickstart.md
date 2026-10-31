@@ -88,7 +88,7 @@ The agent writes to stderr through the JVM's logger. Each message starts with `o
 otherlode: installing endpoint modules: javalin-6, javalin-7, jaxrs, jdk-httpserver, ktor-2, ktor-3, micronaut, micronaut-3, servlet, spring-webflux, spring-webmvc, vertx-web
 ```
 
-It also warns `otherlode: exportUrl uses plain http, so the auth token is sent unencrypted`. The token goes no further than `localhost` here, so you can ignore it on your own machine. A HotSpot JVM also prints its own line, `Sharing is only supported for boot loader classes because bootstrap classpath has been appended`, which is harmless. See [The CDS warning](/docs/agent/compatibility#the-cds-warning).
+A HotSpot JVM prints its own line, `Sharing is only supported for boot loader classes because bootstrap classpath has been appended`, which is harmless. See [The CDS warning](/docs/agent/compatibility#the-cds-warning).
 
 If the agent prints `includePackages is not set`, the option is missing or empty and the agent instruments nothing. When it can find your main class, the line suggests a package to use. [Choose includePackages](/docs/agent/attach#choose-includepackages) covers the option.
 
