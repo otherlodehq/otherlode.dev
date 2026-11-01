@@ -64,7 +64,7 @@ Otherlode keeps only these counts. It keeps nothing from a refused payload or it
 
 Ingest answers a refused payload with `403` and a JSON body that names the reason, `{"error":"redaction_required"}` or `{"error":"redaction_secret_mismatch"}`. It never reads or stores the payload. The audit log records no event for a refusal.
 
-- **From a collector.** The collector drops the payload at once and logs a `WARN` line with `dropping payload: permanent failure`. Its `error` field ends with `backend returned 403 Forbidden`, and its `service` and `instance` fields name the agent that sent the payload. The collector does not log the body, so use the **Redaction** page to tell the two reasons apart. See [backend returned 403](troubleshooting#backend-returned-403).
+- **From a collector.** The collector drops the payload at once and logs a `WARN` line with `dropping payload: permanent failure`. Its `error` field reads `backend returned 403 Forbidden`, its `backend_error` field names the reason, `redaction_required` or `redaction_secret_mismatch`, and its `service` and `instance` fields name the agent that sent the payload. See [backend returned 403](troubleshooting#backend-returned-403).
 - **From an agent that sends straight to ingest.** The agent keeps the payload, sends it again at its next flush, and logs a `WARNING` each time. Point the agent at your collector to stop the refusals.
 
 ## Check what changed

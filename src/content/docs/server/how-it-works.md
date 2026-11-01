@@ -1,6 +1,6 @@
 ---
 title: How findings are judged
-description: Why Otherlode stores each run apart, merges counts so retries and restarts cannot inflate them, judges finding pages when you read and the report in the background, and leaves some stored code unjudged, so you can decide how far to trust a finding.
+description: Why Otherlode stores each run apart, merges counts so retries and restarts cannot inflate them, judges the report and the main finding pages in the background for the scopes people open most, and everything else when you read, and leaves some stored code unjudged, so you can decide how far to trust a finding.
 order: 140
 ---
 
@@ -68,7 +68,7 @@ A version's snapshot holds no removal, so it waits for the gap. A test run's or 
 
 A refresh job runs every 5 minutes. So on the Team and Enterprise plans the findings on a snapshot page trail the data by up to about 20 minutes, the interval plus the job's period, and counts and dates on the page, such as hit totals and last-hit times, can trail by up to about 2 hours. On the free plan both can trail by up to about 6 hours. Each trails more while the refresh has a backlog. The report and the pages trail together, so a panel count from the report matches the page it links to when both come from the snapshot. A page worked out when you read can differ from its count by what arrived since the snapshot. [Counts in the panel](findings#counts-in-the-panel) lists which counts come from the report.
 
-Every other scope is worked out when you read it: an older version, a version with no environment, any read with a seen-within window, and a service or environment that only test runs have reached. Every other page is worked out when you read it too, whatever the scope: the code path graph's endpoints and calls, and the pages **Never called**, **Never supplied**, **Never loaded**, **Failed to load**, **Unused dependencies**, **Dependencies failed to load**, **Instances**, **Endpoints**, **Dependencies**, **Absent references** and **Unclassified**.
+Every other scope is worked out when you read it: an older version, a version with no environment, any read with a seen-within window, and a service or environment that only test runs have reached. Every other page is worked out when you read it too, whatever the scope: the code path graph's endpoints and calls, and the pages **Never called**, **Never supplied**, **Never loaded**, **Failed to load**, **Failed to initialise**, **Unused dependencies**, **Dependencies failed to load**, **Dependencies failed to initialise**, **Instances**, **Endpoints**, **Dependencies**, **Absent references** and **Unclassified**.
 
 **As of**, in the evidence list and on each page read from the snapshot, says when the data was read. For a snapshot it is the time the snapshot was computed, and for a live read the time of the read.
 
@@ -124,7 +124,7 @@ Every date about your code is the time the payload reached Otherlode, not the ti
 ## What this costs you
 
 - Storage grows with the number of runs.
-- Reading a finding page of a large service takes time, since Otherlode works it out when you read.
+- Reading a page that no snapshot serves takes time on a large service, since Otherlode works it out when you read.
 - The report can trail the data by up to about 20 minutes on the Team and Enterprise plans and about 6 hours on the free plan, and more while the refresh has a backlog.
 - A count can be low if a process dies before its last flush.
 - A date can be late by one flush interval or more.

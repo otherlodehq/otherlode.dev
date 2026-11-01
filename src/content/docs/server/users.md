@@ -71,7 +71,7 @@ If your tenant uses directory sync, your identity provider tells Otherlode when 
 - **A person changes email.** The user keeps its role and takes the new email. If another user of the tenant already has the new email, or the new email is not one you could add on the **Users** page, nothing changes. If the new email is not on one of your verified domains, nothing changes either, and the [audit log](audit-log) records **Email change refused**. The same happens for a user who has never signed in and whose email is not on one of your verified domains, whatever the new email.
 - **A removal event is older than the user.** If you added the person back more than a minute after the event, Otherlode skips the removal. Inside that minute the deletion goes ahead.
 
-Without directory sync, removing a person at your identity provider does nothing here until their session ends. Delete their user on the **Users** page to end it at once.
+Without directory sync, removing a person at your identity provider leaves their user and their open sessions here. Delete their user on the **Users** page to end their sessions at once.
 
 ## Find who changed a user
 
