@@ -21,7 +21,7 @@ Once single sign-on is on for your tenant, the rest needs no operator. Your firs
 
 ## Set up an SSO connection
 
-The three buttons on the page open WorkOS's Admin Portal in a new tab. WorkOS runs the portal, and its screens guide you through your identity provider. The page itself only shows the result.
+Each **Set up** or **Verify** button on the page opens WorkOS's Admin Portal in a new tab. WorkOS runs the portal, and its screens guide you through your identity provider. The page itself only shows the result.
 
 1. Open **Single sign-on** in the admin area.
 2. In the **SSO connections** card, click **Set up SSO**.
@@ -76,7 +76,7 @@ To keep them, verify a domain that covers their emails first. You can also delet
 
 ### What happens to existing sessions
 
-Click **Enforce SSO**, then confirm in the sheet. Every session not made through SSO ends at once. Your own session stays, because it was made through SSO. Everyone else signs in again through your SSO connection. If someone tries another method, the page **Sign-in did not complete** shows "Your organization requires single sign-on. Sign in again through your company's single sign-on. If you do not see it, ask your admin."
+Click **Enforce SSO**, then confirm in the sheet. Every session not made through SSO ends at once. Your own session stays, because it was made through SSO. Everyone else signs in again through your SSO connection. If someone tries another method, the page **Sign-in did not complete** shows "Your tenant requires single sign-on. Sign in again through your company's single sign-on. If you do not see it, ask your admin."
 
 If the connection later becomes inactive, or the last verified domain stops verifying, the page shows a warning. While SSO is enforced and the organization has no active connection, nobody can sign in. Fix the connection in the Admin Portal, or stop enforcing SSO.
 
@@ -97,7 +97,7 @@ When it is on, a person gets a viewer user at sign-in if all of these hold:
 
 The user always has the role viewer. Change the role on the **Users** page afterward if the person needs to be an admin. A sign-in through Google, Microsoft, or GitHub never creates a user.
 
-To turn it on, click **Turn on just-in-time provisioning**. The button works only while SSO is enforced. Otherwise Otherlode answers "just-in-time provisioning needs SSO enforced first". To turn it off, click **Turn off just-in-time provisioning**. People who already have a user keep it.
+To turn it on, click **Turn on just-in-time provisioning**. The button is disabled until SSO is enforced. If enforcement stopped after the page loaded, the page shows "Just-in-time provisioning needs SSO enforced first." To turn it off, click **Turn off just-in-time provisioning**. People who already have a user keep it.
 
 If your SSO organization is unlinked, the users your identity provider created just in time are deleted, unless an admin has changed their role since. Users you added on the **Users** page stay.
 

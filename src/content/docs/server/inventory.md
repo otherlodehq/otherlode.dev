@@ -34,7 +34,7 @@ A service in a named namespace opens at `/namespaces/{namespace}/services/{servi
 
 ### Services with no name
 
-A service whose name starts with `unknown_service` shows a **name not set** badge. Several services with no name in one namespace report under the same name and merge into one service. To name it, see [The service is listed under another name](troubleshooting#the-service-is-listed-under-another-name) and the agent's [configuration options](/docs/agent/configuration) for `serviceName` and `serviceNamespace`.
+A service whose name starts with `unknown_service` shows a **Name not set** badge. Several services with no name in one namespace report under the same name and merge into one service. To name it, see [The service is listed under another name](troubleshooting#the-service-is-listed-under-another-name) and the agent's [configuration options](/docs/agent/configuration) for `serviceName` and `serviceNamespace`.
 
 ## The Inventory group
 
@@ -88,9 +88,7 @@ The Classes page lists each class that has probes in scope, sorted by class name
 | **Conditions** | The conditions the report counts for the class, one per site. |
 | **With a path that never ran** | The conditions with at least one outcome that never ran. |
 | **Routed** | `yes` when any method of the class is the handler of an endpoint in scope, `no` otherwise. |
-| **Finding** | `never initialised` or `never instantiated`, `Failed to initialise` for a class on the [Failed to initialise](findings#failed-to-initialise) list, or a dash when the class has none of them. |
-
-Summed over every class, the rows equal the report's counts, since both use the same rules.
+| **Finding** | `never initialised` or `never instantiated`, `failed to initialise` for a class on the [Failed to initialise](findings#failed-to-initialise) list, or a dash when the class has none of them. |
 
 For most scopes the list is read from the same [stored snapshot](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots) as the report, so its rows add up to the report's counts when both come from it. **As of** says when the snapshot was computed. While the snapshot is being computed, the page says "Computing…" and lists no rows.
 
@@ -104,7 +102,7 @@ A class that never loaded has no row in the list, and its page names its finding
 
 ## Endpoints
 
-The Endpoints page lists every endpoint the agent found, with its status and its calls in scope. The agent's [endpoints page](/docs/agent/endpoints) says what it counts and how it names an endpoint. Otherlode merges the endpoint across every in-scope instance and run. Two rows never share a verb, route template and template kind. [Outside routes](findings#outside-routes) are listed apart, and the page's total and paging count only the service's own routes. A route template the agent marks as a regular expression or a servlet pattern is a different endpoint from a path that reads the same. The page sorts rows by status, with never called first. The **Status** header reverses the order. Within a status, never called rows run from the earliest first known, stale rows from the oldest last call, and live rows from the newest last call. In both orders the statuses that claim nothing come last: **Module disabled**, then **Counts behind**, then **Not judged**. Rows with the same status and date, and the statuses that claim nothing, sort by verb, then route template, then template kind.
+The Endpoints page lists every endpoint the agent found, with its status and its calls in scope. The agent's [endpoints page](/docs/agent/endpoints) says what it counts and how it names an endpoint. Otherlode merges the endpoint across every in-scope instance and run. Two rows never share a verb, route template and template kind. [Outside routes](findings#outside-routes) are listed apart, and the page's total and paging count only the service's own routes. A route template the agent marks as a regular expression or a servlet pattern is a different endpoint from a path that reads the same. The page sorts rows by status, with never called first. The **Status** header reverses the order. Within a status, never called rows run from the earliest first known, stale rows from the oldest last call, and live rows from the newest last call. In both orders the statuses that claim nothing come last: **Module disabled**, then **Counts behind** and **Without evidence**, then **Not judged**. Rows with the same status and date, and the statuses that claim nothing, sort by verb, then route template, then template kind.
 
 | Column | What it shows |
 |---|---|
@@ -112,6 +110,7 @@ The Endpoints page lists every endpoint the agent found, with its status and its
 | **Endpoint** | The HTTP method, such as `GET`, and the route template in the agent's normal form, such as `/orders/{id}`. An endpoint that takes every method reads `ANY`. A template that is a regular expression shows as the framework wrote it, followed by the label **Regular expression**. A servlet extension mapping such as `*.do`, or the default mapping `/`, shows as written with the label **Servlet pattern**. Each is judged like any other endpoint. |
 | **Handler** | The handler's class and method, as [names](#how-names-read) read. A dash means no instance could name the handler. |
 | **Calls** | The calls summed over every in-scope run. |
+| **Last called** | When the endpoint was last called, or "never". |
 | **Instances** | The number of in-scope instances that reported the endpoint. |
 
 Each endpoint has one status.
@@ -126,11 +125,11 @@ Each endpoint has one status.
 | **Stale** | The endpoint was called, and its last call is older than **Stale after (days)**. |
 | **Not judged** | The data cannot say. An endpoint found only by dispatch whose count was lost reads this way, and so does a called endpoint with no last-called date or with a capped last date older than the cutoff. |
 
-A star after a row's first known date means the date is capped to the instances in scope.
+A star after a row's first known date means the date is capped to the runs in scope.
 
 Framework, discovery source and handler come from the in-scope instance that reported the endpoint most recently.
 
-When any in-scope run switched an endpoint module off, the page lists each module with its kind and the agent's reason. A module whose hook matched no method reads "A hook matched no method on the framework class it hooks", followed by the agent's detail. A module that hit a framework release it was not built for reads "The framework release differs from the one the module was built for" and the error, such as `java.lang.NoSuchMethodError: ...`. The kind and reason come from the newest in-scope run that disabled the module. A module the agent's configuration kept off reads "The agent's configuration kept the module off". That is the adopter's setting, not a failure. A Micronaut module on a runtime it cannot count requests on reads "The runtime has no dispatch point the module counts requests at" and declares no endpoint. Without a kind, the notice reads "The agent did not say why"; for a kind Otherlode does not name, it says a newer agent sent it.
+When any in-scope run switched an endpoint module off, the page lists each module with its kind and the agent's reason. A module whose hook matched no method reads "A hook matched no method on the framework class it hooks", followed by the agent's detail. A module that hit a framework release it was not built for reads "The framework release differs from the one the module was built for" and the error, such as `java.lang.NoSuchMethodError: ...`. The kind and reason come from the newest in-scope run that disabled the module. A module the agent's configuration kept off reads "The agent's configuration kept the module off". That is your setting, not a failure. A Micronaut module on a runtime it cannot count requests on reads "The runtime has no dispatch point the module counts requests at" and declares no endpoint. Without a kind, the notice reads "The agent did not say why"; for a kind Otherlode does not name, it says a newer agent sent it.
 
 When any in-scope run reported a framework marker, a notice titled "Routes not counted" lists each marker by Otherlode's label and says the endpoint list leaves those routes out. See [Routing whose routes are not counted](#routing-whose-routes-are-not-counted).
 
@@ -138,6 +137,7 @@ The page has three filters besides **Class prefix**.
 
 | Filter | Values |
 |---|---|
+| **Status** | One status, or **All endpoints**. |
 | **Stale after (days)** | The number of days after which a called endpoint reads **Stale** and not **Live**. It defaults to 30. |
 | **Framework** | The framework name, matched exactly. |
 
@@ -175,7 +175,7 @@ The Dependencies page lists each library that an in-scope run found, merged by i
 | **Status** | The status, with its meaning as a tooltip. |
 | **Loaded classes** | `12 of 340` when the jar's class count is known, and `12` when it is not. The loaded figure is the largest any in-scope run reported. |
 | **Discovery** | `startup classpath`, `class load`, or both. |
-| **Known since** | When Otherlode first learned of the dependency. A star means the date is capped to the instances in scope. |
+| **Known since** | When Otherlode first learned of the dependency. A star means the date is capped to the runs in scope. |
 | **First loaded** | When Otherlode first saw a class load from it, or "never". |
 | **Last loaded** | When a batch last raised a loaded-class total for it, or "never". Otherlode writes it at most once an hour. |
 | **Sites** | The number of places in your code that reference the dependency, for the statuses **Unreached**, **No live reference**, **Failed to load** and **Failed to initialise**. A dash for any other status. |

@@ -10,7 +10,7 @@ Your agents report to your collector. The collector forwards what they send to O
 
 Only an admin of your tenant can create a key.
 
-1. Sign in at `https://app.otherlode.dev` and open the menu under your tenant's name at the right of the top bar, then click **Admin**.
+1. Sign in at `https://app.otherlode.dev`, open the tenant menu in the top bar, then click **Admin**.
 2. Open **API keys** and click **Create key**.
 3. Enter a name, choose the scope **Ingest**, and create the key.
 4. Copy the key. The page shows it once, with the note "Copy this key now. You will not see it again."
@@ -28,7 +28,7 @@ OTHERLODE_COLLECTOR_FORWARD_AUTH_TOKEN=<your ingest key>
 
 The collector sends the token as `Authorization: Bearer <key>` on every request. To keep the key out of the environment, put it in a file and set `OTHERLODE_COLLECTOR_FORWARD_AUTH_TOKEN_FILE` to the file's path. Set one of the two variables, not both.
 
-Use the host name `ingest.otherlode.dev` and no path. The collector adds the paths `/v1/otherlode/deltas`, `/v1/otherlode/manifest`, `/v1/otherlode/static-baseline` and `/v1/otherlode/class-listing` itself. `ingest.otherlode.dev` answers only those paths, and `app.otherlode.dev` never answers them. A request for any other path on the ingest host gets a 404.
+Use the host name `ingest.otherlode.dev` and no path. The collector adds the paths `/v1/otherlode/deltas`, `/v1/otherlode/manifest`, `/v1/otherlode/static-baseline` and `/v1/otherlode/class-listing` itself. `ingest.otherlode.dev` answers only those paths, and `app.otherlode.dev` never answers them. A request for any other path on the ingest host, except the health check `/healthz`, gets a 404.
 
 Restart the collector after you change its variables.
 
@@ -49,7 +49,7 @@ An agent sends a batch every 60 seconds by default, so a service can take that l
 1. Sign in at `https://app.otherlode.dev`. The **Services** page opens first.
 2. Look for the service under the `serviceName` you gave the agent. The table lists each service's environments, its instance count, **Last seen**, and **Watched for**.
 
-Until a service reports, the page says "No service has reported yet." Use the **Filter** box to match a namespace or a service name. [Inventory](inventory) describes the service list in full.
+Until a service reports, the page says "No service has reported yet." [Inventory](inventory) describes the service list in full.
 
 If the service does not appear, read the collector's log first. The answers below say what each line means, and [Troubleshooting](troubleshooting) goes through the causes by symptom.
 
@@ -59,7 +59,7 @@ A test run never adds a service to the list. A service appears only once a produ
 
 ## Read what ingest answers
 
-The collector accepts a payload from an agent with `202`, queues it, and forwards it in the background. The status Otherlode returns shows up only in the collector's log. When a payload is dropped, the collector logs a warning that starts with `dropping payload` and ends with `backend returned <status>`.
+The collector accepts a payload from an agent with `202`, queues it, and forwards it in the background. The status Otherlode returns shows up only in the collector's log. When a payload is dropped, the collector logs a warning whose message starts with `dropping payload` and whose `error` field reads `backend returned <status>`, such as `backend returned 401 Unauthorized`.
 
 | Status | Body | Meaning | What the collector does |
 |---|---|---|---|

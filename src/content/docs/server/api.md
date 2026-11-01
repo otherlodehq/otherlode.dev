@@ -24,7 +24,7 @@ The web app calls the same routes with the session cookie of a signed-in user. A
 
 ## Errors
 
-Every error has a JSON body with one field, `error`.
+Every error a route on this page returns has a JSON body with one field, `error`. A path that names no route gets `404` with a plain-text body.
 
 ```json
 {"error": "service not found"}
@@ -35,7 +35,7 @@ Every error has a JSON body with one field, `error`.
 | `400` | A sentence naming the parameter, such as "limit must be between 1 and 5000" | A parameter is missing or has a value the route refuses. The route tables below list the values. |
 | `401` | "unauthorized" | The header is missing, is not a bearer header, or holds an unknown or revoked key. |
 | `403` | "this route needs a read key" | The key is valid and has the `ingest` scope. |
-| `404` | "service not found" | The tenant has no such service. See [name a service in the path](#name-a-service-in-the-path). |
+| `404` | "service not found" or "service not tracked" | The tenant has no such service, or the service holds no slot of your service cap. See [name a service in the path](#name-a-service-in-the-path) and [`GET /services`](#get-services). |
 | `500` | "internal error" | Otherlode failed. The body never names the cause. |
 | `503` | "unavailable" | Otherlode could not check the key. The key may still be valid, so retry. |
 
@@ -363,7 +363,7 @@ The response is `{"probes", "total", "watched_since", "as_of", "from_snapshot"}`
 | `role`, `case_key`, `case_label`, `guarded_lines`, `partly_guarded_lines` | | The outcome of a branch row, as in [site rows](#site-rows). Otherwise `null`. |
 | `in_never_hit_code` | boolean or null | On a branch row, `true` when the site folds into a never-hit method. Otherwise `null`. |
 | `routine` | string or null | On a branch row, the outcome's routine kind. Otherwise `null`. |
-| `outside_caller` | object or null | On a method row, why code outside the scope may call it: `{"kind", "type_name"}`. `kind` is `overrides_method` or `callback_annotation`. |
+| `outside_caller` | object or null | On a method row, why code outside the scope may call it: `{"kind", "type_name"}`. `kind` is `overrides_method`, `callback_annotation`, or `unknown` for a kind Otherlode does not name, which a newer agent sent. |
 
 ### `GET /services/{service}/classes`
 
@@ -389,14 +389,14 @@ No filter changes a row's counts.
 
 ### Class finding routes
 
-Four routes list classes by one finding each. All four take `class_prefix`, and the response is `{"classes", "total"}`, ordered by class name.
+Five routes list classes by one finding each. All five take `class_prefix`, and the response is `{"classes", "total"}`, ordered by class name.
 
 | Route | Lists | Extra parameters |
 |---|---|---|
 | `/never-loaded` | Classes a complete static baseline declared that no in-scope run loaded. A class that failed to load is left out. | None |
 | `/never-initialized` | Loaded classes whose static initialiser never ran. | `known_for_days` |
 | `/never-instantiated` | Loaded classes with a constructor and an instance method, where no constructor and no instance method ran. | `known_for_days` |
-| `/failed-to-load` | Classes the agent wove that the JVM never defined. Each is a deployment problem and never dead code. | None |
+| `/failed-to-load` | Classes the agent instrumented that the JVM never defined. Each is a deployment problem and never dead code. | None |
 | `/failed-to-initialize` | Classes the JVM defined whose verification or static initialiser failed, and the subtypes that fail with them. Each is a deployment problem and never dead code. | None |
 
 `/never-initialized` and `/never-instantiated` also return `watched_since`, `as_of` and `from_snapshot`. Their `known_for_days` keeps a class only when its `first_known_at` is at least that many days old. Both are [read from a snapshot](#routes-read-from-a-snapshot) for most scopes, with every parameter applied to the snapshot, and answer `202` while the snapshot is computing. `known_for_days` then counts back from `as_of`. See [Findings](findings).
@@ -496,7 +496,7 @@ A row has the fields of its kind and no others:
 | `identities` | `dependency` | `{"group_id", "artifact_id", "versions"}` for each identity, as `/dependencies` shows them. |
 | `stopped_at` | every row | The latest time Otherlode received a payload from a run that held the thing. |
 
-A class row also carries the [class naming fields](#class-naming-fields), and a method row the [method naming fields](#method-naming-fields), which already describe the method's class. They come from the same facts as any other row of that class or method, so a client names a removed row as it names the rest. The row has no name field: a client builds the text it shows from these fields.
+A class row also carries the [class naming fields](#class-naming-fields), and a method row the [method naming fields](#method-naming-fields), which already describe the method's class. They come from the same facts as any other row of that class or method, so a client names a removed row as it names the rest. The row has no name field. A client builds the text it shows from these fields.
 
 ### `GET /services/{service}/endpoints`
 
@@ -516,7 +516,7 @@ Endpoints merged across the in-scope runs and identified by `verb`, `route_templ
 |---|---|---|
 | `verb` | string | The HTTP method, upper case. `*` when the framework takes any method. |
 | `route_template` | string | The agent's normalised template. For a `regex` template it is the framework's regular expression as written. For a `servlet_pattern` template it is the servlet mapping as written, such as `*.do` or `/`. |
-| `template_kind` | string | `path` for a path template, `regex` for a regular expression, `servlet_pattern` for a servlet extension mapping or default mapping, or `unknown` for a kind Otherlode does not name. An agent that predates the field reads as `path`. A `regex` or `servlet_pattern` template is never a path: no filter or label reads it as one. |
+| `template_kind` | string | `path` for a path template, `regex` for a regular expression, `servlet_pattern` for a servlet extension mapping or default mapping, or `unknown` for a kind Otherlode does not name. An agent that predates the field reads as `path`. A `regex` or `servlet_pattern` template is never a path. No filter or label reads it as one. |
 | `template_kind_label` | string | The text Otherlode writes for the kind: `Path`, `Regular expression`, `Servlet pattern`, or for `unknown` a label saying a newer agent sent it. |
 | `verbatim_template` | string | The framework's own spelling of the template. |
 | `framework` | string | The endpoint module that reported it. |
@@ -568,7 +568,7 @@ Unreached clusters, largest first and then by root. The route takes `class_prefi
 
 `members` and `test_callers` each hold at most 200 entries. The totals are always true counts.
 
-A graph node has `class_name`, `method_name`, `method_descriptor`, `line`, `hits_total`, `never_loaded`, `generated_by`, `unread_shape`, `counts_behind`, `without_evidence`, `recorded_hit` and the [method naming fields](#method-naming-fields). `never_loaded` is `true` for a method only a complete baseline knows, and its `line` is `0`. `counts_behind` is `true` when a run that knows the method is not settled and, on a request that names no `version` and no `active_within_days`, the service has recorded no hit of it. With `hits_total` `0` the method may have run, and the cluster rules treat it as neither hit nor never hit. `without_evidence` is `true` when every run that knows the method is settled and none is [evidence](findings#without-evidence) about its class. The cluster rules treat it as `counts_behind`, and it is `false` where `counts_behind` is `true`. `recorded_hit` is `true` when the service has recorded a hit of the method, on a request that names no `version` and no `active_within_days`. `hits_total` stays the in-scope count, and the method counts as hit. Both fields are `false` for a method only a baseline knows and on a `class_finding` root. A graph node is never generated or unread, so both marks read `none`.
+A graph node has `class_name`, `method_name`, `method_descriptor`, `line`, `hits_total`, `never_loaded`, `generated_by`, `unread_shape`, `counts_behind`, `without_evidence`, `recorded_hit` and the [method naming fields](#method-naming-fields). `never_loaded` is `true` for a method only a complete baseline knows, and its `line` is `0`. `counts_behind` is `true` when a run that knows the method is not settled and, on a request that names no `version` and no `active_within_days`, the service has recorded no hit of it. With `hits_total` `0` the method may have run, and the cluster rules treat it as neither hit nor never hit. `without_evidence` is `true` when every run that knows the method is settled and none is [evidence](findings#without-evidence) about its class. The cluster rules treat it as `counts_behind`, and it is `false` where `counts_behind` is `true`. `recorded_hit` is `true` when the service has recorded a hit of the method, on a request that names no `version` and no `active_within_days`. `hits_total` stays the in-scope count, and the method counts as hit. `counts_behind`, `without_evidence` and `recorded_hit` are all `false` for a method only a baseline knows and on a `class_finding` root. A root, a member and an edge end are never generated or unread, so both marks read `none` on them. A `reached_from` node can be a generated or unread method that ran, and carries its own marks.
 
 The root is a graph node with these extra fields:
 
@@ -663,4 +663,4 @@ curl -s -H "Authorization: Bearer $OTHERLODE_READ_KEY" \
   "$BASE/never-hit?environment=prod&kind=method&known_for_days=30&limit=100&offset=0"
 ```
 
-The response has `rows`, `total`, `capped_hidden` and `watched_since`. To read the next page, repeat the call with `offset=100`, and stop when `offset` reaches `total`.
+The response has `rows`, `total`, `capped_hidden`, `watched_since`, `as_of` and `from_snapshot`. To read the next page, repeat the call with `offset=100`, and stop when `offset` reaches `total`.

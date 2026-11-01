@@ -14,7 +14,7 @@ A date therefore trails the event. The agent sends counts at its flush interval,
 
 The API writes every date as a UTC time in ISO 8601 form with a `Z` suffix, such as `2026-09-22T23:19:31Z`.
 
-Two times are not arrival times. `as_of`, shown as **As of** in the evidence list of every service page and on the pages read from a snapshot, is the time Otherlode computed the result: the time its stored snapshot was computed, or the time of a live read. `last_failed_at`, shown while a snapshot is being prepared, is the time Otherlode last failed to compute it. A day filter on a page read from a snapshot, such as **Stale after (days)**, counts back from `as_of`. See [the snapshots](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots).
+Two times are not arrival times. `as_of`, shown as **As of** in the evidence list of every service page and on the pages read from a snapshot, is the time Otherlode computed the result: the time its stored snapshot was computed, or the time of a live read. `last_failed_at` in the answer a page gets while its snapshot is being prepared is the time Otherlode last failed to compute the snapshot. It is not the class failure date of the same name below. A day filter on a page read from a snapshot, such as **Stale after (days)**, counts back from `as_of`. See [the snapshots](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots).
 
 ## Service-wide dates
 
@@ -37,7 +37,7 @@ First hit and last hit change name with the item. The table gives the API field 
 | Item | First known | First hit | Last hit |
 |---|---|---|---|
 | Method or branch outcome | `first_known_at`, **Known since** | `first_hit_at`, **First hit** | `last_hit_at`, **Last hit** |
-| Endpoint | `first_known_at`, **First known** | `first_called_at`, **First called** | `last_called_at`, **Last called** |
+| Endpoint | `first_known_at`, **Known since** | `first_called_at`, **First called** | `last_called_at`, **Last called** |
 | Optional parameter | `first_known_at`, **Known since** | `first_omitted_at`, **First omitted** | `last_omitted_at`, **Last omitted** |
 | Dependency | `first_known_at`, **Known since** | `first_loaded_at`, **First loaded** | `last_loaded_at`, **Last loaded** |
 
@@ -45,7 +45,7 @@ A dependency's last loaded date is the arrival time of the latest delta batch th
 
 The **Never initialised** and **Never instantiated** pages show **Known since** for a class. It is the first known date of the method that decides the finding. See [Findings](findings).
 
-The [Instances](inventory) page shows **First seen** and **Last seen** for each instance. Those are not service-wide dates. They cover the instance's runs in scope, and they change with scope, with expiry and with pruning.
+The [Instances](inventory) page shows **First seen** and **Last seen** for each instance. Those are not service-wide dates. **First seen** is when Otherlode first saw the instance, whatever the scope. **Last seen** covers the instance's runs in scope, so it changes with scope, with expiry and with pruning.
 
 ### Failure dates
 
@@ -88,7 +88,7 @@ A keyless outcome has no service-wide row. Its dates come from the runs in scope
 - A capped first date can be later than the true one. It is a lower bound on age.
 - A capped last date can be earlier than the true one. It cannot prove the outcome stale.
 
-A row with service-wide dates has `dates_capped: false`. Otherlode marks a capped **Known since** with an asterisk. Its tooltip reads "capped to the instances in scope".
+A row with service-wide dates has `dates_capped: false`. Otherlode marks a capped **Known since** with an asterisk. Its tooltip reads "Capped to the runs in scope."
 
 ### How a filter treats a capped row
 
@@ -128,6 +128,4 @@ Otherlode shows it in two places:
 
 ## How Otherlode shows a date
 
-Most dates read as how long ago they were, rounded down, with a month counted as 30 days. The tooltip holds the exact UTC time, such as "2026-09-22 23:19:31 UTC".
-
-Watched since and failing since read as a calendar date in UTC.
+A date shown as how long ago it was rounds down and counts a month as 30 days.

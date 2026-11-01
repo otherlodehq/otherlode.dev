@@ -18,7 +18,7 @@ The page lists events newest first.
 
 | Column | Shows |
 |---|---|
-| **Time** | When Otherlode recorded the event, in UTC. Hover the time to see how long ago it was. |
+| **Time** | When Otherlode recorded the event, in UTC. |
 | **Actor** | Who did it. See [Actors](#actors). |
 | **Action** | The action's label and its dotted name. The tables below list both. |
 | **Target** | What the action changed, such as a user's email or a key's name. An en dash means the event has no target. |
@@ -55,7 +55,7 @@ A session that ends because it was idle too long or reached its maximum age reco
 
 ## Sign-in actions
 
-A browser request causes each of these events, so each carries the client address.
+A browser request causes each of these events except some **Session ended** events, and each event a browser request causes carries the client address. A **Session ended** event that an operator, directory sync or WorkOS caused has none.
 
 | Label | Action | Recorded when | Actor | Target | Details |
 |---|---|---|---|---|---|
@@ -87,7 +87,7 @@ In both cases the target is the user's email as your tenant stores it.
 
 ## Changes to users and keys
 
-Admins make these changes in Otherlode, so those events carry the admin's address. An operator or directory sync makes the same changes without one.
+Admins make these changes in Otherlode, so those events carry the admin's address. A user created just in time carries the address of the sign-in that created it. An operator or directory sync makes the same changes without one.
 
 | Label | Action | Recorded when | Actor | Target | Details |
 |---|---|---|---|---|---|

@@ -13,10 +13,10 @@ Otherlode has two hostnames. Collectors send to `https://ingest.otherlode.dev`. 
 The collector writes one JSON line to standard output for each payload Otherlode refuses for good. The line is at level `WARN`, so the collector's default log level shows it:
 
 ```json
-{"time":"2026-10-07T09:12:44.512Z","level":"WARN","msg":"dropping payload: permanent failure","namespace":"","service":"checkout","instance":"3f1c9a","path":"/v1/otherlode/deltas","error":"backend returned 401 Unauthorized"}
+{"time":"2026-10-07T09:12:44.512Z","level":"WARN","msg":"dropping payload: permanent failure","namespace":"","service":"checkout","instance":"3f1c9a","path":"/v1/otherlode/deltas","error":"backend returned 401 Unauthorized","backend_error":"unauthorized"}
 ```
 
-The `error` field ends with the status Otherlode sent. The `path` field names the payload: `/v1/otherlode/deltas`, `/v1/otherlode/manifest`, `/v1/otherlode/static-baseline` or `/v1/otherlode/class-listing`. The collector logs only the status and never the response body, so the bodies below are what you see when you call ingest with `curl`.
+The `error` field ends with the status Otherlode sent. The `path` field names the payload: `/v1/otherlode/deltas`, `/v1/otherlode/manifest`, `/v1/otherlode/static-baseline` or `/v1/otherlode/class-listing`. When Otherlode's body is JSON with an `error` string, the line adds that string as `backend_error`, cut to 64 bytes. A plain-text body adds nothing, so for those the bodies below are what you see when you call ingest with `curl`.
 
 The collector retries 429, 502, 503, 504 and a failed connection. It drops any other non-2xx answer at once with `dropping payload: permanent failure`. After 5 minutes of retries, by default, it drops the payload with `dropping payload: retry budget exhausted`. [Send data from your collector](connect) covers the setup.
 
@@ -31,7 +31,7 @@ Create an ingest key on the **API keys** page, then set it as the collector's fo
 
 ### backend returned 403
 
-Otherlode answers 403 with one of three bodies. The collector logs only the status, so work through them in order. If your tenant does not [require redacted payloads](require-redaction), only the first applies. If it does, the **Refused payloads** table on the **Redaction** page in the admin area counts the other two by reason.
+Otherlode answers 403 with one of three bodies, and the collector's line names which one in its `backend_error` field: `this route needs an ingest key`, `redaction_required` or `redaction_secret_mismatch`. If your tenant does not [require redacted payloads](require-redaction), only the first applies. If it does, the **Refused payloads** table on the **Redaction** page in the admin area counts the other two by reason.
 
 Otherlode answers `{"error":"this route needs an ingest key"}` when the key is valid but has the `read` scope, and ingest takes only an `ingest` key. A `read` key cannot send reports, and an `ingest` key cannot read anything back. Replace the forward token with an `ingest` key. See [Manage API keys](api-keys).
 
@@ -63,13 +63,13 @@ Set the forward URL to `https://ingest.otherlode.dev` and nothing more, in `OTHE
 
 ### backend returned 400
 
-Otherlode rejected the content. A collector that forwards what an Otherlode agent sent rarely hits this. The body is one of these:
+Otherlode rejected the content. A collector runs the same checks before it forwards a payload, so it gets this only when it runs older checks than Otherlode, or when something changed the payload between them. `failed to read body` also comes when the body takes more than 15 seconds to arrive. The body is one of these:
 
-- `invalid delta batch: <reason>`, `invalid manifest: <reason>`, `invalid static baseline: <reason>` or `invalid class listing: <reason>`. The reason is one of `missing resource`, `resource.service_name is empty`, `resource.service_instance_id is empty`, `resource.run_id is empty`, or `resource.service_name is ".."`. A namespace of `.` or `..` is refused the same way, as `resource.service_namespace is ".."`. A value over 1024 bytes in `service_name`, `service_version`, `service_instance_id`, `environment`, `run_id`, `service_namespace` or `agent_version` is refused with the field and its length, as in `resource.run_id is 5000 bytes, over the 1024-byte limit`. A static baseline can also fail with `scanned_at is not set`, `chunk_count must be at least 1`, `chunk_index is negative` or `chunk_index is out of range for chunk_count`. A class listing can fail with `listed_at is not set` or the same three chunk reasons. A manifest can fail with `dependencies[N].identities is empty`, where `N` is the position of a dependency that lists no identity.
+- `invalid delta batch: <reason>`, `invalid manifest: <reason>`, `invalid static baseline: <reason>` or `invalid class listing: <reason>`. The reason is one of `missing resource`, `resource.service_name is empty`, `resource.service_instance_id is empty`, `resource.run_id is empty`, `resource.<field> holds a NUL byte`, `<list>[N].<field> is out of range`, `classes_failed_to_initialize[N].reason is not set`, or `resource.service_name is "..", which no URL path can name`. A namespace of `.` or `..` is refused the same way, as `resource.service_namespace is "..", which no URL path can name`. A value over 1024 bytes in `service_name`, `service_version`, `service_instance_id`, `environment`, `run_id`, `service_namespace` or `agent_version` is refused with the field and its length, as in `resource.run_id is 5000 bytes, over the 1024-byte limit`. A static baseline can also fail with `scanned_at is not set`, `chunk_count must be at least 1`, `chunk_index is negative` or `chunk_index is out of range for chunk_count`. A class listing can fail with `listed_at is not set` or the same three chunk reasons. A manifest can fail with `dependencies[N].identities is empty`, where `N` is the position of a dependency that lists no identity.
 - `malformed delta batch`, `malformed manifest`, `malformed static baseline` or `malformed class listing`. The body is not valid protobuf.
 - `failed to read body`.
 
-Something other than an agent is posting to the collector, or something changed the payload on the way. Find the sender with the `service` and `instance` fields of the log line. See [the agent's configuration](/docs/agent/configuration) for service names.
+Upgrade the collector, or remove what changes the payload between the collector and Otherlode. Find the sender with the `service` and `instance` fields of the log line. See [the agent's configuration](/docs/agent/configuration) for service names.
 
 ### backend returned 413
 
@@ -121,7 +121,7 @@ A key names one tenant, and the services it delivers show only in that tenant. I
 
 ### The service is listed under another name
 
-A service with no name set reports as `unknown_service`. The **Services** page marks it with a **name not set** badge. Other services with no name in the same namespace merge into it. Set `OTHERLODE_SERVICE_NAME` or `OTEL_SERVICE_NAME` on the service. A service with no namespace sits under **not named** when other services have a namespace. See [Service identity](/docs/agent/configuration#service-identity).
+A service with no name set reports as `unknown_service:java`. The **Services** page marks it with a **Name not set** badge. Other services with no name in the same namespace merge into it. Set `OTHERLODE_SERVICE_NAME` or `OTEL_SERVICE_NAME` on the service. A service with no namespace sits under **not named** when other services have a namespace. See [Service identity](/docs/agent/configuration#service-identity).
 
 ### The service is not tracked
 
@@ -145,7 +145,7 @@ Some pages say `No instances in this scope.`, `No class failed to load in this s
 
 ### The overview shows no graph
 
-With no run in scope, the graph area reads `No run in scope`. No run matches the scope you picked, and the **Instances** fact in the evidence list reads `0`. It reads `Nothing judged` when every run that matches the scope is a stripped run, described [below](#an-instance-is-kept-out-of-every-finding). The **Instances** fact then reads like `2, all kept out of every finding`. It reads `No endpoints or entry methods to draw` when a run is in scope and none of them knows an entry method, or an endpoint that is not an [outside route](findings#outside-routes), which includes a service whose code holds nothing Otherlode judges, such as only inline or generated methods. When a run reported a framework marker, Otherlode's label for it follows, such as `A grpc-java server started`: routing the agent does not count was set up in that run. See [Routing whose routes are not counted](inventory#routing-whose-routes-are-not-counted), [How findings are judged](how-it-works) and [the code path graph](unreached-clusters#the-code-path-graph).
+With no run in scope, the graph area reads `No run in scope`. No run matches the scope you picked, and the **Instances** fact in the evidence list reads `0`. It reads `Nothing judged` when every run that matches the scope is a stripped run, described [below](#an-instance-is-kept-out-of-every-finding). The **Instances** fact then reads like `2, all kept out of every finding`. It reads `No endpoints or entry methods to draw` when runs are in scope but none knows an entry method, or an endpoint that is not an [outside route](findings#outside-routes), which includes a service whose code holds nothing Otherlode judges, such as only inline or generated methods. When a run reported a framework marker, Otherlode's label for it follows, such as `A grpc-java server started`: routing the agent does not count was set up in that run. See [Routing whose routes are not counted](inventory#routing-whose-routes-are-not-counted), [How findings are judged](how-it-works) and [the code path graph](unreached-clusters#the-code-path-graph).
 
 ### The report stays old or its refresh keeps failing
 
@@ -186,7 +186,7 @@ See [Findings](findings).
 
 ### Rows vanish after you set Known for at least or Stale after
 
-Never hit and Stale each have a day filter: **Known for at least (days)** and **Stale after (days)**. A branch outcome with no service-wide dates takes its dates from the in-scope runs, so a day filter cannot prove its age. The page leaves it out and says `1 branch outcome was left out because its dates are not known for the whole service.` or `4 branch outcomes were left out because their dates are not known for the whole service.` The API counts them in `capped_hidden`. Clear the filter to see them. A keyless outcome of an environment that has lost a production run stays out of the list with or without the filter, since Otherlode makes no claim about it. The API counts it in `capped_hidden` too. See [Dates](dates).
+Never hit and Stale each have a day filter: **Known for at least (days)** and **Stale after (days)**. A condition path with no service-wide dates takes its dates from the in-scope runs, so a day filter cannot prove its age. The page leaves it out and says `1 condition path was left out because its dates are not known for the whole service.` or `4 condition paths were left out because their dates are not known for the whole service.` The API counts them in `capped_hidden`. Clear the filter to see them. A keyless outcome of an environment that has lost a production run stays out of the list with or without the filter, since Otherlode makes no claim about it. The API counts it in `capped_hidden` too. See [Dates](dates).
 
 ### An instance is kept out of every finding
 
@@ -198,7 +198,7 @@ An endpoint whose framework module switched itself off reads **Module disabled**
 
 ### The dependency lists look short
 
-The **Dependencies** page says `The dependency listing has not fully arrived from 2 instances.` The listing arrives after startup, so a new instance has none for a while. Two more notes can follow: `No in-scope run records references, so a loaded dependency reads as loaded and only unloaded is judged.` and `Unreferenced and unreached are not told apart, because some run that judged a dependency has no complete static baseline. Such a dependency reads as no live reference.` See [Dependencies](/docs/agent/dependencies).
+The **Dependencies** page says `The dependency listing has not fully arrived from 2 instances.` The listing arrives after startup, so a new instance has none for a while. Two more notes can follow: `No in-scope run records references.` and `Some run that judged a dependency has no complete static baseline.` See [Dependencies](/docs/agent/dependencies).
 
 ### A finding you did not expect appears on a new service
 
@@ -218,8 +218,8 @@ After a failed sign-in, the page **Sign-in did not complete** shows one of the m
 | `The sign-in response did not match this browser. Try again.` | The response does not match the sign-in this browser began, for example because you began a second sign-in in another tab. Begin again and finish in one tab. |
 | `Sign-in was cancelled.` | The sign-in page of the identity service reported an error, or you cancelled. Try again. |
 | `Sign-in could not be completed. Try again in a moment.` | Otherlode could not finish the exchange or read your user. Try again. |
-| `That account is not set up here. An admin or an operator must add your email before you can sign in. If you could sign in here before, ask an admin to delete your user and add it again.` | No user matches your email. It also shows when the tenant is being deleted or its single sign-on link is removed. Ask an admin to add your email. See [Manage users and roles](users). |
-| `Your organization requires single sign-on. Sign in again through your company's single sign-on. If you do not see it, ask your admin.` | The tenant enforces single sign-on, and you signed in another way. Use your company's single sign-on. See [Set up single sign-on](sso). |
+| `No user is set up for you here. An admin or an operator must add your email before you can sign in. If you could sign in here before, ask an admin to delete your user and add it again.` | No user matches your email. It also shows when the tenant is being deleted or its single sign-on link is removed. Ask an admin to add your email. See [Manage users and roles](users). |
+| `Your tenant requires single sign-on. Sign in again through your company's single sign-on. If you do not see it, ask your admin.` | The tenant enforces single sign-on, and you signed in another way. Use your company's single sign-on. See [Set up single sign-on](sso). |
 | `Impersonated sign-ins are not accepted here.` | The sign-in came from an impersonation session. Otherlode refuses these. Sign in as yourself. |
 | `That way of signing in is not accepted here. Sign in with Google, Microsoft, GitHub or your company's single sign-on.` | The sign-in used a method such as a password or a magic link. Use one of the four named. |
 | `Sign-in needs one of your organizations picked, which this page cannot do. Ask your admin.` | The identity service asked for one of your organizations to be picked and Otherlode could not finish the sign-in, or it returned a single sign-on sign-in with no organization. Ask an admin to check your single sign-on connection. |
@@ -229,7 +229,7 @@ If you can reach more than one tenant, a page titled **Choose a tenant** follows
 
 ### AuthKit's sign-in page appears with no message
 
-When your session ends, the browser goes to AuthKit's sign-in page and says nothing. A session ends when you sign out, when it sits idle too long, when it reaches its maximum age, when an admin deletes your user, and when the tenant enforces single sign-on and your session did not come through it. Sign in again. See [Sign-in and sessions](sign-in).
+When your session ends, the browser goes to AuthKit's sign-in page and says nothing. A session ends when you sign out, when it sits idle too long, when it reaches its maximum age, when an admin deletes your user, when the tenant enforces single sign-on and your session did not come through it, when the tenant's single sign-on organization is unlinked and your session came through it, and when the tenant is deleted. Sign in again. See [Sign-in and sessions](sign-in).
 
 ### A page shows only the word unavailable
 
@@ -247,7 +247,7 @@ Only admins can see this page.
 
 This replaces **Users**, **API keys**, **Single sign-on**, **Redaction** and **Audit log** for a viewer. A viewer reads everything in the tenant and changes nothing. Ask an admin to change your role on the **Users** page, then reload the page. See [Manage users and roles](users).
 
-## The API answers 401 or 403
+## The API answers 401, 403, 404 or 503
 
 Every body is JSON, in the shape `{"error":"<message>"}`. The read API sits under `/api/v1/` on `app.otherlode.dev` and takes `Authorization: Bearer <key>` with a `read` key. See [Read API](api).
 
