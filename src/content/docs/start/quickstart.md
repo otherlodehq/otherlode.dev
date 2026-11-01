@@ -21,7 +21,7 @@ You need these four things:
 
 The collector sends this key with everything it forwards, and the key names your tenant.
 
-1. Sign in at `https://app.otherlode.dev` and open the menu under your tenant's name at the right of the top bar, then click **Admin**.
+1. Sign in at `https://app.otherlode.dev`, open the tenant menu in the top bar, then click **Admin**.
 2. Open **API keys** and click **Create key**.
 3. Enter a name, choose the scope **Ingest**, and create the key.
 4. Copy the key. The page shows it only once.
