@@ -238,12 +238,13 @@ The same data is at the `never-initialized` route.
 
 ## Never instantiated
 
-**Never instantiated** claims that no run in scope created an instance of a class that was loaded. A class is never instantiated when all of these hold:
+**Never instantiated** claims that no run in scope ran a constructor or an instance method of a class that was loaded. A class is never instantiated when all of these hold:
 
 - A run in scope loaded the class.
 - The class is not never initialised.
 - The class has a constructor and at least one instance method that the agent probes.
 - No constructor ran in any run in scope, and a read that names no version and no seen-within window finds no hit of a constructor recorded for the service.
+- No instance method of the class ran in any run in scope, including a generated or inline one, and a read that names no version and no seen-within window finds no hit of one recorded for the service. Java deserialization and libraries that create objects without their constructor, such as Gson, Kryo and Objenesis, make instances whose constructor never runs.
 - Every run in scope that knows the constructors is settled.
 - No run in scope skipped the class, and, on a read that names no version and no seen-within window, no environment in scope has ever had a run skip it.
 

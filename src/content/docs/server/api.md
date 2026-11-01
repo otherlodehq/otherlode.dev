@@ -61,7 +61,7 @@ A service that only [test runs](/docs/agent/test-runs) reached is missing from `
 
 ## Identifiers are the agent's
 
-The API names things the way the agent does and never returns a database row id. A class is its dotted binary name, such as `com.acme.OrderService` or `com.acme.Outer$Inner`. A method is its class, its name and its JVM descriptor, such as `(Ljava/lang/String;I)V`. An endpoint is its `verb`, its `route_template` and its `template_kind`. A dependency is its `identity_key`, the sorted `group:artifact` pairs of its identities joined with commas. An instance is its `instance_id`, and a run is its `run_id`. See the agent's [classes](/docs/agent/classes), [endpoints](/docs/agent/endpoints) and [dependencies](/docs/agent/dependencies) pages for how each name is formed.
+The API names things the way the agent does and never returns a database row id. A class is its dotted binary name, such as `com.acme.OrderService` or `com.acme.Outer$Inner`. A method is its class, its name and its JVM descriptor, such as `(Ljava/lang/String;I)V`. An endpoint is its `verb`, its `route_template` and its `template_kind`. A dependency is its `identity_key`, the sorted `group:artifact` pairs of its identities joined with commas. A backslash, colon or comma inside a group or an artifact gets a backslash before it, so a group `a:b` reads `a\:b`. An instance is its `instance_id`, and a run is its `run_id`. See the agent's [classes](/docs/agent/classes), [endpoints](/docs/agent/endpoints) and [dependencies](/docs/agent/dependencies) pages for how each name is formed.
 
 ## Read the shared parameters and fields
 
@@ -395,7 +395,7 @@ Four routes list classes by one finding each. All four take `class_prefix`, and 
 |---|---|---|
 | `/never-loaded` | Classes a complete static baseline declared that no in-scope run loaded. A class that failed to load is left out. | None |
 | `/never-initialized` | Loaded classes whose static initialiser never ran. | `known_for_days` |
-| `/never-instantiated` | Loaded classes with a constructor and an instance method, where no constructor ran. | `known_for_days` |
+| `/never-instantiated` | Loaded classes with a constructor and an instance method, where no constructor and no instance method ran. | `known_for_days` |
 | `/failed-to-load` | Classes the agent wove that the JVM never defined. Each is a deployment problem and never dead code. | None |
 | `/failed-to-initialize` | Classes the JVM defined whose verification or static initialiser failed, and the subtypes that fail with them. Each is a deployment problem and never dead code. | None |
 
@@ -481,7 +481,7 @@ Classes a scan found but could not read or probe. It takes `class_prefix`, and t
 
 Classes, methods, endpoints and dependencies that every live run of the environment proves absent. See [Removed](inventory#removed) for what proves it. The route takes `class_prefix`, and the response is `{"rows", "total", "as_of", "from_snapshot"}`. The route is [read from a snapshot](#routes-read-from-a-snapshot) for most scopes, and answers `202` while the snapshot is computing. So without a `class_prefix` its `total` equals the sum of the report's `removed` counts, and a class on this list is in none of the findings that the same snapshot holds. A request that names a `version` or an `active_within_days` lists no rows, and its `total` is 0.
 
-Rows come in this order: by kind (`class`, `method`, `endpoint`, `dependency`), and then within a kind by the identifiers as Otherlode stores them, compared byte by byte. A class row goes by `class_name`. A method row goes by `class_name`, `method_name` and `method_descriptor`. An endpoint row goes by `verb`, then `route_template`, then `template_kind`, so the stored verb `*`, which stands for any verb, comes before every named verb. A dependency row goes by `identity_key`, which is its `group:artifact` pairs sorted and joined with commas, so a dependency whose first identity has no group comes before one that has a group, and the order is not that of the names a page shows.
+Rows come in this order: by kind (`class`, `method`, `endpoint`, `dependency`), and then within a kind by the identifiers as Otherlode stores them, compared byte by byte. A class row goes by `class_name`. A method row goes by `class_name`, `method_name` and `method_descriptor`. An endpoint row goes by `verb`, then `route_template`, then `template_kind`, so the stored verb `*`, which stands for any verb, comes before every named verb. A dependency row goes by `identity_key`, which is its `group:artifact` pairs sorted and joined with commas, so a dependency whose first identity has no group comes before one that has a group, and the order is not that of the names a page shows. The backslashes that escape a separator are part of the key and sort with it.
 
 A row has the fields of its kind and no others:
 
