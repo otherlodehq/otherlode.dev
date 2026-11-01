@@ -75,7 +75,7 @@ The collector accepts a payload from an agent with `202`, queues it, and forward
 
 The collector retries 429, 502, 503 and 504, and any request that gets no response. It waits at least the `Retry-After` time, backs off between attempts, and drops the payload after 5 minutes of retries. Any other status is final, so the collector drops the payload at once. A 401 or 403 does not fix itself. For a key problem, create or fix the key, set it on the collector, and restart the collector. For a redaction refusal, see [backend returned 403](troubleshooting#backend-returned-403). The collector does not send a dropped payload again.
 
-Ingest answers 400 for a body that is not valid protobuf, lacks a service name, instance ID or run ID, carries an identity value over 1024 bytes or holding a NUL character, carries an agent time before 1970 or after the year 9999, names a class that failed to initialise with no reason, or takes more than 15 seconds to arrive, and 415 for the wrong content type. Your collector rejects such payloads before it forwards them, so you see these only from a sender that is not your collector.
+Ingest answers 400 for a body that is not valid protobuf, lacks a service name, instance ID or run ID, carries an identity value over 1024 bytes or holding a NUL character, carries an agent time before 1970 or after the year 9999, names a class that failed to initialise with no reason, lists a dependency with no identities, or takes more than 15 seconds to arrive, and 415 for the wrong content type. Your collector rejects such payloads before it forwards them, so you see these only from a sender that is not your collector.
 
 ### The ingest limit
 

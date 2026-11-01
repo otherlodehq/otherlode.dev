@@ -166,7 +166,7 @@ Not every never-hit method is in a cluster the graph knows. A method called from
 
 ### The node panel
 
-Click an endpoint or method to open its panel. Drag the panel's edge, or press the left and right arrow keys on it, to change its width. The browser remembers the width. Escape closes the panel.
+Click an endpoint or method to open its panel. Drag the panel's edge, or press the left and right arrow keys on it, to change its width. The browser remembers the width until you sign out. Escape closes the panel.
 
 An endpoint's panel shows the status the Endpoints page shows for it. A never-loaded method's **Calls** tab lists callers only.
 
