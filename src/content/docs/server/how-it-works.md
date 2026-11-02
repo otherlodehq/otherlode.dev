@@ -58,13 +58,15 @@ An environment's snapshot covers that environment's runs, and a version's snapsh
 
 With nothing changed, Otherlode still refreshes every snapshot at least once every 2 hours on the Team and Enterprise plans, and every 6 hours on the free plan, since day counts move with the clock.
 
-A change that can take findings away refreshes without the wait, on every plan:
+A change that can take findings away, or release findings held back, refreshes without the wait, on every plan:
 
-- a run that ends or passes its live deadline refreshes the snapshots with no version;
+- a run that ends refreshes the snapshots with no version;
+- a run that passes its live deadline refreshes the snapshots it counts in;
+- a run that becomes settled refreshes the service's snapshots, since never loaded waits for it;
 - a class listing or static baseline that completes refreshes the snapshot with no environment and its environment's snapshot;
 - a run whose counts fall behind refreshes the service's snapshots.
 
-A version's snapshot holds no removal, so it waits for the gap. A test run's or a stripped run's listing or baseline doesn't count for removal, so it waits too.
+A version's snapshot holds no removal, so a listing or baseline that completes waits for the gap there. A test run's or a stripped run's listing or baseline doesn't count for removal, so it waits too.
 
 A refresh job runs every 5 minutes. So on the Team and Enterprise plans the findings on a snapshot page trail the data by up to about 20 minutes, the interval plus the job's period, and counts and dates on the page, such as hit totals and last-hit times, can trail by up to about 2 hours. On the free plan both can trail by up to about 6 hours. Each trails more while the refresh has a backlog. The report and the pages trail together, so a panel count from the report matches the page it links to when both come from the snapshot. A page worked out when you read can differ from its count by what arrived since the snapshot. [Counts in the panel](findings#counts-in-the-panel) lists which counts come from the report.
 
@@ -103,7 +105,7 @@ So Otherlode stores a flagged run and shows it, labelled as sent through a colle
 
 ## Never loaded needs a complete scan
 
-A class that never loads sends nothing, so it looks the same as a class that does not exist. The only evidence is the agent's static baseline, an inventory of the classes it found on the classpath, taken without loading them. Otherlode calls a class never loaded only when two things hold. A complete baseline declares the class, and no in-scope run mentions it anywhere else. A read with no version or "seen within" filter also counts a class that any production run of the service loaded, in the environments in scope.
+A class that never loads sends nothing, so it looks the same as a class that does not exist. The only evidence is the agent's static baseline, an inventory of the classes it found on the classpath, taken without loading them. Otherlode calls a class never loaded only when three things hold. A complete baseline declares the class, no in-scope run mentions it anywhere else, and no live run that could have loaded it is still not settled. See [runs that are not settled](scope#runs-that-are-not-settled). A read with no version or "seen within" filter also counts a class that any production run of the service loaded, in the environments in scope.
 
 The scan arrives in chunks. A partial scan cannot tell a missing class from one that has not been sent yet, so Otherlode counts a scan only when every chunk has arrived. A service with no complete scan in scope has an empty never-loaded list. That means no evidence. It does not mean no dead classes, and the report's count of instances with a complete baseline tells the two apart.
 
