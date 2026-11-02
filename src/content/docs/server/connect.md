@@ -59,21 +59,21 @@ A test run never adds a service to the list. A service appears only once a produ
 
 ## Read what ingest answers
 
-The collector accepts a payload from an agent with `202`, queues it, and forwards it in the background. The status Otherlode returns shows up only in the collector's log. When a payload is dropped, the collector logs a warning whose message starts with `dropping payload` and whose `error` field reads `backend returned <status>`, such as `backend returned 401 Unauthorized`.
+The collector forwards each payload to Otherlode while the agent waits, and answers the agent from Otherlode's answer. It answers `202` only when Otherlode answered `202`. When Otherlode refuses a payload, the collector logs a line whose `error` field reads `backend returned <status>`, such as `backend returned 401 Unauthorized`, and the agent keeps the payload and sends it again on its next flush.
 
 | Status | Body | Meaning | What the collector does |
 |---|---|---|---|
-| 202 | none | Otherlode accepted the payload. | Counts it as delivered. |
-| 401 | `{"error":"unauthorized"}` | The `Authorization` header is missing or is not a bearer key, or the key is unknown or revoked. | Drops the payload. |
-| 403 | `{"error":"this route needs an ingest key"}` | The key is valid but has the `read` scope. | Drops the payload. |
-| 403 | `{"error":"redaction_required"}` | Your tenant [requires redacted payloads](require-redaction), and the payload carried no fingerprint, or a malformed one. | Drops the payload. |
-| 403 | `{"error":"redaction_secret_mismatch"}` | Your tenant requires redacted payloads, and the payload carried the fingerprint of another secret. | Drops the payload. |
-| 413 | `request body too large` | The request body is over 16 MiB. | Drops the payload. |
-| 413 | `payload has too many elements` | The payload holds more entries than the limit for its kind. Every message and every element of a repeated field counts, at every depth. The limits are 500,000 entries for a delta batch, 100,000 for a manifest chunk, 200,000 for a static baseline chunk and 100,000 for a class listing chunk. | Drops the payload. |
-| 429 | `rate limit exceeded`, with `Retry-After` | Your tenant sent more requests than its limit allows. | Retries. |
-| 503 | `{"error":"unavailable"}`, or no body with `Retry-After: 5` or `Retry-After: 1` | Otherlode could not check the key or read whether your tenant requires redacted payloads, or, with no body, could not store the payload (`Retry-After: 5`) or was busy with other payloads (`Retry-After: 1`). | Retries. |
+| 202 | none | Otherlode accepted the payload. | Answers the agent `202`. |
+| 401 | `{"error":"unauthorized"}` | The `Authorization` header is missing or is not a bearer key, or the key is unknown or revoked. | Answers the agent `401`. |
+| 403 | `{"error":"this route needs an ingest key"}` | The key is valid but has the `read` scope. | Answers the agent `403`. |
+| 403 | `{"error":"redaction_required"}` | Your tenant [requires redacted payloads](require-redaction), and the payload carried no fingerprint, or a malformed one. | Answers the agent `403`. |
+| 403 | `{"error":"redaction_secret_mismatch"}` | Your tenant requires redacted payloads, and the payload carried the fingerprint of another secret. | Answers the agent `403`. |
+| 413 | `request body too large` | The request body is over 16 MiB. | Answers the agent `413`. |
+| 413 | `payload has too many elements` | The payload holds more entries than the limit for its kind. Every message and every element of a repeated field counts, at every depth. The limits are 500,000 entries for a delta batch, 100,000 for a manifest chunk, 200,000 for a static baseline chunk and 100,000 for a class listing chunk. | Answers the agent `413`. |
+| 429 | `rate limit exceeded`, with `Retry-After` | Your tenant sent more requests than its limit allows. | Answers the agent `429` with the same `Retry-After`. |
+| 503 | `{"error":"unavailable"}`, or no body with `Retry-After: 5` or `Retry-After: 1` | Otherlode could not check the key or read whether your tenant requires redacted payloads, or, with no body, could not store the payload (`Retry-After: 5`) or was busy with other payloads (`Retry-After: 1`). | Answers the agent `503` with `Retry-After: 5`. |
 
-The collector retries 429, 502, 503 and 504, and any request that gets no response. It waits at least the `Retry-After` time, backs off between attempts, and drops the payload after 5 minutes of retries. Any other status is final, so the collector drops the payload at once. A 401 or 403 does not fix itself. For a key problem, create or fix the key, set it on the collector, and restart the collector. For a redaction refusal, see [backend returned 403](troubleshooting#backend-returned-403). The collector does not send a dropped payload again.
+The collector makes one attempt and retries nothing; the agent sends the payload again on its next flush, and ends a send at once when `Retry-After` is over 2 seconds. Nothing is lost while the agent keeps running. A 401 or 403 does not fix itself. For a key problem, create or fix the key, set it on the collector, and restart the collector. For a redaction refusal, see [backend returned 403](troubleshooting#backend-returned-403).
 
 Ingest answers 400 for a body that is not valid protobuf, lacks a service name, instance ID or run ID, carries an identity value over 1024 bytes or holding a NUL character, carries an agent time before 1970 or after the year 9999, names a class that failed to initialise with no reason, lists a dependency with no identities, or takes more than 15 seconds to arrive, and 415 for the wrong content type. Your collector rejects such payloads before it forwards them, so you see these only from a sender that is not your collector.
 
