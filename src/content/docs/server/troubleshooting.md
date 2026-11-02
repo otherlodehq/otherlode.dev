@@ -8,17 +8,15 @@ Every entry starts from something you see: a collector log line, an empty page, 
 
 Otherlode has two hostnames. Collectors send to `https://ingest.otherlode.dev`. People and scripts use `https://app.otherlode.dev`, which serves the web app and the read API. Each hostname answers only its own routes.
 
-## The collector logs a dropped payload
+## The collector logs a refused payload
 
-The collector writes one JSON line to standard output for each payload Otherlode refuses for good. The line is at level `WARN`, so the collector's default log level shows it:
+The collector forwards each payload while the agent waits and answers the agent from Otherlode's answer, so the agent keeps any payload Otherlode did not store and sends it again. The collector writes a JSON line to standard output for the failure, at most one a minute for each payload type and cause. A `4xx` from Otherlode logs at level `WARN`:
 
 ```json
-{"time":"2026-10-07T09:12:44.512Z","level":"WARN","msg":"dropping payload: permanent failure","namespace":"","service":"checkout","instance":"3f1c9a","path":"/v1/otherlode/deltas","error":"backend returned 401 Unauthorized","backend_error":"unauthorized"}
+{"time":"...","level":"WARN","msg":"sink refused delta batch","error":"sink answered Unauthorized: backend returned 401 Unauthorized for service \"demo\" instance \"i1\"","status":401,"unlogged_sink_refusals":0,"backend_error":"unauthorized"}
 ```
 
-The `error` field ends with the status Otherlode sent. The `path` field names the payload: `/v1/otherlode/deltas`, `/v1/otherlode/manifest`, `/v1/otherlode/static-baseline` or `/v1/otherlode/class-listing`. When Otherlode's body is JSON with an `error` string, the line adds that string as `backend_error`, cut to 64 bytes. A plain-text body adds nothing, so for those the bodies below are what you see when you call ingest with `curl`.
-
-The collector retries 429, 502, 503, 504 and a failed connection. It drops any other non-2xx answer at once with `dropping payload: permanent failure`. After 5 minutes of retries, by default, it drops the payload with `dropping payload: retry budget exhausted`. [Send data from your collector](connect) covers the setup.
+Any other failure logs at level `ERROR` with a `reason`, such as `server_error` or `timeout`. The `error` field ends with the status Otherlode sent and names the service and instance. When Otherlode's body is JSON with an `error` string, the `WARN` line adds that string as `backend_error`, cut to 64 bytes. A plain-text body adds nothing, so for those the bodies below are what you see when you call ingest with `curl`. [Send data from your collector](connect) covers the setup, and the collector's [troubleshooting](/docs/collector/troubleshooting#otherlode-did-not-store-a-payload) lists every `reason`.
 
 ### backend returned 401
 
@@ -83,18 +81,18 @@ While the collector refuses a run's delta batches, the agent keeps the hits and 
 
 Otherlode answers `rate limit exceeded` with a `Retry-After` header in whole seconds. Each tenant has one request limit on ingest, shared by all its ingest keys, so a second key adds nothing. A collector that forwards a whole fleet can hit it in a burst.
 
-The collector waits for the `Retry-After` time and sends again, so a 429 that clears is harmless. A payload is lost only when the 5-minute retry budget runs out first. An operator sets each tenant's limit. If a single collector reaches it routinely, email [support@otherlode.dev](mailto:support@otherlode.dev) to ask for a higher one.
+The collector answers the agent `429` with the same `Retry-After`, and the agent sends the payload again on its next flush, so a 429 that clears loses nothing. An operator sets each tenant's limit. If a single collector reaches it routinely, email [support@otherlode.dev](mailto:support@otherlode.dev) to ask for a higher one.
 
 ### backend returned 502, 503 or 504
 
-The collector retries all three. Otherlode uses 503 for four cases:
+The collector answers the agent `503` for all three, and the agent sends the payload again on its next flush. Otherlode uses 503 for four cases:
 
 - `{"error":"unavailable"}`. Otherlode could not check the key, or could not read whether your tenant requires redacted payloads. This clears on its own.
 - The text `unavailable`. The request ended while it waited for Otherlode's first read of your tenant's request limit, as when the sender gave up on it. A failed read of the limit gives no 503. Otherlode applies its default limit and reads your tenant's limit again 5 seconds later.
-- An empty body with `Retry-After: 5`. Otherlode could not store a valid payload. The collector waits at least 5 seconds before it sends the payload again.
-- An empty body with `Retry-After: 1`. Otherlode was busy with other payloads. The collector waits at least a second before it sends the payload again.
+- An empty body with `Retry-After: 5`. Otherlode could not store a valid payload.
+- An empty body with `Retry-After: 1`. Otherlode was busy with other payloads.
 
-If the retries run out, the line `dropping payload: retry budget exhausted` follows. A proxy you run can also produce 502 and 504. The collector does not retry a plain 500, and drops that payload at once.
+A proxy you run can also produce 502 and 504. A plain 500 gets the same `503` to the agent.
 
 ### A request you send with curl
 
@@ -109,7 +107,7 @@ The **Services** page lists a service once a production run has reached Otherlod
 
 ### The collector's payloads are refused
 
-If the collector log holds `dropping payload` lines for this service, fix those first. See [the entries above](#the-collector-logs-a-dropped-payload).
+If the collector log holds `sink refused` or `sink rejected` lines for this service, fix those first. See [the entries above](#the-collector-logs-a-refused-payload).
 
 ### Only test runs have arrived
 
@@ -157,7 +155,7 @@ Every finding covers only the runs in scope: the environment you pick, an option
 
 ### Never loaded is empty
 
-**Never loaded** needs a complete static scan. A class is listed only when some in-scope run's latest complete scan declares it and no in-scope run loaded it. The top bar reads `3 instances, 2 with a complete baseline` when one instance has none, and the **Instances** fact in the evidence list reads `3, 2 with a complete baseline`. Turn on `staticBaselineEnabled` in the agent and wait for a scan to finish. A class the scan cannot see, such as one from a WAR deployed after startup, is never listed. See [Never loaded](/docs/agent/classes#never-loaded).
+**Never loaded** needs a complete static scan. A class is listed only when some in-scope run's latest complete scan declares it and no in-scope run loaded it. The top bar reads `3 instances, 2 with a complete baseline` when one instance has none, or when its only baseline came from a run that stopped before it delivered any counts, and the **Instances** fact in the evidence list reads `3, 2 with a complete baseline`. Turn on `staticBaselineEnabled` in the agent and wait for a scan to finish. A run that has not delivered its counts yet holds the list back too: the classes its scan declares are left out, and so is every class while that run has no complete scan. The **Instances** page marks the run. The list fills at the run's first flush, or when the run ends or passes its live deadline. A class the scan cannot see, such as one from a WAR deployed after startup, is never listed. See [Never loaded](/docs/agent/classes#never-loaded).
 
 ### A class is under Failed to load and not under Never loaded
 

@@ -45,7 +45,7 @@ The counts beside **Never hit**, **Never called**, **Never supplied**, **Never l
 
 A deploy that deletes code leaves the old runs behind until they expire, 30 days by default. A finding taken over those runs would list the deleted code as unused. So Otherlode keeps removed code out of every finding, the code path graph, the clusters and every total, on a full read. A full read names no version and no seen-within window, and it may name an environment. The code is on the [Removed](inventory#removed) list instead, with the date the last run that held it stopped.
 
-A **live run** is a run that has not ended cleanly and has not been silent for more than three of its flush intervals. The flush interval is the `flush_interval_seconds` the agent sends. A run that sent none stays live until it ends cleanly or expires. When no run of an environment is live, the runs that were live when the last one stopped judge the environment, so a service that is switched off keeps its newest picture.
+A **live run** is a run that has not ended cleanly and has not been silent for more than three of its flush intervals. The flush interval is the `flush_interval_seconds` the agent sends. A run that sent none stays live for removal until it ends cleanly or expires. For holding a never-loaded claim back, it stops being live after an hour of silence. When no run of an environment is live, the runs that were live when the last one stopped judge the environment, so a service that is switched off keeps its newest picture.
 
 A live run proves a thing absent in one of these ways. Absence from a probe manifest proves nothing, since a class may not have loaded yet.
 
@@ -172,6 +172,7 @@ A class is never loaded when all of these hold:
 
 - A run in scope sent a complete baseline that declares the class. The latest complete scan of each run counts. A scan is complete only when every chunk has arrived.
 - No run in scope loaded the class. A class that was skipped, or that a sweep found loaded where no transformer saw it, counts as loaded.
+- No run in scope that is not settled, and has not ended or passed its live deadline, could have loaded the class. A run sends its scan when it starts and the classes it loaded at its first flush, so until it is settled the classes its scan declares could have loaded. A run with no complete scan could have loaded any class. A run that ended or passed its live deadline before it delivered a delta batch is no evidence, and its scan declares nothing. See [runs that are not settled](scope#runs-that-are-not-settled).
 - No run in scope names the class as failed to load. [Failed to load](#failed-to-load) holds that class.
 - No in-scope run initialised the class and some in-scope run failed it. [Failed to initialise](#failed-to-initialise) holds that class.
 - At least one declared method of the class is not inline, not generated and not an unread shape.

@@ -143,7 +143,7 @@ A creation reaches its target as a call does, because a lambda body can run only
 | **Live** | The code has hits, and its last hit is within the stale window. |
 | **Stale** | The code has hits, its last hit is older than the stale window, and its dates are not capped. |
 | **Never hit** | The code has no hits in scope, and on a read that names no version and no seen-within window, the service has recorded no hit of it either. |
-| **Never loaded** | A complete static baseline declared the method and no run loaded its class. |
+| **Never loaded** | A complete static baseline declared the method, no run loaded its class, and no run not yet settled could have loaded it. |
 | **Not judged** | An inline method, a routine branch outcome, code with no hits that a run not yet settled knows, code with no hits that no run is evidence for, a handler the agent does not report, with no hits, a method or outcome whose dates are capped and whose last hit is older than the stale window, or a keyless branch outcome with no hits in an environment that has lost a production run. A withheld outcome's tooltip says that no claim is made because a run of its environment was removed. |
 
 On a read that names no version and no seen-within window, code with no hits in scope that the service has recorded a hit of counts as hit. The graph draws it as live or stale by its recorded dates, with a hit count of 0.
