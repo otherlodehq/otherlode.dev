@@ -97,7 +97,12 @@ For each account we keep:
 - your email address
 - your role (admin or viewer)
 - the WorkOS user ID that links your account to your sign-in
-- when the account was created and when you last signed in
+- when the account was created, when you last signed in, and when you
+  last signed in through your organisation's single sign-on
+- if your organisation's staff directory manages your account, the IDs
+  of your directory entry and of the directory
+- if your account was created the first time you signed in through
+  single sign-on, the WorkOS ID of the organisation that created it
 
 We don't keep your name or profile picture, even when your sign-in
 provider shares them.
@@ -126,6 +131,11 @@ you in and we add nothing to our database. WorkOS still makes a record
 of you when you sign in, and our logs may hold your WorkOS user ID for
 30 days. Ask us and we will delete the WorkOS record.
 
+There is one exception. Your email address can match an account at one
+customer that is already linked to a different sign-in. Then we record
+a failed sign-in in that customer's audit log, with your email address,
+your IP address and your WorkOS user ID.
+
 ### Sessions and cookies
 
 When you sign in, we set a session cookie. We store only a hash of its
@@ -140,7 +150,8 @@ The service uses these cookies and browser storage:
 | `__Host-otherlode_session` | Keeps you signed in | Up to 30 days |
 | `__Host-otherlode_login` | Protects the sign-in step from forgery | 10 minutes |
 | `__Host-otherlode_login_choice` | Holds your place while you choose an account | 5 minutes |
-| `otherlode.environment.*` (browser storage) | Remembers the environment you last chose for each service | Until you clear it |
+| `otherlode.environment.*` (browser storage) | Remembers the environment you last chose for each service | Until you sign out or clear it |
+| `otherlode.nodePanelWidth` (browser storage) | Remembers the width you set for the side panel | Until you sign out or clear it |
 
 Each one is needed for the service to work or records a choice you made
 on the page. We don't use them to track you, and we don't share them.
@@ -148,9 +159,11 @@ on the page. We don't use them to track you, and we don't share them.
 ### The audit log
 
 Each customer has an audit log that its admins can read. It records
-sign-ins, failed sign-ins, sign-outs, and changes to who can use the
-customer's account, including changes our team makes and each time our
-team lists the account's users. An entry can name you by your email
+sign-ins, failed sign-ins and sign-outs. It records changes to who can
+use the customer's account, to its API keys, and to its sign-in and
+redaction settings. It also records changes our team makes, such as to
+the customer's plan or to how long we keep its agent reports, and each
+time our team reads the account's data with our tools. An entry can name you by your email
 address and your WorkOS user ID. When a directory changes your email
 address, the entry keeps both the old and the new one.
 Entries made from your browser, such as a sign-in or a change an admin
@@ -179,8 +192,9 @@ names or request contents. A few fields can still hold personal data:
   match a pattern. It does not change the names listed above. Replacing
   is off unless the customer turns it on. When it is on, the collector
   also changes the keys the agent builds from these strings, so the keys
-  do not give the text away. A customer can ask us to refuse any report
-  that did not come through a collector with replacing turned on.
+  do not give the text away. A customer's admin can make the service
+  refuse any report that did not come through the customer's own
+  collector with replacing turned on.
 - A customer can choose an instance ID that names a machine or a
   person.
 
@@ -244,7 +258,7 @@ the safeguards that apply.
 | Data | How long |
 | --- | --- |
 | Account | Until the customer or our team removes it |
-| An email our team enters to add or change an account | Destroyed when it's used, and within 2 days if it isn't |
+| An email our team enters to add, change or remove an account | Destroyed when it's used, and within 2 days if it isn't |
 | Account choice at sign-in | Deleted within a day of expiring, 5 minutes after it starts |
 | Sessions | Deleted within a day of expiring, after 7 days without use or 30 days in total |
 | Audit log | Until the customer leaves |
@@ -252,7 +266,7 @@ the safeguards that apply.
 | Agent reports, the detail of each run of the customer's app | 30 days after the run last reported, or a longer or shorter period of at least 7 days that the customer agrees with us. A daily job deletes them |
 | Agent reports, the summary of which code each service has run and when | Until the customer leaves, or asks us to delete them |
 | Your record at WorkOS | Until the customer leaves, or you ask us to delete it |
-| Your record at WorkOS, if you have no account | Until you ask us to delete it |
+| Your record at WorkOS, if you have no account or your account was removed | Until you ask us to delete it |
 | WorkOS's event history | [WORKOS RETENTION] |
 | Request logs and our own logs | 30 days |
 | Security logs | 400 days |
@@ -261,9 +275,11 @@ the safeguards that apply.
 | Email | 2 years after our last contact, or 6 years after a customer contract ends |
 
 When a customer leaves, we delete what we hold for them: accounts,
-sessions, the audit log, agent reports and API keys, and their records
-at WorkOS. We keep a person's WorkOS record if another customer has
-also given them an account. Backups hold a copy for up to 7 more days. Logs are kept for
+sessions, the audit log, agent reports and API keys, and the WorkOS
+records of the people who still have an account with them. We keep a
+person's WorkOS record if they have also signed in to another
+customer's account with it. A person whose account was removed earlier
+keeps their WorkOS record until they ask us to delete it. Backups hold a copy for up to 7 more days. Logs are kept for
 the periods above.
 
 ## Your rights
