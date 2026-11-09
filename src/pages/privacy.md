@@ -267,7 +267,7 @@ the safeguards that apply.
 | Agent reports, the summary of which code each service has run and when | Until the customer leaves, or asks us to delete them |
 | Your record at WorkOS | Until the customer leaves, or you ask us to delete it |
 | Your record at WorkOS, if you have no account or your account was removed | Until you ask us to delete it |
-| WorkOS's event history | [WORKOS RETENTION] |
+| WorkOS's event history | As long as WorkOS's own retention schedule sets, and no longer than our contract with WorkOS. WorkOS then deletes it |
 | Request logs and our own logs | 30 days |
 | Security logs | 400 days |
 | Database backups | 7 days |
