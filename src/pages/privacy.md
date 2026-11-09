@@ -39,10 +39,11 @@ This website sets no cookies, runs no analytics and loads nothing from
 other sites.
 
 Cloudflare serves the website. To deliver pages and block attacks, it
-handles each visitor's IP address and browser details. We don't keep
-that data. Cloudflare's dashboard can show us the IP address of a
-request it blocks as an attack, and our tools can show requests to our
-code as they happen, but we don't record either.
+handles each visitor's IP address and browser details. We don't copy
+that data or keep it ourselves. Cloudflare's dashboard shows us the IP
+address of a request it blocks as an attack, and keeps it for at least
+31 days. Our tools can show requests to our code as they happen, but we
+don't record them.
 
 ## Early access requests
 
@@ -248,10 +249,15 @@ We don't sell personal data, and we don't use it for advertising.
 
 Some of these companies can process data outside the UK, including in
 the United States. When personal data leaves the UK, we rely on
-[SAFEGUARD: the UK Extension to the EU-US Data Privacy Framework for
-companies certified under it, or the UK's International Data Transfer
-Addendum to the EU standard contractual clauses]. Ask us for a copy of
-the safeguards that apply.
+these safeguards:
+
+- For Cloudflare and Google, the UK Extension to the EU-US Data Privacy
+  Framework. Both are certified under it.
+- For WorkOS, the EU standard contractual clauses with the UK's
+  International Data Transfer Addendum. WorkOS is not certified under
+  the Framework.
+
+Ask us for a copy of the safeguards that apply.
 
 ## How long we keep data
 
@@ -268,6 +274,7 @@ the safeguards that apply.
 | Your record at WorkOS | Until the customer leaves, or you ask us to delete it |
 | Your record at WorkOS, if you have no account or your account was removed | Until you ask us to delete it |
 | WorkOS's event history | As long as WorkOS's own retention schedule sets, and no longer than our contract with WorkOS. WorkOS then deletes it |
+| The IP address of a request Cloudflare blocks as an attack | At least 31 days, in Cloudflare's dashboard. Cloudflare sets the period |
 | Request logs and our own logs | 30 days |
 | Security logs | 400 days |
 | Database backups | 7 days |
