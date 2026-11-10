@@ -29,7 +29,7 @@ Check the line on each collector. Two collectors with the same secret log the sa
 3. Paste the fingerprint into **Fingerprint**. The page trims spaces around it.
 4. Click **Require redacted payloads**, then confirm in the sheet.
 
-The page then reads **Require redacted payloads: on** and shows the fingerprint. Every Otherlode process applies the change within about 15 seconds. A fingerprint that is not 16 lowercase hex characters is refused with "Fingerprint must be 16 lowercase hexadecimal characters, the secret_fingerprint the collector logs at startup."
+**Require redacted payloads** then reads **On**, and the page shows the fingerprint. Every Otherlode process applies the change within about 15 seconds. A fingerprint that is not 16 lowercase hex characters is refused with "Fingerprint must be 16 lowercase hexadecimal characters, the secret_fingerprint the collector logs at startup."
 
 ### Data already stored stays as it is
 

@@ -18,9 +18,9 @@ The page lists events newest first.
 
 | Column | Shows |
 |---|---|
-| **Time** | When Otherlode recorded the event, in UTC. |
-| **Actor** | Who did it. See [Actors](#actors). |
+| **Time (UTC)** | When Otherlode recorded the event. |
 | **Action** | The action's label and its dotted name. The tables below list both. |
+| **Actor** | Who did it. See [Actors](#actors). |
 | **Target** | What the action changed, such as a user's email or a key's name. An en dash means the event has no target. |
 | **IP** | The client address of the browser request that caused the event. An en dash means no address was recorded. |
 | **Details** | Facts about the event. A change reads `from → to`, such as `viewer → admin`. An en dash means the event has no details. |

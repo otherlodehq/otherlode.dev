@@ -10,13 +10,14 @@ The service list is the first page of `https://app.otherlode.dev` after sign-in.
 
 ## The service list
 
-The service list shows every service of your tenant, across all environments. It's not filtered by scope. A service past your tenant's [service cap](scope#your-plan-tracks-a-fixed-number-of-services) is not tracked, and it has no findings to open.
+The service list shows every service of your tenant, across all environments. It's not filtered by scope, and its finding counts count every environment. A service past your tenant's [service cap](scope#your-plan-tracks-a-fixed-number-of-services) is not tracked, and it has no findings to open.
 
 A service appears once a production run has reached Otherlode. A service that only [test runs](/docs/agent/test-runs) reached never appears. A service is known by its namespace and its name together, so two services with the same name in two namespaces are two rows with separate data. Namespace and name keep their case, so `Shop` and `shop` are two namespaces.
 
 | Column | What it shows |
 |---|---|
-| **Service** | The service name. It opens the service's Overview in the environment you last picked for this service in this browser, if the service still has it, and otherwise in every environment. A service that isn't tracked doesn't open. |
+| **Service** | The service name. It opens the service's Overview in the environment you last picked for this service in this browser, if the service still has it, and otherwise in every environment. A service that isn't tracked reads "Not tracked" after its name, has no counts and doesn't open. |
+| **Never hit**, **Never called**, **Never loaded**, **Unused dependencies** | The service's count for each finding in every environment, the same numbers the panel shows with no environment picked. A count links to that finding's page in every environment. A count with a `~` waits on an incomplete dependency listing, as in the panel. While Otherlode computes the service's findings, each count reads `–` and its tooltip says "Computing…", or when the last refresh failed. A service with no watched environment has no counts. |
 | **Environments** | The service's watched environments. The environment `none` reads "not named". A count such as "2 not tracked" gives the environments past the service's [environment cap](scope#a-service-watches-at-most-10-environments), and its tooltip names them. |
 | **Instances** | The number of distinct instances with a production run, in any environment. |
 | **Last seen** | How long ago any production run of the service last reported. A service whose runs have all expired reads "never". |
@@ -83,12 +84,12 @@ The Classes page lists each class that has probes in scope, sorted by class name
 | Column | What it shows |
 |---|---|
 | **Class** | The class label, as a link to the [class page](#the-class-page). See [how names read](#how-names-read). |
-| **Methods** | The methods the report counts for the class. Inline methods, generated methods, methods of an unread shape and static initialisers are left out, so a class made only of those shows 0. |
-| **Never ran** | The methods that never ran and that [Never hit](findings) lists. A method covered by the class's own finding is not counted here. |
-| **Conditions** | The conditions the report counts for the class, one per site. |
-| **With a path that never ran** | The conditions with at least one outcome that never ran. |
+| **Methods**: **Total** | The methods the report counts for the class. Inline methods, generated methods, methods of an unread shape and static initialisers are left out, so a class made only of those shows 0. |
+| **Methods**: **Never ran** | The methods that never ran and that [Never hit](findings) lists. A method covered by the class's own finding is not counted here. |
+| **Conditions**: **Total** | The conditions the report counts for the class, one per site. |
+| **Conditions**: **Path never ran** | The conditions with at least one outcome that never ran. |
 | **Routed** | `yes` when any method of the class is the handler of an endpoint in scope, `no` otherwise. |
-| **Finding** | `never initialised` or `never instantiated`, `failed to initialise` for a class on the [Failed to initialise](findings#failed-to-initialise) list, or a dash when the class has none of them. |
+| **Finding** | **Never initialised** or **Never instantiated**, **Failed to initialise** for a class on the [Failed to initialise](findings#failed-to-initialise) list, or a dash when the class has none of them. |
 
 For most scopes the list is read from the same [stored snapshot](how-it-works#the-report-and-finding-pages-are-read-from-stored-snapshots) as the report, so its rows add up to the report's counts when both come from it. **As of** says when the snapshot was computed. While the snapshot is being computed, the page says "Computing…" and lists no rows.
 
@@ -96,7 +97,7 @@ For most scopes the list is read from the same [stored snapshot](how-it-works#th
 
 A class label links to `/services/{service}/classes/{class}`, or the same path under a namespace prefix. The path holds the JVM class name.
 
-A class that never loaded has no row in the list, and its page names its finding **never loaded**. The page's counts are the class's row from the list.
+A class that never loaded has no row in the list, and its page names its finding **Never loaded**. The page's counts are the class's row from the list: its methods and the methods that never ran, its conditions and the conditions with a path that never ran. When any is above 0, the counts the report holds back follow, under the same words as the report: **In its class finding**, **Counts behind**, **Withheld** and **Without evidence**. Under them, the page draws the class's [graph](unreached-clusters#the-class-page-graph) and lists its methods.
 
 [Unreached clusters and the code path graph](unreached-clusters) describes the class's code path graph.
 
@@ -167,23 +168,23 @@ For a service with no endpoint or entry method to draw, the graph area lists the
 
 ## Dependencies
 
-The Dependencies page lists each library that an in-scope run found, merged by identity, with its status. The agent's [dependencies page](/docs/agent/dependencies) says what counts as a dependency and how the agent identifies one. The page sorts rows by status in the order of the filter below, then by identity.
+The Dependencies page lists each library that an in-scope run found, merged by identity, grouped by status. The agent's [dependencies page](/docs/agent/dependencies) says what counts as a dependency and how the agent identifies one. The groups follow the order of the filter below, and rows sort by identity within a group. Each group's heading names the status and its count. A bar over the table shows how many dependencies hold each status, and choosing a status in its legend filters the page to it. The Status filter shows each status's count too. While the dependency listing is incomplete, the group, legend and filter counts carry a `~`, as the panel's do.
 
 | Column | What it shows |
 |---|---|
 | **Dependency** | Its `group:artifact` and versions. A shaded jar shows several lines, since it's one dependency with several identities. |
-| **Status** | The status, with its meaning as a tooltip. |
-| **Loaded classes** | `12 of 340` when the jar's class count is known, and `12` when it is not. The loaded figure is the largest any in-scope run reported. |
+| **Loaded classes** | `12 / 340` when the jar's class count is known, and `12` when it is not. The loaded figure is the largest any in-scope run reported. |
 | **Discovery** | `startup classpath`, `class load`, or both. |
 | **Known since** | When Otherlode first learned of the dependency. A star means the date is capped to the runs in scope. |
-| **First loaded** | When Otherlode first saw a class load from it, or "never". |
 | **Last loaded** | When a batch last raised a loaded-class total for it, or "never". Otherlode writes it at most once an hour. |
 | **Sites** | The number of places in your code that reference the dependency, for the statuses **Unreached**, **No live reference**, **Failed to load** and **Failed to initialise**. A dash for any other status. |
 
-**Unused** is the four statuses **Unloaded**, **Unreferenced**, **Unreached** and **No live reference** together. **Used** means some run that judged the dependency holds a live reference, from a method with hits or a loaded class. **Loaded** means no run that lists the dependency records references, so Otherlode says nothing more. **Failed to initialise** means a class that failed to initialise holds the only references, as [Findings](findings#dependencies-failed-to-initialise) describes. **Counts behind** means the status the dependency would take rests on counts that a run not yet settled has not delivered. **Without evidence** means it rests on zero counts that no settled run is [evidence](findings#without-evidence) for. Both claim nothing. **Stale** means the jar was listed from the startup classpath, no run in scope loaded a class from it, and the service has recorded a load before. It claims nothing about removal. **Resources only** means every in-scope listing counted no class in the jar, and no run loaded a class from it, as with a native library or web assets. It claims nothing. [Findings](findings) describes the other statuses, and the **Unused dependencies**, **Dependencies failed to load** and **Dependencies failed to initialise** items in the Findings group open this page with that status.
+**Unused** is the four statuses **Unloaded**, **Unreferenced**, **Unreached** and **No live reference** together. **Used** means some run that judged the dependency holds a live reference, from a method with hits or a loaded class. **Loaded** means no run that lists the dependency records references, so Otherlode says nothing more. It is also the status of a dependency that a run from an older collector loaded a class from, reports a reference to, or reaches through a method it hit or a class it loaded, since that run makes no claim and the dependency is not unloaded, unreferenced or unreached. **Failed to initialise** means a class that failed to initialise holds the only references, as [Findings](findings#dependencies-failed-to-initialise) describes. **Counts behind** means the status the dependency would take rests on counts that a run not yet settled has not delivered. **Without evidence** means it rests on zero counts that no settled run is [evidence](findings#without-evidence) for. Both claim nothing. **Stale** means the jar was listed from the startup classpath, no run in scope loaded a class from it, and the service has recorded a load before. It claims nothing about removal. **Resources only** means every in-scope listing counted no class in the jar, and no run loaded a class from it, as with a native library or web assets. It claims nothing. [Findings](findings) describes the other statuses, and the **Unused dependencies**, **Dependencies failed to load** and **Dependencies failed to initialise** items in the Findings group open this page with that status.
+
+Each row expands. Its detail gives **First loaded**, when Otherlode first saw a class load from the dependency, or "never", and lists the dependency's reference sites when it has any.
 
 - **Site** names the class, and the method when the reference sits in one. A reference that sits in no single method reads "(class level)". A loaded class links to its class page.
-- **Class** reads "loaded", "never loaded", "counts behind", "failed to initialise", or "failed to load since 1 Jun 2026". "Counts behind" marks a class that no run loaded and that a run not yet settled could have loaded. A class that never loaded, or reads counts behind, has no probes, so its name is not a link. A class that failed to load links to the failed-to-load list, filtered to that class, and a class that failed to initialise links to the failed-to-initialise list, filtered the same way.
+- **Class** reads "Loaded", "Never loaded", "Counts behind", "Failed to initialise", or "Failed to load since 1 Jun 2026". "Counts behind" marks a class that no run loaded and that a run not yet settled could have loaded. A class that never loaded, or reads counts behind, has no probes, so its name is not a link. A class that failed to load links to the failed-to-load list, filtered to that class, and a class that failed to initialise links to the failed-to-initialise list, filtered the same way.
 
 ## Absent references
 

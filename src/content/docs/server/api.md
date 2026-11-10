@@ -202,6 +202,48 @@ Every route under `/services/{service}/` for a service that is not tracked answe
 
 A test run counts toward none of these figures. See [Inventory](inventory) for the same list in the web app.
 
+### Add each service's finding counts
+
+`GET /services?include=findings` adds a `findings` object to each entry of `services`. Without `include`, the response has no `findings`. Any other value of `include` answers `400` with `include must be "findings"`.
+
+The counts come from the service's all-environments [snapshot](#routes-read-from-a-snapshot), the one [`/report`](#get-servicesservicereport) reads with no `environment`. They mean what the same fields mean in the report. Otherlode computes nothing for the request, so a service whose snapshot is missing answers `computing`.
+
+```json
+{
+  "status": "ready",
+  "as_of": "2026-10-06T14:00:12Z",
+  "methods": {"never_hit": 41},
+  "branch_sites": {"with_never_hit_outcome": 17},
+  "classes": {"never_loaded": 6},
+  "endpoints": {"never_called": 3},
+  "dependencies": {
+    "unloaded": 2,
+    "unreferenced": 1,
+    "unreached": 0,
+    "no_live_reference": 4,
+    "listing_complete": true,
+    "instances_awaiting_listing": 0
+  }
+}
+```
+
+| `status` | Meaning | Other fields |
+|---|---|---|
+| `ready` | The service has an all-environments snapshot of the current format. | The counts below, and `as_of`. |
+| `computing` | The service has an all-environments scope and no snapshot of the current format. It is the case where `/report` answers `202`. | `last_failed_at`, as in the [`202` answer](#routes-read-from-a-snapshot). |
+| `none` | No environment of the service is watched, so it has no all-environments scope. | None. |
+
+| Field | Type | Meaning |
+|---|---|---|
+| `as_of` | timestamp | When the snapshot was computed. |
+| `methods.never_hit` | integer | The report's `methods.never_hit`. |
+| `branch_sites.with_never_hit_outcome` | integer | The report's `branch_sites.with_never_hit_outcome`. |
+| `classes.never_loaded` | integer | The report's `classes.never_loaded`. |
+| `endpoints.never_called` | integer | The report's `endpoints.never_called`. |
+| `dependencies` | object | The report's `unloaded`, `unreferenced`, `unreached`, `no_live_reference`, `listing_complete` and `instances_awaiting_listing`. While `listing_complete` is `false`, a count may be missing entries. |
+
+An entry of `not_tracked_services` never carries `findings`.
+
 ## Read a service
 
 Every route below starts with `/services/{service}/` and takes the [scope parameters](#scope-parameters). The tables list each route's own parameters and fields.
@@ -223,11 +265,13 @@ The response is `{"instances": [...]}`. `run_id`, `version` and `environment` co
 | `last_seen_at` | timestamp | The latest time any in-scope run was seen. |
 | `baseline` | string | `complete` when any in-scope run holds a complete [static baseline](/docs/agent/classes#never-loaded), `incomplete` when one holds a scan that is not complete, else `none`. |
 | `ended_cleanly` | boolean | `true` once the latest run's shutdown flush arrived. |
-| `dependencies_listed` | boolean | `true` when every in-scope run sent its whole dependency listing. |
+| `dependencies_listed` | boolean | `true` when every in-scope run sent its whole dependency listing. A run that lost its history never counts as having sent it. |
 | `agent_version` | string | The agent version of the latest run. |
 | `fields_stripped` | boolean | `true` when the latest run is a stripped run. The list shows it, and no finding counts it. |
 | `deltas_received` | boolean | `true` once a delta batch of the latest run has arrived. A run that sent only a manifest reads `false`. |
 | `starting` | boolean | `true` while the latest run says its application is still loading its classes and the run is live. |
+| `history_lost` | boolean | `true` when the latest run lost its history. Otherlode had removed the run's row while its process kept running, so the run's counts name classes Otherlode has no record of. While such a run is in scope, it holds every zero-count claim of its scope. The claims return when the run leaves the scope, which is when it expires. A restart starts a new run that reports in full, but it does not release the hold. |
+| `earlier_run_history_lost` | boolean | `true` when an in-scope run of the instance other than the latest lost its history. That run holds the scope's claims until it expires, though the latest run is a full run. |
 | `earlier_run_unsettled` | boolean | `true` when an in-scope run of the instance other than the latest has received no delta batch, has counts that are behind, or is starting and still live. The report's `unsettled` counts the instance for it. |
 | `counts_behind_since` | timestamp or null | When Otherlode received the first payload that said some hits the latest run recorded had not reached it. `null` when the run's newest payload says none are missing. |
 
@@ -244,7 +288,7 @@ The route is [read from a snapshot](#routes-read-from-a-snapshot) for most scope
 | `active_within_days` | integer or null | The `active_within_days` filter, `null` when unset. |
 | `as_of` | timestamp | When Otherlode read the data. See [routes read from a snapshot](#routes-read-from-a-snapshot). |
 | `from_snapshot` | boolean | `true` when a stored snapshot gave the report, `false` for a live read. |
-| `instances` | object | `total`, `listed`, `with_complete_baseline`, `ended_cleanly`, `silent_without_final_flush`, `unsettled`, `verifier_unwatched`, `unplaced_verification` and `with_skipped_class`. Each counts distinct instances. `with_complete_baseline` leaves out an instance whose only complete baseline came from a run that never delivered a delta batch and is no longer live, since that run is no evidence; its instance still shows the baseline on `/instances`. `unsettled` counts the instances with an in-scope run that has received no delta batch, whose counts are behind, or that is starting and still live. `total` counts the instances with a run a finding can judge. `listed` counts every instance the `/instances` route lists, so it also counts an instance whose every run that matches the scope came through a collector older than its agent. It is never below `total`. `ended_cleanly` and `silent_without_final_flush` judge an instance by its latest run. `unsettled` counts an instance once when any of its in-scope runs is unsettled, so the instance list shows the same instance with a badge for its latest run or with `earlier_run_unsettled`. A run is silent when it has not ended cleanly and was not seen for over an hour. `verifier_unwatched` counts the instances with an in-scope run whose agent could not see the verifier's rejections. `unplaced_verification` counts the instances with an in-scope run that reported a verification failure it could not place in a class. Neither kind of run supports a zero-count claim. `with_skipped_class` counts the instances with an in-scope run whose manifest named a skipped class. A skipped class supports no zero-count claim in any run, and a skip kept from a run that has expired is not counted. See [Findings](findings#without-evidence). |
+| `instances` | object | `total`, `listed`, `with_complete_baseline`, `ended_cleanly`, `silent_without_final_flush`, `unsettled`, `verifier_unwatched`, `unplaced_verification`, `with_skipped_class` and `history_lost`. Each counts distinct instances. `with_complete_baseline` leaves out an instance whose only complete baseline came from a run that never delivered a delta batch and is no longer live, since that run is no evidence; its instance still shows the baseline on `/instances`. `unsettled` counts the instances with an in-scope run that has received no delta batch, whose counts are behind, or that is starting and still live. `total` counts the instances with a run a finding can judge. `listed` counts every instance the `/instances` route lists, so it also counts an instance whose every run that matches the scope came through a collector older than its agent. It is never below `total`. `ended_cleanly` and `silent_without_final_flush` judge an instance by its latest run. `unsettled` counts an instance once when any of its in-scope runs is unsettled, so the instance list shows the same instance with a badge for its latest run or with `earlier_run_unsettled`. A run is silent when it has not ended cleanly and was not seen for an hour or more, or for three of its flush intervals when that is longer. `verifier_unwatched` counts the instances with an in-scope run whose agent could not see the verifier's rejections. `unplaced_verification` counts the instances with an in-scope run that reported a verification failure it could not place in a class. Neither kind of run supports a zero-count claim. `history_lost` counts the instances with a run in scope, the latest or an earlier one, that lost its history. `with_skipped_class` counts the instances with an in-scope run whose manifest named a skipped class. A skipped class supports no zero-count claim in any run, and a skip kept from a run that has expired is not counted. See [Findings](findings#without-evidence). |
 | `methods` | object | `known` is the sum of `hit`, `never_hit`, `in_class_findings`, `in_never_hit_code`, `unjudged_constructors`, `counts_behind` and `without_evidence`. It counts judgeable methods and leaves out static initialisers. A method the service has recorded a hit of counts in `hit` when the request names no `version` and no `active_within_days`, even when no run in scope holds a hit. `counts_behind` counts the methods with no hits that a run not yet settled knows. They make no zero-count claim. `without_evidence` counts the other methods with no hits that no run is [evidence](findings#without-evidence) about. They make no zero-count claim either. |
 | `branch_sites` | object | `known`, `all_outcomes_hit`, `with_never_hit_outcome`, `in_never_hit_code`, `routine`, `counts_behind`, `withheld` and `without_evidence`. A site that folds into code a finding already lists counts in `in_never_hit_code`. `routine` counts sites whose only never-hit outcomes are routine. `counts_behind` counts sites whose judgeable outcomes with no hits are all in locations a run not yet settled knows. `withheld` counts the other sites with an outcome with no hits and no branch key, in an environment that has lost a production run. `without_evidence` counts the other sites with a never-hit outcome that no run is evidence about. They make no claim. The first three leave the other five out. |
 | `probes` | object | `inline` and `generated` count the probes the counts above leave out. `no_debug_info` counts judgeable probes in classes that carry no line numbers. |
@@ -356,7 +400,7 @@ The response is `{"probes", "total", "watched_since", "as_of", "from_snapshot"}`
 | `recorded_hit` | boolean | `true` when the request names no `version` and no `active_within_days`, the service has recorded a hit of the location, and the location's dates are not capped. `hits_total` stays the in-scope count, so a location with `recorded_hit` can show `0` hits. Such a location counts as hit. A client that draws a hit status reads `hits_total` above `0` or `recorded_hit`. |
 | `claim_withheld` | boolean | `true` on a branch row with no `branch_key` when an environment of the read has lost a production run. With `hits_total` `0` the outcome is neither hit nor never hit, since a removed run may have hit it. `false` on every other row. A client must not draw such an outcome as never hit. |
 | `inline` | boolean | `true` for a probe inside a Kotlin inline function. |
-| `generated_by`, `unread_shape` | string | The probe's marks. A probe with either mark is stored and shown, and never judged. `generated_by` is `none`, `enum`, `data_class`, `default_impls`, `record`, `jvm_overloads`, `multifile_facade`, `case_class`, `static_forwarder`, `scala_object`, `value_class`, `kotlinx_serialization`, `trait_forwarder`, or `unknown` for a value Otherlode does not name, which a newer agent sent. |
+| `generated_by`, `unread_shape` | string | The probe's marks. A probe with either mark is stored and shown, and never judged. `generated_by` is `none`, `enum`, `data_class`, `default_impls`, `record`, `jvm_overloads`, `multifile_facade`, `case_class`, `static_forwarder`, `scala_object`, `value_class`, `kotlinx_serialization`, `trait_forwarder`, `class_delegation`, or `unknown` for a value Otherlode does not name, which a newer agent sent. |
 | `inlined_from_class_name` | string or null | The class an inlined branch copy came from. |
 | `routes` | array | As on a never-hit row. |
 | `parameter_index`, `parameter_name`, `overridable`, `target_class_name` | integer or null, string or null, boolean, string or null | For an optional-argument probe. `target_class_name` is set only for a Scala constructor default. |
@@ -569,7 +613,7 @@ Unreached clusters, largest first and then by root. The route takes `class_prefi
 
 `members` and `test_callers` each hold at most 200 entries. The totals are always true counts.
 
-A graph node has `class_name`, `method_name`, `method_descriptor`, `line`, `hits_total`, `never_loaded`, `generated_by`, `unread_shape`, `counts_behind`, `without_evidence`, `recorded_hit` and the [method naming fields](#method-naming-fields). `never_loaded` is `true` for a method only a complete baseline knows, and its `line` is `0`. `counts_behind` is `true` when a run that knows the method is not settled and, on a request that names no `version` and no `active_within_days`, the service has recorded no hit of it. With `hits_total` `0` the method may have run, and the cluster rules treat it as neither hit nor never hit. `without_evidence` is `true` when every run that knows the method is settled and none is [evidence](findings#without-evidence) about its class. The cluster rules treat it as `counts_behind`, and it is `false` where `counts_behind` is `true`. `recorded_hit` is `true` when the service has recorded a hit of the method, on a request that names no `version` and no `active_within_days`. `hits_total` stays the in-scope count, and the method counts as hit. `counts_behind`, `without_evidence` and `recorded_hit` are all `false` for a method only a baseline knows and on a `class_finding` root. A root, a member and an edge end are never generated or unread, so both marks read `none` on them. A `reached_from` node can be a generated or unread method that ran, and carries its own marks.
+A graph node has `class_name`, `method_name`, `method_descriptor`, `line`, `hits_total`, `never_loaded`, `generated_by`, `unread_shape`, `counts_behind`, `without_evidence`, `recorded_hit` and the [method naming fields](#method-naming-fields). `never_loaded` is `true` for a method only a complete baseline knows, and its `line` is `0`. `counts_behind` is `true` when a run that knows the method is not settled, or a [stripped run](how-it-works#a-run-from-an-older-collector-makes-no-claim) in the scope hit it, and, on a request that names no `version` and no `active_within_days`, the service has recorded no hit of it. With `hits_total` `0` the method may have run, and the cluster rules treat it as neither hit nor never hit. `without_evidence` is `true` when every run that knows the method is settled and none is [evidence](findings#without-evidence) about its class. The cluster rules treat it as `counts_behind`, and it is `false` where `counts_behind` is `true`. `recorded_hit` is `true` when the service has recorded a hit of the method, on a request that names no `version` and no `active_within_days`. `hits_total` stays the in-scope count, and the method counts as hit. `counts_behind`, `without_evidence` and `recorded_hit` are all `false` for a method only a baseline knows and on a `class_finding` root. A root, a member and an edge end are never generated or unread, so both marks read `none` on them. A `reached_from` node can be a generated or unread method that ran, and carries its own marks.
 
 The root is a graph node with these extra fields:
 
@@ -613,7 +657,7 @@ The response is `{"dependencies", "total", "watched_since", "listing_complete", 
 |---|---|---|
 | `identity_key` | string | The dependency's identity. |
 | `identities` | array | Each `{"group_id", "artifact_id", "versions"}`. `versions` lists every version seen. A shaded jar carries several identities. |
-| `status` | string | One of the twelve statuses above. `stale` means the dependency was listed from the startup classpath, no run in scope loaded a class from it, and the service has recorded a load, dated by `last_loaded_at`. A request with `version` or `active_within_days` never gets `stale`, and answers `unloaded` instead. `counts-behind` means the status the dependency would take (`stale`, `unloaded`, `unreached` or `no-live-reference`) rests on counts that a run not yet settled has not delivered, and it claims nothing. `resources-only` means every in-scope listing counted no class in the jar and no run loaded a class from it. `failed-to-initialize` means the dependency is loaded, has no live reference, and some run that judged it references it from a class that reads as [failed to initialise](findings#failed-to-initialise). `without-evidence` means the status it would take (`unreached` or `no-live-reference`) rests on zero counts that no settled run is evidence for. Both claim nothing. |
+| `status` | string | One of the twelve statuses above. `stale` means the dependency was listed from the startup classpath, no run in scope loaded a class from it, and the service has recorded a load, dated by `last_loaded_at`. A request with `version` or `active_within_days` never gets `stale`, and answers `unloaded` instead. `counts-behind` means the status the dependency would take (`stale`, `unloaded`, `unreached` or `no-live-reference`) rests on counts that a run not yet settled has not delivered, and it claims nothing. `resources-only` means every in-scope listing counted no class in the jar and no run loaded a class from it. `loaded` also means a stripped run in the scope loaded a class from the jar, reports a reference to it, hit a method that holds a reference to it, or loaded a class that holds one, which stops `unloaded`, `unreferenced`, `unreached` and `no-live-reference`. `failed-to-initialize` means the dependency is loaded, has no live reference, and some run that judged it references it from a class that reads as [failed to initialise](findings#failed-to-initialise). `without-evidence` means the status it would take (`unreached` or `no-live-reference`) rests on zero counts that no settled run is evidence for. Both claim nothing. |
 | `loaded_classes_total` | integer | The largest count of loaded classes any in-scope run reported. |
 | `class_count` | integer or null | Classes in the jar, when a run reported it. |
 | `discovery_sources` | array of strings | How the agent learned of it: `startup_classpath`, `load`, or `unspecified`. |
