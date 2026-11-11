@@ -1,6 +1,6 @@
 ---
 title: How Otherlode fits together
-description: What Otherlode finds, the three parts that find it and where each one runs, what leaves your network, and which page to read next.
+description: What Otherlode finds, the parts that find it and where each one runs, what leaves your network, and which page to read next.
 order: 10
 ---
 
@@ -20,21 +20,21 @@ Each finding names a piece of code and says what did not happen to it in the run
 
 [Findings](/docs/server/findings) describes every kind, what it claims and what it needs.
 
-## Three parts, and where each one runs
+## The parts, and where each one runs
 
-Otherlode has three parts. Two of them run on your machines.
+Otherlode has three parts, and you need two of them. The agent and the optional collector run on your machines.
 
-- **The agent** runs inside each of your JVMs. You attach it with `-javaagent`. It counts how often each method runs, which way each condition goes and how often each endpoint is called, and it sends those counts to your collector.
-- **The collector** runs in your network. It receives what your agents send and forwards it to Otherlode. It can replace the string literals in branch conditions and switch case labels with a placeholder before anything leaves.
+- **The agent** runs inside each of your JVMs. You attach it with `-javaagent`. It counts how often each method runs, which way each condition goes and how often each endpoint is called, and it sends those counts to Otherlode, straight or through your collector.
+- **The collector** is optional and runs in your network. It receives what your agents send and forwards it to Otherlode. It can replace the string literals in branch conditions and switch case labels with a placeholder before anything leaves.
 - **Otherlode** is hosted. It stores each run, adds up the counts from every instance and works out the findings. You read them in the web app or through the [read API](/docs/server/api).
 
 The agent and the collector are open source under the Apache 2.0 licence, at [otherlode-agent](https://github.com/otherlodehq/otherlode-agent) and [otherlode-collector](https://github.com/otherlodehq/otherlode-collector) on GitHub.
 
-## The collector decides what leaves your network
+## What leaves your network
 
-Your agents send their reports to your collector, and the collector forwards them to Otherlode with an ingest key. The collector is the one place that holds the key, and it is where you turn on blanking. [Send data from your collector](/docs/server/connect) sets up the key and the forward address.
+Your agents send their reports to Otherlode with an ingest key, either straight from each JVM or through a collector you run. Sent straight, each JVM holds the key, and string literals leave as your code holds them. Through a collector, the collector is the one place that holds the key and the one host that sends to the internet, and it's where you turn on blanking. [Add a collector](/docs/collector/add) says when you need one, and [Send data to Otherlode](/docs/server/connect) sets up the key.
 
-Otherlode keeps what the collector forwards in Google Cloud's London region. [What Otherlode keeps](/docs/server/data-kept) lists what it stores and when it deletes it, and the [privacy policy](/privacy) covers the personal data.
+Otherlode keeps what your agents send in Google Cloud's London region. [What Otherlode keeps](/docs/server/data-kept) lists what it stores and when it deletes it, and the [privacy policy](/privacy) covers the personal data.
 
 ## A finding is a lead to check
 
@@ -44,7 +44,7 @@ So read a finding together with how long the service has been watched and which 
 
 ## Next steps
 
-- To connect a collector that already runs, see [Send data from your collector](/docs/server/connect).
+- To connect your agents or a collector, see [Send data to Otherlode](/docs/server/connect).
 - To choose which runs a finding covers, see [Scope and environments](/docs/server/scope).
 - To read what Otherlode found, see [Findings](/docs/server/findings).
 - To add people and sign-in, see [Manage users and roles](/docs/server/users) and [Set up single sign-on](/docs/server/sso).
