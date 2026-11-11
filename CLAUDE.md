@@ -8,11 +8,19 @@ phrasing, such as "seamless," "robust," "leverage" or "crucial." Site and
 marketing copy follows the `copy-style` skill's `marketing.md`, and docs
 under `src/content/docs/` follow its `docs.md`.
 
-Avoid code comments. Do not write comments that restate what the code
-does, and do not write comments that explain why a choice was made or
-why one construct was picked over another (e.g. "use X, not Y"). Write
-one only for a hard constraint or surprising consequence that the code
-and its tests cannot convey, and keep it short.
+- **Code comments are rare.** Write one only for a hard constraint or
+  surprising consequence that the code and its tests cannot convey. Keep
+  it to one line where it fits, and never more than three. Never restate
+  what the code does. Never explain why a choice was made or why one
+  construct was picked over another (e.g. "use X, not Y"). That reasoning
+  goes in an ADR.
+- **Doc comments go on exported declarations only.** A declaration its
+  module does not export and test code get none. The rule above covers
+  them.
+- **A doc comment states the contract and stops.** Say what it does or
+  returns, what the caller must supply, and any edge a caller would get
+  wrong. Most fit in one to three lines. Leave out design history,
+  rejected options, how the body works and who calls it.
 
 ## Claims
 
