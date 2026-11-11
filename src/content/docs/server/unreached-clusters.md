@@ -17,9 +17,9 @@ The table lists the largest cluster first, then orders equal sizes by root. Each
 | **Root** | The method, branch or class that starts the cluster, and the callers that lead to it. |
 | **Root kind** | Why the root starts a cluster. See [Root kinds](#root-kinds). |
 | **Routes** | The endpoints whose handler is the root, as `ANY /checkout`. Empty for a root that is no handler. |
-| **Members total** | The number of methods in the cluster, the root included when it is a method. |
-| **Never-loaded classes** | The number of distinct classes in the cluster that never loaded. |
-| **Show on graph** | A link to the service overview with the cluster highlighted. |
+| **Members** | The number of methods in the cluster, the root included when it is a method. |
+| **Never loaded** | The number of distinct classes in the cluster that never loaded. |
+| Last column | A link, **Graph**, to the service overview with the cluster highlighted. |
 
 ### The root cell
 
@@ -70,7 +70,7 @@ The members table lists the classes the cluster holds whole first, such as "Lega
 
 The test table lists each test with the cluster method it calls, the root's own test callers first.
 
-The expanded row shows at most 200 members, 200 whole classes and 200 test calls. **Members total** keeps the true count.
+The expanded row shows at most 200 members, 200 whole classes and 200 test calls. **Members** keeps the true count.
 
 ## Filters on the Unreached clusters page
 
@@ -114,7 +114,7 @@ A method is an entry method when it has hits, no endpoint hands to it, and none 
 
 ### What the graph draws
 
-The graph draws each endpoint that is not an [outside route](findings#outside-routes) and each entry method, and everything each of them links, calls or creates, with the class frame and the conditions of every method it draws. A method that no root reaches is not drawn. That covers an uncalled root and what only it reaches, and a group of hit methods that call only each other. Code in a cluster is drawn when you highlight that cluster. A method is drawn when you follow its **Show on graph** link on the **Never hit** or **Stale hit** page. See [Filters](#filters).
+The graph draws each endpoint that is not an [outside route](findings#outside-routes) and each entry method, and everything each of them links, calls or creates, with the class frame and the conditions of every method it draws. A method that no root reaches is not drawn. That covers an uncalled root and what only it reaches, and a group of hit methods that call only each other. Code in a cluster is drawn when you highlight that cluster. A method is drawn when you follow its **Graph** link on the **Never hit** or **Stale hit** page. See [Filters](#filters).
 
 With no endpoint and no entry method to draw, the graph area shows one of these facts.
 
@@ -122,7 +122,7 @@ With no endpoint and no entry method to draw, the graph area shows one of these 
 - "Nothing judged". Every run that matches the scope came through a collector older than its agent. Such a run makes no claim, so it is not in scope.
 - "No endpoints or entry methods to draw". The service has runs in scope, but none of them knows an endpoint that is not an [outside route](findings#outside-routes), or an entry method. The graph area also shows this when the service's report could not load. When an in-scope run reported a framework marker, Otherlode's label for each marker follows, such as "A grpc-java server started". Routing the agent does not count was set up in that run. See [Routing whose routes are not counted](inventory#routing-whose-routes-are-not-counted).
 
-When the filters keep no root, the graph area reads "No roots match the filters", unless it draws a highlighted cluster or a **Show on graph** method.
+When the filters keep no root, the graph area reads "No roots match the filters", unless it draws a highlighted cluster or a **Graph** method.
 
 While Otherlode computes the graph's data, the page asks again every 30 seconds.
 
@@ -159,15 +159,15 @@ The overview has these filters.
 
 The status filter and the search both apply. A root that one of them rejects is dropped, and the graph draws the rest in full.
 
-Click a cluster root in the graph, or follow **Show on graph** on the Unreached clusters page, to highlight a cluster. A chip names its root, and **Clear** removes the highlight. The graph draws the highlighted cluster even when no drawn root reaches it, and even when the filters keep no root. It draws the cluster's root and members, and everything they call or create. For a branch root, it draws the method that holds the branch, and everything that method calls. The filters still choose the roots, and the cluster is drawn beside them. **Clear** removes the code that only the cluster added.
+Click a cluster root in the graph, or follow **Graph** on the Unreached clusters page, to highlight a cluster. A chip names its root, and **Clear** removes the highlight. The graph draws the highlighted cluster even when no drawn root reaches it, and even when the filters keep no root. It draws the cluster's root and members, and everything they call or create. For a branch root, it draws the method that holds the branch, and everything that method calls. The filters still choose the roots, and the cluster is drawn beside them. **Clear** removes the code that only the cluster added.
 
-**Show on graph** on the **Never hit** and **Stale hit** pages opens the method's panel. It also draws the method beside the kept roots, with everything it calls or creates, even when no kept root reaches it. A condition row draws the method that holds the condition. When an outcome of the condition roots a cluster, or the method roots or is a member of one, the graph highlights that cluster and the chip names the cluster's root. When the graph knows no cluster for the code and no kept root reaches it, the chip names the method or the condition instead. **Clear** removes the chip, the highlight and the code that only the link added.
+**Graph** on the **Never hit** and **Stale hit** pages opens the method's panel. It also draws the method beside the kept roots, with everything it calls or creates, even when no kept root reaches it. A condition row draws the method that holds the condition. When an outcome of the condition roots a cluster, or the method roots or is a member of one, the graph highlights that cluster and the chip names the cluster's root. When the graph knows no cluster for the code and no kept root reaches it, the chip names the method or the condition instead. **Clear** removes the chip, the highlight and the code that only the link added.
 
 Not every never-hit method is in a cluster the graph knows. A method called from two clusters belongs to neither, and a cluster lists at most 200 members. Such a method draws with no highlight.
 
 ### The node panel
 
-Click an endpoint or method to open its panel. Drag the panel's edge, or press the left and right arrow keys on it, to change its width. The browser remembers the width until you sign out. Escape closes the panel.
+Click an endpoint or method to open its panel, or move focus to it with Tab and press Enter or Space. Drag the panel's edge, or press the left and right arrow keys on it, to change its width. The browser remembers the width until you sign out. Escape closes the panel, unless focus is in a text field, an open menu or a popover.
 
 An endpoint's panel shows the status the Endpoints page shows for it. A never-loaded method's **Calls** tab lists callers only.
 
@@ -179,4 +179,4 @@ The number on each tab counts these things. **Paths** counts the conditions with
 
 ### The class page graph
 
-A class page draws one class: its methods and their conditions, the endpoints that hand to those methods, and the direct callers and callees of those methods, one hop each way. It draws no further closure and has no status or search filter. The page's heading, finding badge and counts belong to [Inventory](inventory).
+A class page draws one class: its methods and their conditions, the endpoints that hand to those methods, and the direct callers and callees of those methods, one hop each way. It draws no further closure and has no status or search filter. The page's heading, finding and counts belong to [Inventory](inventory#the-class-page).
