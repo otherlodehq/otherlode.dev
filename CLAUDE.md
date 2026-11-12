@@ -27,6 +27,8 @@ under `src/content/docs/` follow its `docs.md`.
   complete: the code and its tests hold the full rules. A code comment
   may still name a value another component requires, as a hard
   constraint.
+- **No comment or doc comment cites an ADR.** It says what the code
+  does or must do. The reasons stay in the ADR.
 
 ## Claims
 
