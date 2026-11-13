@@ -55,8 +55,9 @@ existing `dist/`.
 
 Cloudflare Workers Builds builds the site from GitHub on every push to
 `master` and deploys it as the Worker `otherlode-dev`, set up in
-`wrangler.jsonc`. Cloudflare Pages is deprecated in favour of Workers
-static assets.
+`wrangler.jsonc`. The Worker serves `otherlode.dev` as its custom
+domain, and the deploy creates the domain's DNS record and certificate.
+Cloudflare Pages is deprecated in favour of Workers static assets.
 
 | Setting | Value |
 |---|---|

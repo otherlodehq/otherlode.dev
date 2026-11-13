@@ -7,6 +7,7 @@
   "name": "otherlode-dev",
   "main": "worker/index.ts",
   "compatibility_date": "2026-10-02",
+  "routes": [{ "pattern": "otherlode.dev", "custom_domain": true }],
   "assets": {
     "directory": "./dist/",
     "binding": "ASSETS",
