@@ -39,7 +39,7 @@ Turning the requirement on changes nothing Otherlode already holds. Runs that ar
 
 Change the fingerprint when you change the collector's secret. While the requirement is on, open **Redaction**, paste the new value into **New fingerprint**, click **Change the fingerprint** and confirm.
 
-Ingest checks one fingerprint at a time. Payloads from a collector that still has the old secret are refused once the new fingerprint applies, and a collector with the new secret is refused until then. The collector drops a refused payload and never sends it again. To change the secret without losing payloads, stop requiring redacted payloads first, change the secret on every collector, then turn the requirement on again with the new fingerprint.
+Ingest checks one fingerprint at a time. Payloads from a collector that still has the old secret are refused once the new fingerprint applies, and a collector with the new secret is refused until then. Ingest stores nothing from a refused payload, and the agent sends it again at each flush, so a payload that keeps being refused never arrives. To change the secret without losing payloads, stop requiring redacted payloads first, change the secret on every collector, then turn the requirement on again with the new fingerprint.
 
 ## Stop requiring redacted payloads
 

@@ -4,9 +4,9 @@ description: Find the cause of a refused forward, a missing service or finding, 
 order: 150
 ---
 
-Every entry starts from something you see: a collector log line, an empty page, a message or an HTTP status. Each gives the text as Otherlode shows it, the cause, and the fix. Each fix links the page that owns the detail.
+Every entry starts from something you see: an agent or collector log line, an empty page, a message or an HTTP status. Each gives the text as Otherlode shows it, the cause, and the fix. Each fix links the page that owns the detail.
 
-Otherlode has two hostnames. Collectors send to `https://ingest.otherlode.dev`. People and scripts use `https://app.otherlode.dev`, which serves the web app and the read API. Each hostname answers only its own routes.
+Otherlode has two hostnames. Agents and collectors send to `https://ingest.otherlode.dev`. People and scripts use `https://app.otherlode.dev`, which serves the web app and the read API. Each hostname answers only its own routes.
 
 ## The collector logs a refused payload
 
@@ -16,7 +16,7 @@ The collector forwards each payload while the agent waits and answers the agent 
 {"time":"...","level":"WARN","msg":"sink refused delta batch","error":"sink answered Unauthorized: backend returned 401 Unauthorized for service \"demo\" instance \"i1\"","status":401,"unlogged_sink_refusals":0,"backend_error":"unauthorized"}
 ```
 
-Any other failure logs at level `ERROR` with a `reason`, such as `server_error` or `timeout`. The `error` field ends with the status Otherlode sent and names the service and instance. When Otherlode's body is JSON with an `error` string, the `WARN` line adds that string as `backend_error`, cut to 64 bytes. A plain-text body adds nothing, so for those the bodies below are what you see when you call ingest with `curl`. [Send data from your collector](connect) covers the setup, and the collector's [troubleshooting](/docs/collector/troubleshooting#otherlode-did-not-store-a-payload) lists every `reason`.
+Any other failure logs at level `ERROR` with a `reason`, such as `server_error` or `timeout`. The `error` field ends with the status Otherlode sent and names the service and instance. When Otherlode's body is JSON with an `error` string, the `WARN` line adds that string as `backend_error`, cut to 64 bytes. A plain-text body adds nothing, so for those the bodies below are what you see when you call ingest with `curl`. [Send data to Otherlode](connect) covers the setup, and the collector's [troubleshooting](/docs/collector/troubleshooting#otherlode-did-not-store-a-payload) lists every `reason`.
 
 ### backend returned 401
 
@@ -47,7 +47,7 @@ The `service` and `instance` fields of the collector's log line name the agent w
 
 Otherlode answers `{"error":"redaction_secret_mismatch"}`. The payload came through a collector with redaction on, but its secret differs from the one whose fingerprint your tenant requires. Compare the `secret_fingerprint` the collector logs at startup with the fingerprint on the **Redaction** page. Then give the collector the same secret as your other collectors, or, if you changed the secret on purpose, change the fingerprint. See [Change the fingerprint](require-redaction#change-the-fingerprint).
 
-A refused payload is dropped and never stored, and the collector does not send it again.
+Ingest stores nothing from a refused payload. The agent keeps it and sends it again at each flush, so it arrives once the fingerprints match.
 
 ### backend returned 404
 
@@ -57,7 +57,7 @@ Otherlode answers `404 page not found`. The collector's forward URL does not rea
 - The forward URL has a path after the hostname. The collector adds `/v1/otherlode/deltas`, `/v1/otherlode/manifest`, `/v1/otherlode/static-baseline` and `/v1/otherlode/class-listing` to the URL it holds.
 - A proxy between the collector and Otherlode drops those paths.
 
-Set the forward URL to `https://ingest.otherlode.dev` and nothing more, in `OTHERLODE_COLLECTOR_FORWARD_URL`.
+Set the forward URL to `https://ingest.otherlode.dev` and nothing more, in `OTHERLODE_COLLECTOR_FORWARD_URL`. For an agent that sends straight to ingest, the same applies to its `exportUrl`.
 
 ### backend returned 400
 
@@ -87,8 +87,8 @@ The collector answers the agent `429` with the same `Retry-After`, and the agent
 
 The collector answers the agent `503` for all three, and the agent sends the payload again on its next flush. Otherlode uses 503 for four cases:
 
-- `{"error":"unavailable"}`. Otherlode could not check the key, or could not read whether your tenant requires redacted payloads. This clears on its own.
-- The text `unavailable`. The request ended while it waited for Otherlode's first read of your tenant's request limit, as when the sender gave up on it. A failed read of the limit gives no 503. Otherlode applies its default limit and reads your tenant's limit again 5 seconds later.
+- `{"error":"unavailable"}`, with `Retry-After: 5`. Otherlode could not check the key, or could not read whether your tenant requires redacted payloads. This clears on its own.
+- The text `unavailable`, with `Retry-After: 5`. The request ended while it waited for Otherlode's first read of your tenant's request limit, as when the sender gave up on it. A failed read of the limit gives no 503. Otherlode applies its default limit and reads your tenant's limit again 5 seconds later.
 - An empty body with `Retry-After: 5`. Otherlode could not store a valid payload.
 - An empty body with `Retry-After: 1`. Otherlode was busy with other payloads.
 
@@ -101,13 +101,24 @@ Use a `POST` with `Content-Type: application/x-protobuf`, no `Content-Encoding` 
 - `415` with `unsupported content type` or `unsupported content encoding`. The collector never causes this. A proxy that compresses the body, or a different sender, does.
 - `405 Method Not Allowed`. The ingest routes take only `POST`.
 
+## The agent logs a refused payload
+
+An agent that sends straight to ingest gets Otherlode's answer itself. For a payload Otherlode did not store, it logs a `WARNING` that names the payload, followed by the status on the next line:
+
+```text
+WARNING: otherlode: delta export failed, will retry next flush
+dev.otherlode.shaded.export.ExportFailedException: otherlode: unexpected status 401 from https://ingest.otherlode.dev/v1/otherlode/deltas
+```
+
+The agent keeps the payload and sends it again at its next flush. Each status means what the entries above say for `backend returned <status>`: [401](#backend-returned-401), [403](#backend-returned-403), [404](#backend-returned-404), [413](#backend-returned-413), [429](#backend-returned-429) and [503](#backend-returned-502-503-or-504). Where an entry says to fix the collector's forward URL or token, fix the agent's `exportUrl` or `OTHERLODE_AUTH_TOKEN` instead. A `2xx` status other than `202` reads `answered 200, not 202, so the payload counts as not stored`: the URL reaches something that is not ingest, such as a proxy. The agent's [troubleshooting](/docs/agent/troubleshooting) covers its other log lines.
+
 ## A service does not appear in the list
 
 The **Services** page lists a service once a production run has reached Otherlode. It shows `No service has reported yet.` when the tenant has none, and `No service matches the filter.` when the filter matches none. Work through these causes in order.
 
 ### The collector's payloads are refused
 
-If the collector log holds `sink refused` or `sink rejected` lines for this service, fix those first. See [the entries above](#the-collector-logs-a-refused-payload).
+If the collector log holds `sink refused` or `sink rejected` lines for this service, fix those first. See [the entries above](#the-collector-logs-a-refused-payload). If the agent sends straight to ingest, look for its `WARNING` lines instead. See [The agent logs a refused payload](#the-agent-logs-a-refused-payload).
 
 ### Only test runs have arrived
 
@@ -115,7 +126,7 @@ A test run never lists a service, adds to no count and never enters a finding. A
 
 ### The key belongs to another tenant
 
-A key names one tenant, and the services it delivers show only in that tenant. If you sign in to a different tenant, the service is missing there. The tenant menu in the top bar names the tenant you're signed in to. On the **API keys** page of the tenant that should hold the service, find the key's **Prefix**, which reads like `otl_ab12cd34…`, and compare it with the start of the key your collector sends. If it is not there, the key is from another tenant. See [Manage API keys](api-keys) and [Sign-in and sessions](sign-in).
+A key names one tenant, and the services it delivers show only in that tenant. If you sign in to a different tenant, the service is missing there. The tenant menu in the top bar names the tenant you're signed in to. On the **API keys** page of the tenant that should hold the service, find the key's **Prefix**, which reads like `otl_ab12cd34…`, and compare it with the start of the key your agent or collector sends. If it is not there, the key is from another tenant. See [Manage API keys](api-keys) and [Sign-in and sessions](sign-in).
 
 ### The service is listed under another name
 
@@ -125,7 +136,7 @@ A service with no name set reports as `unknown_service:java`. The **Services** p
 
 Your plan tracks a fixed number of services, and a service past that number is not tracked. Its runs are still stored. The **Services** list shows **Not tracked** after its name, and it opens no page. The service switcher and the `services` array of `GET /services` leave it out. The read API lists it in `not_tracked_services`, and each of its per-service routes answers `404` with `{"error":"service not tracked"}`.
 
-The collector logs a `WARN` line for each of its payloads, at most once an hour for each service, and counts them in `otherlode_collector_forward_notices_total` with the label `notice="service-over-cap"`:
+An agent that sends straight to Otherlode logs `otherlode: Otherlode stores this service's payloads but does not track the service, because the tenant's plan tracks no more services` at most once an hour. See [the agent's entry](/docs/agent/troubleshooting#otherlode-stores-a-payload-but-does-not-track-it). A collector logs a `WARN` line for each of its payloads, at most once an hour for each service, and counts them in `otherlode_collector_forward_notices_total` with the label `notice="service-over-cap"`:
 
 ```text
 {"time":"2026-10-29T08:28:22.418Z","level":"WARN","msg":"backend stores the service's payloads but does not track the service, because the tenant's plan tracks no more services","notice":"service-over-cap","namespace":"","service":"checkout"}
@@ -135,7 +146,7 @@ The collector's [troubleshooting page](/docs/collector/troubleshooting#otherlode
 
 ### The first report has not arrived
 
-The agent sends its first batch at a random point within the first `flushIntervalSeconds`, 60 seconds by default. See [Troubleshooting the agent](/docs/agent/troubleshooting#nothing-reaches-the-collector).
+The agent sends its first batch at a random point within the first `flushIntervalSeconds`, 60 seconds by default. See [Troubleshooting the agent](/docs/agent/troubleshooting#nothing-reaches-otherlode-or-the-collector).
 
 ## A finding page is empty or lacks a row you expect
 
@@ -188,7 +199,11 @@ Never hit and Stale each have a day filter: **Known for at least (days)** and **
 
 ### An instance is kept out of every finding
 
-An instance whose latest run came through a collector older than its agent shows a **Collector older than agent** badge on the **Instances** page. The evidence list adds a **Stripped runs** fact: `1 run, kept out of every finding`. The old collector dropped fields it did not know, so Otherlode makes no claim from that run. Code the run hit stays off the lists that say it never ran: a method or branch outcome it hit is not never hit, a class it loaded is not never loaded, and an endpoint it saw called is not never called. Such a method or endpoint is not listed as stale either. A dependency the run loaded a class from is not unloaded. A dependency the run reports a reference to is not unreferenced. A dependency whose referencing method the run hit, or whose referencing class it loaded, is not unreached and has no dead reference, whether the judged runs know the reference or only the run reports it. Such a dependency reads as loaded. An optional parameter is not never supplied when the run hit its method, and not always supplied when the run hit an omission of it. A class whose `<clinit>`, constructor or instance method it hit loses its never-initialised or never-instantiated finding, and its other methods with no hits, apart from its constructors, then show as never-hit rows. Branch sites and lambda bodies that were grouped under such a method show as rows of their own. A method it hit leaves its unreached cluster, and the code that method calls gets no root from it. This lasts only while the run is in scope, so a claim it held back can return when the run expires. The badge looks at the latest run only. The evidence list's **Instances** fact counts an instance as kept out of every finding only when every run of it that matches the scope came through such a collector, as in `3, 2 judged with a complete baseline, 1 kept out of every finding`. An instance with a badge can still count as judged through an earlier run. Upgrade the collector to the agent's version, as the [collector's troubleshooting](/docs/collector/troubleshooting) describes. Runs that start after the upgrade count. A service that only such runs reached is still listed.
+An instance whose latest run came through a collector older than its agent shows a **Collector older than agent** badge on the **Instances** page. The evidence list adds a **Stripped runs** fact: `1 run, kept out of every finding`. The old collector dropped fields it did not know, so Otherlode makes no claim from that run. Code the run hit stays off the lists that say it never ran: a method or branch outcome it hit is not never hit, a class it loaded is not never loaded, and an endpoint it saw called is not never called. Such a method or endpoint is not listed as stale either. A dependency the run loaded a class from is not unloaded. A dependency the run reports a reference to is not unreferenced. A dependency whose referencing method the run hit, or whose referencing class it loaded, is not unreached and has no dead reference, whether the judged runs know the reference or only the run reports it. Such a dependency reads as loaded. An optional parameter is not never supplied when the run hit its method, and not always supplied when the run hit an omission of it. A class whose `<clinit>`, constructor or instance method it hit loses its never-initialised or never-instantiated finding, and its other methods with no hits, apart from its constructors, then show as never-hit rows. Branch sites and lambda bodies that were grouped under such a method show as rows of their own. A method it hit leaves its unreached cluster, and the code that method calls gets no root from it. This lasts only while the run is in scope, so a claim it held back can return when the run expires. The badge looks at the latest run only. The evidence list's **Instances** fact counts an instance as kept out of every finding only when every run of it that matches the scope is a stripped run, as in `3, 2 judged with a complete baseline, 1 kept out of every finding`. An instance with a badge can still count as judged through an earlier run. Upgrade the collector to the agent's version, as the [collector's troubleshooting](/docs/collector/troubleshooting) describes. Runs that start after the upgrade count. A service that only such runs reached is still listed.
+
+### A run carried fields Otherlode does not know
+
+An instance whose latest run carried fields Otherlode does not know shows an **Otherlode older than agent** badge on the **Instances** page, and the evidence list's **Stripped runs** fact counts the run. The agent is newer than Otherlode, so Otherlode could not read every field the run sent. It judges the run as it judges a run from an older collector: the run makes no claim, and code it hit stays off the lists that say it never ran, as [An instance is kept out of every finding](#an-instance-is-kept-out-of-every-finding) describes. Nothing on your side needs to change. Runs that start after Otherlode reads the new fields count. If new runs keep the badge, email [support@otherlode.dev](mailto:support@otherlode.dev).
 
 ### A never-called endpoint is missing
 
@@ -256,7 +271,7 @@ Every body is JSON, in the shape `{"error":"<message>"}`. The read API sits unde
 | 403 | `{"error":"this needs an admin"}` | The request has no admin session. The audit log and the admin routes answer an admin's browser session only, never a key. Use the web app. |
 | 403 | `{"error":"cross-origin request"}` | A browser session sent a change from another site. Make the change from the web app itself. |
 | 404 | `{"error":"service not found"}` | The tenant has no service at that namespace and name. Check the `namespace` and `service` parts of the path against the **Services** page. A service with no production run is not listed. |
-| 503 | `{"error":"unavailable"}` | Otherlode could not check the key. Retry. |
+| 503 | `{"error":"unavailable"}` | Otherlode could not check the key or the session. A request with a key gets `Retry-After: 5`. Retry. |
 
 A key never has a role, so `/api/v1/me` answers `"user":null` for a key.
 
