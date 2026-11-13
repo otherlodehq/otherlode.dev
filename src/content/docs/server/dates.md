@@ -10,7 +10,7 @@ Findings about unused code depend on dates, such as how long code has been known
 
 Every date about your code comes from Otherlode's own clock, at the moment a payload reaches it. It never shows a date from your agent's clock. Agent clocks differ from host to host, and dates taken from many of them could not be put in order. With one clock, the service-wide dates of an item always order as first known, then first hit, then last hit.
 
-A date therefore trails the event. The agent sends counts at its flush interval, and a collector that buffers or retries delivers them later still. Treat a date as accurate to a flush interval or more. The dates can tell you how long code has gone unused. They are not an audit record.
+A date therefore trails the event. The agent sends counts at its flush interval, and a payload it has to send again arrives later still. Treat a date as accurate to a flush interval or more. The dates can tell you how long code has gone unused. They are not an audit record.
 
 The API writes every date as a UTC time in ISO 8601 form with a `Z` suffix, such as `2026-09-22T23:19:31Z`.
 

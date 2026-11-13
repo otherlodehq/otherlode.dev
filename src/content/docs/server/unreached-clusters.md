@@ -119,7 +119,7 @@ The graph draws each endpoint that is not an [outside route](findings#outside-ro
 With no endpoint and no entry method to draw, the graph area shows one of these facts.
 
 - "No run in scope". No run matches the scope.
-- "Nothing judged". Every run that matches the scope came through a collector older than its agent. Such a run makes no claim, so it is not in scope.
+- "Nothing judged". Every run that matches the scope is a stripped run, from a collector older than its agent or with fields Otherlode does not know. Such a run makes no claim, so it is not in scope.
 - "No endpoints or entry methods to draw". The service has runs in scope, but none of them knows an endpoint that is not an [outside route](findings#outside-routes), or an entry method. The graph area also shows this when the service's report could not load. When an in-scope run reported a framework marker, Otherlode's label for each marker follows, such as "A grpc-java server started". Routing the agent does not count was set up in that run. See [Routing whose routes are not counted](inventory#routing-whose-routes-are-not-counted).
 
 When the filters keep no root, the graph area reads "No roots match the filters", unless it draws a highlighted cluster or a **Graph** method.
