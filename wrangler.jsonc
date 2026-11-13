@@ -8,6 +8,9 @@
   "main": "worker/index.ts",
   "compatibility_date": "2026-10-02",
   "routes": [{ "pattern": "otherlode.dev", "custom_domain": true }],
+  "workers_dev": false,
+  // Unset, preview_urls follows workers_dev, and branch builds lose their URLs.
+  "preview_urls": true,
   "assets": {
     "directory": "./dist/",
     "binding": "ASSETS",

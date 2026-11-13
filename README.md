@@ -57,7 +57,9 @@ Cloudflare Workers Builds builds the site from GitHub on every push to
 `master` and deploys it as the Worker `otherlode-dev`, set up in
 `wrangler.jsonc`. The Worker serves `otherlode.dev` as its custom
 domain, and the deploy creates the domain's DNS record and certificate.
-Cloudflare Pages is deprecated in favour of Workers static assets.
+The Worker's own `workers.dev` address is off. Each deployed version and
+each branch build still gets a preview URL on `workers.dev`. Cloudflare
+Pages is deprecated in favour of Workers static assets.
 
 | Setting | Value |
 |---|---|
@@ -67,9 +69,8 @@ Cloudflare Pages is deprecated in favour of Workers static assets.
 | Node version | 22.19 or later (`NODE_VERSION` in the build settings) |
 
 `html_handling` serves `privacy.html` at `/privacy`, and
-`not_found_handling` serves `404.html` with status 404. The
-`workers.dev` addresses send `X-Robots-Tag: noindex`, so only
-`otherlode.dev` is indexed.
+`not_found_handling` serves `404.html` with status 404. The preview
+URLs send `X-Robots-Tag: noindex`, so only `otherlode.dev` is indexed.
 
 ### Cloudflare settings that would break the privacy policy
 
@@ -97,10 +98,10 @@ on the way out. This should print nothing:
 
 ```sh
 ua='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36'
-for path in / /privacy /no-such-page; do
-  curl -sS -A "$ua" -H 'Accept: text/html' -D /tmp/otl-headers -o /tmp/otl-page "https://otherlode.dev$path"
-  grep -i '^set-cookie:' /tmp/otl-headers && echo "cookie on $path"
-  grep -Eio '<script[^>]*>|cloudflareinsights|/cdn-cgi/' /tmp/otl-page && echo "script on $path"
+for page in / /privacy /no-such-page; do
+  curl -sS -A "$ua" -H 'Accept: text/html' -D /tmp/otl-headers -o /tmp/otl-page "https://otherlode.dev$page"
+  grep -i '^set-cookie:' /tmp/otl-headers && echo "cookie on $page"
+  grep -Eio '<script[^>]*>|cloudflareinsights|/cdn-cgi/' /tmp/otl-page && echo "script on $page"
 done
 ```
 
